@@ -190,6 +190,18 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .pmenu .picking,.pmenu:has(.picking){width:100%}
 .pmenu .picking emoji-picker{height:320px}
 @media (hover:none){.bub{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}}
+.ment{display:inline;font:inherit;font-weight:700;color:var(--lapis-lit);background:rgba(143,181,240,0.12);border-radius:5px;padding:0 3px}
+.ment.me{color:var(--on-gold);background:var(--gold)}
+.bub.mentioned{border-color:rgba(216,170,60,0.75);box-shadow:inset 3px 0 0 var(--gold);background:linear-gradient(rgba(216,170,60,0.08),rgba(216,170,60,0.08)),var(--card)}
+.row.me .bub.mentioned{background:rgba(59,116,204,0.20)}
+.mbtn{position:relative}
+.mbadge{position:absolute;top:3px;right:2px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--gold);color:var(--on-gold);font-size:10.5px;font-weight:800;line-height:17px;text-align:center}
+.mpick{position:absolute;left:62px;right:70px;bottom:74px;z-index:6;background:var(--card);border:1px solid rgba(233,238,246,0.18);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,0.5);overflow:hidden;max-width:360px}
+.mpick button{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;font-size:14.5px;font-weight:600}
+.mpick button.on,.mpick button:hover{background:rgba(216,170,60,0.12)}
+@media (max-width:860px){.mpick{left:8px;right:8px;bottom:70px}}
+.mtoast{display:flex;align-items:center;gap:8px;cursor:pointer;border-color:rgba(216,170,60,0.7)}
+.mtoast b{color:var(--gold)}
 .typing{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);padding:6px 0 0 46px;min-height:22px}
 .dots{display:flex;gap:3px}.dots i{width:5px;height:5px;border-radius:50%;background:var(--muted);display:block;animation:blink 1.2s infinite}
 .dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
@@ -440,6 +452,146 @@ function formatText(text) {
   return { html: out, ep: ep ? { kind: ep[1].toLowerCase(), slug: ep[2].toLowerCase() } : null };
 }
 
+// ------------------------------------------------------------ @mentions
+const AT = s => `<svg viewBox="0 0 24 24" width="${s||20}" height="${s||20}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>`;
+function mentionedMe(m) { return !!(S.me && m && Array.isArray(m.mentions) && m.mentions.includes(S.me.uid) && m.uid !== S.me.uid); }
+// which members a message names: "@Name" for any known member (longest names first, so "@Ann Lee" beats "@Ann")
+function findMentions(text) {
+  const out = [], seen = new Set();
+  const people = Object.values(S.people).filter(p => p && p.name && p.uid !== (S.me && S.me.uid)).sort((a, b) => b.name.length - a.name.length);
+  const low = text.toLowerCase();
+  for (const p of people) {
+    const n = '@' + p.name.toLowerCase();
+    let i = low.indexOf(n);
+    while (i >= 0) {
+      const after = low.charAt(i + n.length);
+      if (!after || /[\s.,!?;:)'"]/.test(after)) { if (!seen.has(p.uid)) { seen.add(p.uid); out.push(p.uid); } break; }
+      i = low.indexOf(n, i + 1);
+    }
+  }
+  return out;
+}
+function markMentions(html, m) {
+  if (!m.mentions || !m.mentions.length) return html;
+  for (const u of m.mentions.slice().sort((a, b) => (person(b).name || '').length - (person(a).name || '').length)) {
+    const p = person(u); if (!p.name) continue;
+    const re = new RegExp('@' + esc(p.name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\w])', 'gi');
+    html = html.replace(re, s => `<button class="ment${S.me && u === S.me.uid ? ' me' : ''}" data-who="${esc(u)}">${s}</button>`);
+  }
+  return html;
+}
+// a soft two-note chime (needs one tap on the page first, which every member has made)
+let audioCtx = null;
+document.addEventListener('pointerdown', () => { if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } }, { once: true });
+function chime() {
+  if (!audioCtx || load('ivc_sound') === 'off') return;
+  try {
+    const t = audioCtx.currentTime;
+    [[880, 0], [1320, 0.12]].forEach(([f, d]) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(0.12, t + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.5);
+      o.start(t + d); o.stop(t + d + 0.55);
+    });
+  } catch (e) {}
+}
+const notified = new Set();
+function lastSeenMention() { return Number(load('ivc_seen_mention') || 0); }
+function countNewMentions() {
+  const seen = lastSeenMention();
+  S.newMentions = S.messages.filter(x => mentionedMe(x) && x.id > seen && !x.deleted).length;
+  renderMentionBadge();
+}
+function renderMentionBadge() {
+  document.querySelectorAll('.mbadge').forEach(b => { b.textContent = S.newMentions || ''; b.style.display = S.newMentions ? '' : 'none'; });
+  const base = 'Inner Circle | InnerVerse';
+  document.title = (S.newMentions ? '(@) ' : '') + (S.unread ? `(${S.unread}) ` : '') + base;
+}
+function onMention(m) {
+  if (!mentionedMe(m) || notified.has(m.id)) return;
+  notified.add(m.id);
+  const p = person(m.uid);
+  chime();
+  if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
+  countNewMentions();
+  const box = $('#msgs'); const atBottom = box && box.scrollHeight - box.scrollTop - box.clientHeight < 140;
+  if (!document.hidden && !atBottom) {
+    const t = document.createElement('button'); t.className = 'toast mtoast'; t.setAttribute('role', 'status');
+    t.innerHTML = `${AT(16)}<b>${esc(p.name)}</b> mentioned you`;
+    t.onclick = () => { t.remove(); sendWs({ t: 'thread', id: m.id }); };
+    document.body.appendChild(t); setTimeout(() => t.remove(), 6000);
+  }
+  if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+    try {
+      const n = new Notification(`${p.name} mentioned you in the Inner Circle`, { body: (m.text || 'Image').slice(0, 140), icon: PLUS_LOGO, tag: 'ivc-' + m.id });
+      n.onclick = () => { window.focus(); n.close(); sendWs({ t: 'thread', id: m.id }); };
+    } catch (e) {}
+  }
+}
+function openMentions() { sendWs({ t: 'mentions' }); }
+function showMentions(r) {
+  const top = r.messages.length ? r.messages[0].id : 0;
+  if (top > lastSeenMention()) store('ivc_seen_mention', String(top));
+  countNewMentions();
+  const canNotify = 'Notification' in window;
+  const perm = canNotify ? Notification.permission : 'unsupported';
+  const sound = load('ivc_sound') !== 'off';
+  const o = overlay(`<div style="padding:16px 12px 10px 18px;display:flex;align-items:center;gap:10px"><h2 class="h1" style="font-size:22px;flex:1">Mentions</h2><button class="ibtn" id="mclose" aria-label="Close">${I.close()}</button></div>
+    <div style="padding:0 18px 12px;display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line)">
+      ${perm === 'default' ? `<button class="btn2 sm" id="mnotify">${AT(15)}Alert me when the chat is in the background</button>` : perm === 'granted' ? '<span class="muted" style="font-size:12.5px">Background alerts are on for this browser.</span>' : perm === 'denied' ? '<span class="muted" style="font-size:12.5px">Alerts are blocked for this site in your browser settings.</span>' : ''}
+      <button class="btn2 sm" id="msound">${sound ? 'Chime on' : 'Chime off'}</button>
+    </div>
+    <div id="mres" style="padding:8px 8px 14px;min-height:100px"></div>`, false, 'Mentions');
+  o.firstElementChild.style.width = 'min(560px, 100%)';
+  const box = $('#mres');
+  box.innerHTML = r.messages.length ? r.messages.map(m => { const p = person(m.uid);
+    return `<button class="person" data-hit="${m.id}" style="align-items:flex-start;padding:9px 10px;min-height:0;gap:11px">${avatar(m.uid, 32)}<span style="flex:1;min-width:0;text-align:left"><span style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><b style="font-size:14px">${esc(p.name || 'Member')}</b><span class="time">${esc(dayLabel(m.created))} ${fmtTime(m.created)}</span></span><span style="display:block;font-weight:500;font-size:14px;line-height:1.45;margin-top:2px;color:var(--ink)">${m.text ? markMentions(esc(m.text.slice(0, 220)), m) : '<span class="muted">Image</span>'}</span></span></button>`; }).join('')
+    : '<p class="muted" style="padding:12px 10px;font-size:14px">Nobody has mentioned you yet. When someone types @ and your name, it shows up here.</p>';
+  hydrateMedia(box);
+  box.querySelectorAll('[data-hit]').forEach(b => b.onclick = e => { if (e.target.closest('.ment')) return; sendWs({ t: 'thread', id: Number(b.dataset.hit) }); });
+  $('#mclose').onclick = closeOverlay;
+  if ($('#mnotify')) $('#mnotify').onclick = () => Notification.requestPermission().then(() => showMentions(r));
+  $('#msound').onclick = () => { store('ivc_sound', sound ? 'off' : null); showMentions(r); };
+}
+// typing "@" in the message box suggests members
+function wireMentionPicker(f) {
+  let box = null, list = [], pick = 0, start = -1;
+  const close = () => { if (box) box.remove(); box = null; list = []; start = -1; };
+  const choose = p => {
+    const caret = f.selectionStart;
+    f.value = f.value.slice(0, start) + '@' + p.name + ' ' + f.value.slice(caret);
+    const pos = start + p.name.length + 2; f.selectionStart = f.selectionEnd = pos;
+    close(); f.dispatchEvent(new Event('input')); f.focus();
+  };
+  const draw = () => {
+    if (!list.length) return close();
+    if (!box) { box = document.createElement('div'); box.className = 'mpick'; box.setAttribute('role', 'listbox'); f.closest('.panel').appendChild(box); }
+    box.innerHTML = list.map((p, i) => `<button role="option" aria-selected="${i === pick}" class="${i === pick ? 'on' : ''}" data-i="${i}">${avatar(p.uid, 26)}<span>${esc(p.name)}</span>${badges(p)}</button>`).join('');
+    hydrateMedia(box);
+    box.querySelectorAll('[data-i]').forEach(b => b.onmousedown = e => { e.preventDefault(); choose(list[Number(b.dataset.i)]); });
+  };
+  const update = () => {
+    const caret = f.selectionStart, before = f.value.slice(0, caret);
+    const m = before.match(/(^|\s)@([^\s@]{0,20}(?: [^\s@]{0,20})?)$/);
+    if (!m) return close();
+    start = caret - m[2].length - 1;
+    const q = m[2].toLowerCase();
+    list = Object.values(S.people).filter(p => p && p.name && p.uid !== S.me.uid && p.name.toLowerCase().startsWith(q) || (p && p.name && p.uid !== S.me.uid && q && p.name.toLowerCase().includes(' ' + q)))
+      .sort((a, b) => (S.online.includes(b.uid) - S.online.includes(a.uid)) || a.name.localeCompare(b.name)).slice(0, 6);
+    pick = 0; draw();
+  };
+  f.addEventListener('input', update);
+  f.addEventListener('click', update);
+  f.addEventListener('blur', () => setTimeout(close, 150));
+  f.addEventListener('keydown', e => {
+    if (!box) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); pick = (pick + 1) % list.length; draw(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); pick = (pick - 1 + list.length) % list.length; draw(); }
+    else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); e.stopImmediatePropagation(); choose(list[pick]); }
+    else if (e.key === 'Escape') { e.stopImmediatePropagation(); close(); }
+  }, true);
+}
+
 // media is members only: fetch with the session, show as a local blob
 const mediaCache = new Map();
 function hydrateMedia(root) {
@@ -546,7 +698,8 @@ function onEvent(m) {
         if (!atBottom && m.m.uid !== S.me.uid) $('#jump') && $('#jump').classList.add('show');
         renderTyping();
       }
-      if (document.hidden && m.m.uid !== S.me.uid) { S.unread++; document.title = `(${S.unread}) Inner Circle | InnerVerse`; }
+      if (document.hidden && m.m.uid !== S.me.uid) { S.unread++; renderMentionBadge(); }
+      onMention(m.m);
       return;
     }
     case 'update': {
@@ -561,6 +714,7 @@ function onEvent(m) {
       const ti = (S.threadMsgs || []).findIndex(x => x.id === m.m.id);
       if (ti >= 0 && m.m.deleted) S.threadMsgs.splice(ti, 1);
       if (ti >= 0 && $('#thread')) { S.threadMsgs[ti] = m.m; sendWs({ t: 'thread', id: S.threadId }); }
+      if (!m.m.deleted) onMention(m.m); else countNewMentions();
       return;
     }
     case 'pins': mergePeople(m.people); S.pins = m.pins; if (S.view === 'chat') renderPinbar(); return;
@@ -578,7 +732,8 @@ function onEvent(m) {
     case 'thread': mergePeople(m.people); showThread(m); return;
     case 'results': mergePeople(m.people); showResults(m); return;
     case 'who': S.people[m.p.uid] = Object.assign({}, S.people[m.p.uid], m.p); openProfile(m.p.uid, true); return;
-    case 'members': mergePeople(m.people); S.online = m.online; openPeople(true); return;
+    case 'members': mergePeople(m.people); S.online = m.online; if (!m.quiet) openPeople(true); return;
+    case 'mentionlist': mergePeople(m.people); showMentions(m); return;
     case 'reports': S.reports = m.count; renderSide(); return;
     case 'reportlist': mergePeople(m.people); showReports(m); return;
     case 'notice': toast(m.text); return;
@@ -762,11 +917,13 @@ function renderChat() {
         <a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a>
         <img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">
         <div style="flex:1;min-width:0;margin-left:4px"><h1 class="room">Inner Circle Chat</h1><div class="sub" id="cnt2"></div></div>
+        <button class="ibtn mbtn" id="mentBtn2" aria-label="Mentions">${AT(21)}<span class="mbadge" style="display:none"></span></button>
         <button class="ibtn" id="searchBtn2" aria-label="Search">${I.search(21)}</button>
         <button class="ibtn" id="peopleBtn2" aria-label="Who is here">${I.people(21)}</button>
       </div>
       <div class="phead desk">
         <div style="flex:1;min-width:0"><h2 class="room">Inner Circle Chat</h2><div class="sub" id="cnt"></div></div>
+        <button class="ibtn mbtn" id="mentBtn" aria-label="Mentions">${AT()}<span class="mbadge" style="display:none"></span></button>
         <button class="ibtn" id="searchBtn" aria-label="Search">${I.search()}</button>
         <button class="ibtn" id="peopleBtn" aria-label="Who is here">${I.people()}</button>
         ${hostish ? `<button class="ibtn" id="repBtn" aria-label="Reports">${I.shield()}</button>` : ''}
@@ -799,6 +956,9 @@ function renderChat() {
   $('#jump').onclick = () => { box.scrollTop = box.scrollHeight; $('#jump').classList.remove('show'); };
   $('#peopleBtn').onclick = $('#peopleBtn2').onclick = () => sendWs({ t: 'members' });
   $('#searchBtn').onclick = $('#searchBtn2').onclick = () => openSearch('room');
+  $('#mentBtn').onclick = $('#mentBtn2').onclick = openMentions;
+  sendWs({ t: 'members', quiet: true });
+  countNewMentions();
   if ($('#repBtn')) $('#repBtn').onclick = () => sendWs({ t: 'reports' });
   $('#popout').onclick = e => { e.preventDefault(); window.open('/', 'ivcircle', 'width=440,height=760'); };
 }
@@ -911,7 +1071,7 @@ function msgHtml(m, i, list) {
       const rp = person(m.reply.uid);
       body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b>${m.reply.deleted ? 'Message deleted' : esc(m.reply.text || (m.reply.image ? 'Image' : ''))}</button>`;
     }
-    if (m.text) { const f = formatText(m.text); body += `<div class="txt">${f.html}${m.edited ? ' <span class="time" title="Edited">(edited)</span>' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
+    if (m.text) { const f = formatText(m.text); body += `<div class="txt">${markMentions(f.html, m)}${m.edited ? ' <span class="time" title="Edited">(edited)</span>' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
     if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
   }
   const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile">${esc(p.name)}</button>${badges(p)}${signRow(p)}<span class="time">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span></div>` : '';
@@ -921,7 +1081,7 @@ function msgHtml(m, i, list) {
   const rc = m.replies && !m.deleted ? `<button class="rcount" data-thread="${m.id}" title="View thread">${I.reply(14)}${m.replies}</button>` : '';
   const rx = chips || rc ? `<div class="reacts">${chips}${rc}</div>` : '';
   const av = last ? `<button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile" title="${esc(p.name)}">${avatar(m.uid, 36)}</button>` : '<span class="gap"></span>';
-  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub" data-press="${m.id}">${head}${body}</div>${rx}</div></div>`;
+  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub${mentionedMe(m) ? ' mentioned' : ''}" data-press="${m.id}">${head}${body}</div>${rx}</div></div>`;
   return out;
 }
 
@@ -1003,6 +1163,7 @@ function wireComposer() {
     }
   });
   $('#sendBtn').onclick = send;
+  wireMentionPicker(f);
   $('#emoBtn').onclick = () => {
     const o = overlay('<div id="emoHost"></div>', true, 'Emoji');
     o.querySelector('#emoHost').appendChild(emojiPicker(u => {
@@ -1017,11 +1178,11 @@ function wireComposer() {
     if (S.editMsg) {
       const em = S.messages.find(x => x.id === S.editMsg);
       if (!text && !(em && em.image)) return;
-      if (sendWs({ t: 'edit', id: S.editMsg, text })) { S.editMsg = null; f.value = S.editDraft || ''; S.editDraft = ''; grow(); renderReply(); }
+      if (sendWs({ t: 'edit', id: S.editMsg, text, mentions: findMentions(text) })) { S.editMsg = null; f.value = S.editDraft || ''; S.editDraft = ''; grow(); renderReply(); }
       return;
     }
     if (!text) return;
-    if (sendWs({ t: 'send', text, reply_to: S.reply || undefined })) { f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); }
+    if (sendWs({ t: 'send', text, reply_to: S.reply || undefined, mentions: findMentions(text) })) { f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); }
   }
 }
 
@@ -1291,7 +1452,7 @@ document.addEventListener('mouseover', e => {
   const b = e.target.closest && e.target.closest('button[aria-label],a[aria-label]');
   if (b && !b.hasAttribute('title')) b.setAttribute('title', b.getAttribute('aria-label'));
 });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { S.unread = 0; document.title = 'Inner Circle | InnerVerse'; } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { S.unread = 0; renderMentionBadge(); } });
 
 S.view = S.token ? 'loading' : 'door';
 render();

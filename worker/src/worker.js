@@ -170,6 +170,7 @@ export class Room {
     try { this.sql.exec("ALTER TABLE members ADD COLUMN titles TEXT DEFAULT '[]'"); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE members ADD COLUMN no_init INTEGER DEFAULT 0"); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN kind TEXT DEFAULT ''"); } catch (e) { /* already there */ }
+    try { this.sql.exec("ALTER TABLE messages ADD COLUMN mentions TEXT DEFAULT '[]'"); } catch (e) { /* already there */ }
     for (const [oldKey, emoji] of Object.entries(OLD_REACTIONS)) {
       this.sql.exec('UPDATE OR IGNORE reactions SET kind = ? WHERE kind = ?', emoji, oldKey);
       this.sql.exec('DELETE FROM reactions WHERE kind = ?', oldKey);
@@ -239,7 +240,7 @@ export class Room {
       id: row.id, uid: row.uid, text: row.deleted ? '' : row.text, image: row.deleted ? '' : row.image,
       reply, created: row.created, edited: !!row.edited, deleted: !!row.deleted, pinned: !!row.pinned, reacts,
       replies: this.one('SELECT COUNT(*) AS n FROM messages WHERE reply_to = ? AND deleted = 0', row.id).n,
-      kind: row.kind || '',
+      kind: row.kind || '', mentions: safeArr(row.mentions),
     };
   }
 
@@ -256,7 +257,7 @@ export class Room {
 
   peopleFor(msgs, extra) {
     const ids = new Set(extra || []);
-    for (const m of msgs) { ids.add(m.uid); if (m.reply) ids.add(m.reply.uid); }
+    for (const m of msgs) { ids.add(m.uid); if (m.reply) ids.add(m.reply.uid); for (const u of (m.mentions || [])) ids.add(u); }
     const out = {};
     for (const id of ids) { const p = this.person(this.member(id)); if (p) out[id] = p; }
     return out;
@@ -357,7 +358,8 @@ export class Room {
           const p = this.one('SELECT id FROM messages WHERE id = ?', msg.reply_to);
           if (p) reply = p.id;
         }
-        const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created) VALUES (?, ?, ?, ?, ?) RETURNING *', me.uid, text, image, reply, now);
+        const mentions = this.mentionsFrom(msg.mentions, me.uid);
+        const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created, mentions) VALUES (?, ?, ?, ?, ?, ?) RETURNING *', me.uid, text, image, reply, now, JSON.stringify(mentions));
         const m = this.shape(row);
         this.broadcast({ t: 'msg', m, cid: clean(msg.cid, 40), people: this.peopleFor([m]) });
         if (reply) this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', reply)) });
@@ -495,7 +497,7 @@ export class Room {
         const text = clean(msg.text, MAX_TEXT, true);
         if (!text && !row.image) return;
         if (text === row.text) return;
-        this.sql.exec('UPDATE messages SET text = ?, edited = ? WHERE id = ?', text, now, row.id);
+        this.sql.exec('UPDATE messages SET text = ?, edited = ?, mentions = ? WHERE id = ?', text, now, JSON.stringify(this.mentionsFrom(msg.mentions, me.uid)), row.id);
         this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', row.id)) });
         // replies quoting it show the new words
         for (const r of this.all('SELECT * FROM messages WHERE reply_to = ? AND deleted = 0', row.id)) this.broadcast({ t: 'update', m: this.shape(r) });
@@ -511,8 +513,14 @@ export class Room {
         return this.send(ws, { t: 'results', q, scope: msg.scope, room: 'Inner Circle Chat', messages: msgs, people: this.peopleFor(msgs) });
       }
 
+      case 'mentions': {
+        const rows = this.all("SELECT * FROM messages WHERE deleted = 0 AND mentions LIKE ? ORDER BY id DESC LIMIT 50", '%"' + me.uid + '"%');
+        const msgs = rows.map(r => this.shape(r));
+        return this.send(ws, { t: 'mentionlist', messages: msgs, people: this.peopleFor(msgs) });
+      }
+
       case 'thread': {
-        // the message, everything it replies to, and every reply beneath it
+        // the whole conversation this message belongs to
         const start = this.one('SELECT * FROM messages WHERE id = ?', Number(msg.id));
         if (!start) return this.send(ws, { t: 'notice', text: 'That message is no longer here.' });
         const seen = new Map([[start.id, start]]);
@@ -522,7 +530,10 @@ export class Room {
           if (!up || seen.has(up.id)) break;
           seen.set(up.id, up);
         }
-        let frontier = [start.id];
+        // the whole conversation: walk up to the first message, then take every reply under it, side branches included
+        let root = start;
+        for (const r of seen.values()) if (!r.reply_to || !seen.has(r.reply_to)) { if (r.id <= root.id) root = r; }
+        let frontier = [root.id];
         while (frontier.length && seen.size < 300) {
           const next = [];
           for (const id of frontier) {
@@ -555,11 +566,24 @@ export class Room {
       case 'members': {
         const rows = this.all('SELECT * FROM members WHERE profile_done = 1 AND banned = 0 ORDER BY name COLLATE NOCASE LIMIT 500');
         const out = {}; for (const r of rows) out[r.uid] = this.person(r);
-        return this.send(ws, { t: 'members', people: out, online: this.online() });
+        return this.send(ws, { t: 'members', people: out, online: this.online(), quiet: !!msg.quiet });
       }
 
       case 'ping': return this.send(ws, { t: 'pong' });
     }
+  }
+
+  // @mentions: keep only real members, at most 20
+  mentionsFrom(list, self) {
+    if (!Array.isArray(list)) return [];
+    const out = [];
+    for (const u of list) {
+      if (typeof u !== 'string' || u === self || out.includes(u)) continue;
+      const m = this.member(u);
+      if (m && m.profile_done && !m.banned) out.push(u);
+      if (out.length >= 20) break;
+    }
+    return out;
   }
 
   useEmoji(uid, e) {
