@@ -661,8 +661,9 @@ function renderProfile() {
     <div style="margin-top:22px"><label class="flabel" for="pname">Display name</label><input id="pname" class="finput" maxlength="40" value="${esc(d.name)}" autocomplete="nickname"><div class="fhelp">Use your name or stay anonymous. Members see this. Change it any time.</div></div>
     <div style="margin-top:16px"><label class="flabel" for="pbio">A line about you <span class="muted" style="font-weight:500">(optional)</span></label><textarea id="pbio" class="ftext" maxlength="160" placeholder="Herbalist, Tarot reader, long-time listener">${esc(d.bio)}</textarea></div>
     <div style="margin-top:16px"><div class="flabel">Your Sun, Moon &amp; Rising <span class="muted" style="font-weight:500">(optional)</span></div><div class="grid3">${signSel('psun', 'Sun', d.sun)}${signSel('pmoon', 'Moon', d.moon)}${signSel('prising', 'Rising', d.rising)}</div><div class="fhelp">Shows on your profile. Leave any blank.</div></div>
-    <div style="margin-top:16px"><div class="flabel">What are you into? <span class="muted" style="font-weight:500">(optional)</span></div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">${INTERESTS.map(t => `<button class="chip${d.interests.includes(t) ? ' on' : ''}" data-int="${esc(t)}" aria-pressed="${d.interests.includes(t)}">${esc(t)}</button>`).join('')}</div></div>
+    <div style="margin-top:16px"><label class="flabel" for="pint">What are you into? <span class="muted" style="font-weight:500">(up to 5, optional)</span></label>
+      <div id="pints" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      <select id="pint" class="finput" style="height:46px;font-size:14px;padding:0 10px;margin-top:8px"></select></div>
     <div style="margin-top:18px"><label class="flabel" for="pfav">My favorite episodes <span class="muted" style="font-weight:500">(up to 3, optional)</span></label>
       <div id="pfavs"></div>
       <input id="pfav" class="finput" placeholder="Search episodes by title" autocomplete="off" style="height:46px;font-size:15px"><div id="psug"></div></div>
@@ -683,11 +684,18 @@ function renderProfile() {
   $('#psun').onchange = e => d.sun = e.target.value;
   $('#pmoon').onchange = e => d.moon = e.target.value;
   $('#prising').onchange = e => d.rising = e.target.value;
-  app.querySelectorAll('[data-int]').forEach(b => b.onclick = () => {
-    const t = b.dataset.int, i = d.interests.indexOf(t);
-    if (i >= 0) d.interests.splice(i, 1); else d.interests.push(t);
-    b.classList.toggle('on', i < 0); b.setAttribute('aria-pressed', i < 0);
-  });
+  d.interests = d.interests.filter(t => INTERESTS.includes(t)).slice(0, 5);
+  const drawInts = () => {
+    $('#pints').innerHTML = d.interests.map(t => `<span class="chip on" style="gap:6px;padding:0 6px 0 12px">${esc(t)}<button data-unint="${esc(t)}" aria-label="Remove ${esc(t)}" style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%">${I.close(13)}</button></span>`).join('');
+    $('#pints').style.marginBottom = d.interests.length ? '0' : '-8px';
+    const left = INTERESTS.filter(t => !d.interests.includes(t));
+    const sel = $('#pint');
+    sel.innerHTML = `<option value="">${d.interests.length >= 5 ? 'Five chosen' : d.interests.length ? 'Add another' : 'Choose a topic'}</option>` + left.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    sel.disabled = d.interests.length >= 5;
+    $('#pints').querySelectorAll('[data-unint]').forEach(b => b.onclick = () => { d.interests = d.interests.filter(x => x !== b.dataset.unint); drawInts(); });
+  };
+  drawInts();
+  $('#pint').onchange = e => { const v = e.target.value; if (v && d.interests.length < 5 && !d.interests.includes(v)) d.interests.push(v); drawInts(); };
   const drawFavs = () => loadIndexes().then(ix => {
     $('#pfavs').innerHTML = d.favorites.map(s => { const e = ix.free[s] || {}; return `<div class="favrow"><img src="${esc(e.thumb || '')}" alt=""><span style="flex:1">${esc(e.title || s)}</span><button class="ibtn" data-unfav="${esc(s)}" aria-label="Remove">${I.close(16)}</button></div>`; }).join('');
     $('#pfavs').querySelectorAll('[data-unfav]').forEach(b => b.onclick = () => { d.favorites = d.favorites.filter(x => x !== b.dataset.unfav); drawFavs(); });
@@ -1133,7 +1141,7 @@ function openProfile(uid) {
     <div style="display:flex;gap:16px;align-items:center">${avatar(uid, 76, true)}<div style="flex:1;min-width:0"><h2 class="h1" style="font-size:28px;letter-spacing:-0.6px;overflow-wrap:anywhere">${esc(p.name)}</h2><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">${badges(p)}</div>${joined ? `<div class="muted" style="font-size:13px;margin-top:7px">In the Circle since ${esc(joined)}</div>` : ''}</div><button class="ibtn" id="pclose" aria-label="Close" style="align-self:flex-start;color:var(--muted)">${I.close()}</button></div>
     ${p.bio ? `<p style="font-size:15px;line-height:1.6">${esc(p.bio)}</p>` : ''}
     ${signs.length ? `<div style="border-top:1px solid var(--line);padding-top:16px"><div class="label" style="margin-bottom:10px">Sun, Moon &amp; Rising</div><div style="display:flex;flex-wrap:wrap;gap:6px">${signs.map(s => `<span class="chip" style="gap:6px;padding:0 10px;font-size:12.5px">${P(s[2], {s:15}).replace('currentColor', '#D8AA3C').replace('fill="currentColor"', 'fill="#D8AA3C"')}${s[0]} <span class="zg" style="color:var(--gold)">${ZODIAC[s[1]] ? ZODIAC[s[1]] + '\uFE0E' : ''}</span> ${esc(s[1])}</span>`).join('')}</div></div>` : ''}
-    ${p.interests && p.interests.length ? `<div><div class="label" style="margin-bottom:10px">Into</div><div style="display:flex;flex-wrap:wrap;gap:6px">${p.interests.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div></div>` : ''}
+    ${p.interests && p.interests.length ? (p.interests = p.interests.slice(0, 5), '') + `<div><div class="label" style="margin-bottom:10px">Into</div><div style="display:flex;flex-wrap:wrap;gap:6px">${p.interests.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div></div>` : ''}
     ${p.favorites && p.favorites.length ? `<div><div class="label" style="margin-bottom:10px">My favorite episodes</div><div id="pfavlist"></div></div>` : ''}
     ${self ? `<button class="btn2" id="pedit" style="min-height:46px;font-size:14px">${I.edit(16)}Edit your profile</button>` : `<button class="btn2" id="pmention" style="min-height:46px;font-size:14px">Mention ${esc(p.name)} in the chat</button>`}
     ${mod && !self && p.role !== 'host' ? `<div style="border-top:1px solid var(--line);padding-top:12px;display:flex;flex-wrap:wrap;gap:8px">

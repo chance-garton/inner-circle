@@ -324,7 +324,7 @@ export class Room {
         if (!name) return this.send(ws, { t: 'error', what: 'profile', text: 'Please choose a display name.' });
         const avatar = typeof msg.avatar === 'string' && (/^sym:(sun|moon|eye|star|triangle|leaf)$/.test(msg.avatar) || /^img:circle\/[0-9a-f-]{36}\.(png|jpg|gif|webp)$/.test(msg.avatar)) ? msg.avatar : '';
         const sign = s => SIGNS.includes(s) ? s : '';
-        const interests = Array.isArray(msg.interests) ? msg.interests.map(x => clean(x, 40)).filter(Boolean).slice(0, 20) : [];
+        const interests = Array.isArray(msg.interests) ? msg.interests.map(x => clean(x, 40)).filter(Boolean).slice(0, 5) : [];
         const favorites = Array.isArray(msg.favorites) ? msg.favorites.map(x => clean(x, 120)).filter(s => /^[a-z0-9-]+$/.test(s)).slice(0, 3) : [];
         const joined = me.joined || now;
         this.sql.exec(`UPDATE members SET name = ?, avatar = ?, bio = ?, sun = ?, moon = ?, rising = ?, interests = ?, favorites = ?, joined = ?, profile_done = 1 WHERE uid = ?`,
