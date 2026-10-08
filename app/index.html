@@ -282,8 +282,9 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08l';
+const VERSION = '2026-10-08m';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
+const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
 const SITE = 'https://www.innerversepodcast.com';
 const TOKEN_KEY = 'ivc_token'; // shared with the Inner Circle page on this address
@@ -478,7 +479,7 @@ function setTab(tab) {
   S.tab = tab;
   for (const id of ['home', 'search', 'chatv', 'me']) $('#' + id).hidden = (id !== (tab === 'chat' ? 'chatv' : tab));
   $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  if (tab === 'chat') mountChat();
+  if (tab === 'chat') { mountChat(); setTimeout(maybeAskPush, 1200); try { navigator.clearAppBadge && navigator.clearAppBadge(); } catch (e) {} }
   tellChat();
 }
 let lastTabHash = { home: '#/', search: '#/search', chat: '#/chat', me: '#/me' };
@@ -690,6 +691,7 @@ function renderMe() {
   let body = '';
   if (S.member) {
     body = `<div class="card" style="margin-top:8px"><div class="acct"><span class="av">${esc(ini)}</span><div style="min-width:0"><div style="font-weight:800;font-size:18px">${esc(S.name || 'Plus+ member')}</div><div class="muted small" style="overflow-wrap:anywhere">${esc(S.email)}</div><div class="small" style="color:var(--gold);font-weight:700;margin-top:2px">Plus+ member${S.source === 'patreon' ? ' through Patreon' : ''}</div></div></div></div>
+    <div class="sec card" id="pushBox"></div>
     <div class="sec">
       <a class="linkrow" href="#/chat">The Inner Circle ${I.right(18)}</a>
       <a class="linkrow" href="${SITE}/plus" target="_blank" rel="noopener">Your private podcast feed ${I.right(18)}</a>
@@ -712,10 +714,82 @@ function renderMe() {
     ${!standalone ? `<div class="sec"><button class="btn line block" data-act="install">Add InnerVerse to your Home Screen</button></div>` : ''}
     <p class="note" style="text-align:center;margin-top:28px">InnerVerse app ${VERSION}</p><p class="note" style="text-align:center;margin-top:4px">${esc(screenReport())}</p>
   </div>`;
+  renderPushBox();
   const ct = $('#copyTok');
   if (ct) ct.addEventListener('click', async () => { try { await navigator.clipboard.writeText(S.token); toast('Copied. Paste it in the app on your home screen.'); } catch (e) { toast('Copy did not work on this browser.'); } });
   const ut = $('#useTok');
   if (ut) ut.addEventListener('click', () => { const t = ($('#pasteTok').value || '').trim(); if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(t)) { toast('That does not look like a sign-in. Copy it again.'); return; } store(TOKEN_KEY, t); S.token = t; checkStatus().then(() => toast(S.member ? 'Welcome in.' : 'That sign-in did not work.')); });
+}
+
+// ------------------------------------------------------------ phone notifications (push, even with the app closed)
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const urlKey = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; const b = atob(s); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+async function pushSub() { try { const reg = await navigator.serviceWorker.getRegistration(); return reg ? await reg.pushManager.getSubscription() : null; } catch (e) { return null; } }
+async function sendSub(sub) {
+  const r = await fetch(CIRCLE_API + '/api/push/subscribe', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ sub: sub.toJSON(), level: load('iva_level') || undefined }) });
+  if (!r.ok) throw new Error('subscribe ' + r.status);
+}
+// must start inside the tap: iPhone only shows the permission question for a direct tap
+function enablePush() {
+  if (!pushSupported()) { toast(isIOS && !standalone ? 'Add InnerVerse to your Home Screen first, then turn notifications on there.' : 'This browser cannot show notifications.'); return Promise.resolve(false); }
+  const ask = Notification.requestPermission();
+  return Promise.resolve(ask).then(async perm => {
+    if (perm !== 'granted') { toast('Notifications are off for InnerVerse. You can allow them in your phone settings.'); return false; }
+    const reg = await navigator.serviceWorker.ready;
+    const { key } = await fetch(CIRCLE_API + '/api/push/key').then(r => r.json());
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlKey(key) });
+    await sendSub(sub);
+    store('iva_push', '1');
+    toast('Notifications are on.');
+    return true;
+  }).catch(e => { toast('Could not turn on notifications. Please try again.'); return false; }).finally(() => renderPushBox());
+}
+async function disablePush() {
+  const sub = await pushSub();
+  if (sub) { try { await fetch(CIRCLE_API + '/api/push/unsubscribe', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }); } catch (e) {} try { await sub.unsubscribe(); } catch (e) {} }
+  store('iva_push', null); toast('Notifications are off on this phone.'); renderPushBox();
+}
+async function testPush() {
+  try {
+    const r = await fetch(CIRCLE_API + '/api/push/test', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' }, body: '{}' });
+    const j = await r.json();
+    toast(j.sent ? 'Sent. It should arrive in a few seconds.' : 'This phone is not signed up yet.');
+  } catch (e) { toast('The test could not be sent.'); }
+}
+async function renderPushBox() {
+  const box = $('#pushBox'); if (!box) return;
+  const level = { all: 'All messages', mentions: 'Only when tagged', none: 'Nothing' }[load('iva_level') || 'all'];
+  if (!pushSupported()) {
+    box.innerHTML = `<h3>Chat notifications</h3><p>${isIOS && !standalone ? 'Add InnerVerse to your Home Screen, open it from there, then turn notifications on here.' : 'This browser cannot show notifications.'}</p>`;
+    return;
+  }
+  const sub = await pushSub();
+  const on = !!sub && Notification.permission === 'granted';
+  // keep the server's copy current (it can lapse on its own)
+  if (on && S.token && !S.pushSynced) { S.pushSynced = true; sendSub(sub).catch(() => {}); }
+  box.innerHTML = on
+    ? `<h3>Chat notifications are on</h3><p>This phone gets a notification for new messages in the Inner Circle, even with the app closed. What you hear about: <b>${level}</b> (change it with the gear in the chat).</p><div class="acts"><button class="btn line" id="pushTest">Send a test</button><button class="btn line" id="pushOff">Turn off</button></div>`
+    : Notification.permission === 'denied'
+      ? `<h3>Chat notifications</h3><p>Notifications are blocked for InnerVerse. Turn them on in your phone settings, then come back here.</p>`
+      : `<h3>Chat notifications</h3><p>Get a notification when someone posts in the Inner Circle, even with the app closed.</p><div class="acts"><button class="btn gold" id="pushOn">Turn on notifications</button></div>`;
+  const a = $('#pushOn'); if (a) a.onclick = () => enablePush();
+  const b = $('#pushOff'); if (b) b.onclick = () => disablePush();
+  const c = $('#pushTest'); if (c) c.onclick = () => testPush();
+}
+// a one-time invitation the first time a member opens the chat tab
+function maybeAskPush() {
+  if (!S.member || !pushSupported() || load('iva_push') || load('iva_pushask') || Notification.permission === 'denied') return;
+  pushSub().then(sub => {
+    if (sub) return;
+    store('iva_pushask', '1');
+    const w = document.createElement('div'); w.className = 'sheetwrap';
+    w.innerHTML = `<div class="sheet" role="dialog" aria-label="Chat notifications"><h3>Know when someone posts</h3><p class="muted" style="margin:0 0 16px">Get a notification for new messages in the Inner Circle, even when the app is closed. You choose all messages, only when you are tagged, or nothing, with the gear in the chat.</p>
+      <button class="btn gold block" id="askOn">Turn on notifications</button><button class="btn line block" id="askNo" style="margin-top:10px">Not now</button></div>`;
+    document.body.appendChild(w);
+    $('#askOn', w).onclick = () => { enablePush(); w.remove(); };
+    $('#askNo', w).onclick = () => w.remove();
+  });
 }
 
 // ------------------------------------------------------------ chat (the Inner Circle page, same address)
@@ -726,6 +800,8 @@ function tellChat() {
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || !e.data.ivc) return;
   const d = e.data;
+  if (d.level) store('iva_level', d.level === 'all' ? null : d.level);
+  if (d.openNotify) { go('#/me'); setTimeout(() => { const b = $('#pushBox'); b && b.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }
   if ('unread' in d) {
     S.chatUnread = d.unread || 0; renderTabs();
     try { if (navigator.setAppBadge) { S.chatUnread ? navigator.setAppBadge(S.chatUnread) : navigator.clearAppBadge(); } } catch (err) {}

@@ -538,7 +538,7 @@ function away() { return document.hidden || !!S.appAway; }
 function tellApp(obj) { try { if (window.parent !== window) window.parent.postMessage(Object.assign({ ivc: 1 }, obj), location.origin); } catch (e) {} }
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || !e.data.ivcApp) return;
-  if ('away' in e.data) { S.appAway = !!e.data.away; if (!away()) { S.unread = 0; renderMentionBadge(); } }
+  if ('away' in e.data) { S.appAway = !!e.data.away; sendWs({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); } }
 });
 function onIncoming(m) {
   if (!S.me || !m || m.uid === S.me.uid) return;
@@ -637,13 +637,20 @@ function openSettings() {
   $('#sclose').onclick = closeOverlay;
   $('#sMent').onclick = () => { closeOverlay(); openMentions(); };
   $('#sProf').onclick = () => { closeOverlay(); editProfile(); };
-  $('#sAlert').onclick = () => {
+  if (window.parent !== window) {
+    const row = $('#sAlert'); row.disabled = false;
+    row.querySelector('small').textContent = 'Notifications on this phone, even when the app is closed. Set up on the Account tab.';
+    row.querySelector('.sw').outerHTML = I.chev(18);
+    row.onclick = () => { closeOverlay(); tellApp({ openNotify: true }); };
+  } else $('#sAlert').onclick = () => {
     if (perm === 'default') { Notification.requestPermission().then(p => { if (p === 'granted') store('ivc_alerts', null); openSettings(); }); return; }
     if (perm === 'granted') { store('ivc_alerts', alertsOn ? 'off' : null); openSettings(); }
   };
   $('#sSound').onclick = () => { store('ivc_sound', sound ? 'off' : null); openSettings(); };
   o.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => {
     store('ivc_notify', b.dataset.lvl === 'all' ? null : b.dataset.lvl);
+    sendWs({ t: 'notify', level: b.dataset.lvl });
+    tellApp({ level: b.dataset.lvl });
     if (b.dataset.lvl !== 'none' && perm === 'default') Notification.requestPermission().then(() => openSettings()); else openSettings();
     S.unread = 0; renderMentionBadge();
   });
@@ -884,6 +891,7 @@ function onEvent(m) {
       S.view = 'door'; render(); return;
     case 'init':
       S.connected = true; S.retry = 0;
+      setTimeout(() => { sendWs({ t: 'notify', level: notifyLevel() }); sendWs({ t: 'away', on: away() }); }, 0);
       S.me = m.me; S.people[m.me.uid] = m.me; mergePeople(m.people); setQuick();
       S.messages = m.messages; S.pins = m.pins; S.online = m.online; S.signs = m.signs; if (Array.isArray(m.reactions) && m.reactions.length) DEFAULT_QUICK = m.reactions; setQuick();
       S.oldestDone = m.messages.length < 50;
@@ -1685,7 +1693,7 @@ document.addEventListener('mouseover', e => {
   const b = e.target.closest && e.target.closest('button[aria-label],a[aria-label]');
   if (b && !b.hasAttribute('title')) b.setAttribute('title', b.getAttribute('aria-label'));
 });
-document.addEventListener('visibilitychange', () => { if (!away()) { S.unread = 0; renderMentionBadge(); } });
+document.addEventListener('visibilitychange', () => { sendWs({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); } });
 
 S.view = S.token ? 'loading' : 'door';
 render();

@@ -1,6 +1,6 @@
 /* InnerVerse app: keeps the app opening fast and offline, and always picks up new versions.
    The page itself is fetched fresh first on every launch, so a pushed update shows on the next open. */
-const VERSION = 'iva-2026-10-08l';
+const VERSION = 'iva-2026-10-08m';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -46,4 +46,26 @@ self.addEventListener('fetch', e => {
   if (url.hostname === 'raw.githubusercontent.com' && /innerverse-data/.test(url.pathname)) { e.respondWith(networkFirst(req)); return; }
   if (url.hostname === 'images.squarespace-cdn.com') { e.respondWith(cacheFirst(req)); return; }
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') { e.respondWith(cacheFirst(req)); return; }
+});
+
+// chat notifications, even with the app closed
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
+  const show = self.registration.showNotification(d.title || 'InnerVerse', {
+    body: d.body || '', tag: d.tag || 'ivc', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png',
+    data: { url: d.url || '/app/#/chat' },
+  });
+  const badge = typeof d.badge === 'number' && self.navigator && self.navigator.setAppBadge ? self.navigator.setAppBadge(d.badge).catch(() => {}) : Promise.resolve();
+  e.waitUntil(Promise.all([show, badge]));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || '/app/#/chat', self.location.origin).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) {
+      if (c.url.indexOf('/app/') >= 0) { return c.focus().then(w => (w && 'navigate' in w) ? w.navigate(url).catch(() => {}) : null).catch(() => {}); }
+    }
+    return self.clients.openWindow(url);
+  }));
 });

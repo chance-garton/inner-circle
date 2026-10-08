@@ -70,6 +70,45 @@ const json = (obj, status = 200) => new Response(JSON.stringify(obj), {
   status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
 
+// ---------------------------------------------------------------- web push
+
+const b64u = buf => { const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const ub64 = str => { let s = String(str || '').replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; const b = atob(s); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+const cat = (...arrs) => { let n = 0; for (const a of arrs) n += a.length; const o = new Uint8Array(n); let i = 0; for (const a of arrs) { o.set(a, i); i += a.length; } return o; };
+const utf8 = t => new TextEncoder().encode(t);
+async function hmac256(key, data) {
+  const k = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return new Uint8Array(await crypto.subtle.sign('HMAC', k, data));
+}
+async function encryptPush(sub, payload) {
+  const uaPub = ub64(sub.p256dh), authSecret = ub64(sub.auth);
+  const local = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const asPub = new Uint8Array(await crypto.subtle.exportKey('raw', local.publicKey));
+  const uaKey = await crypto.subtle.importKey('raw', uaPub, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const shared = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: uaKey }, local.privateKey, 256));
+  const ikm = await hmac256(await hmac256(authSecret, shared), cat(utf8('WebPush: info\0'), uaPub, asPub, new Uint8Array([1])));
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const prk = await hmac256(salt, ikm);
+  const cek = (await hmac256(prk, cat(utf8('Content-Encoding: aes128gcm\0'), new Uint8Array([1])))).slice(0, 16);
+  const nonce = (await hmac256(prk, cat(utf8('Content-Encoding: nonce\0'), new Uint8Array([1])))).slice(0, 12);
+  const key = await crypto.subtle.importKey('raw', cek, { name: 'AES-GCM' }, false, ['encrypt']);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, cat(utf8(payload), new Uint8Array([2]))));
+  return cat(salt, new Uint8Array([0, 0, 16, 0]), new Uint8Array([asPub.length]), asPub, ct);
+}
+async function vapidHeader(endpoint, vapid) {
+  const head = b64u(utf8(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
+  const claims = b64u(utf8(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: 'mailto:chance@innerversepodcast.com' })));
+  const key = await crypto.subtle.importKey('jwk', vapid.jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  const sig = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, utf8(head + '.' + claims)));
+  return `vapid t=${head}.${claims}.${b64u(sig)}, k=${vapid.pub}`;
+}
+async function sendPush(sub, payload, vapid) {
+  const body = await encryptPush(sub, payload);
+  return fetch(sub.endpoint, { method: 'POST', body, headers: {
+    'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '86400', Urgency: 'high',
+    Authorization: await vapidHeader(sub.endpoint, vapid) } });
+}
+
 // ---------------------------------------------------------------- worker
 
 export default {
@@ -114,6 +153,20 @@ async function route(req, env, url, path, okOrigin) {
       if (!okOrigin) return new Response('Origin not allowed', { status: 403 });
       const room = env.ROOM.get(env.ROOM.idFromName('lounge'));
       return room.fetch(req);
+    }
+
+    if (path === '/api/push/key' && req.method === 'GET') {
+      const room = env.ROOM.get(env.ROOM.idFromName('lounge'));
+      return room.fetch(new Request('https://room/push-key'));
+    }
+
+    if ((path === '/api/push/subscribe' || path === '/api/push/unsubscribe' || path === '/api/push/test') && req.method === 'POST') {
+      if (!okOrigin) return json({ error: 'origin not allowed' }, 403);
+      const who = await verify(bearer(req), env);
+      if (!who || !who.entitled) return json({ error: 'not a member' }, 401);
+      let body = {}; try { body = await req.json(); } catch (e) { /* empty */ }
+      const room = env.ROOM.get(env.ROOM.idFromName('lounge'));
+      return room.fetch(new Request('https://room/' + path.split('/').pop(), { method: 'POST', body: JSON.stringify({ uid: who.uid, body }) }));
     }
 
     if (path === '/api/upload' && req.method === 'POST') {
@@ -182,6 +235,9 @@ export class Room {
     this.sql.exec(`CREATE TABLE IF NOT EXISTS modlog (id INTEGER PRIMARY KEY AUTOINCREMENT, created INTEGER, actor TEXT DEFAULT '', action TEXT,
       target TEXT DEFAULT '', msg_id INTEGER DEFAULT 0, detail TEXT DEFAULT '{}', undone INTEGER DEFAULT 0, undone_at INTEGER DEFAULT 0, undone_by TEXT DEFAULT '')`);
     this.sql.exec('CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT)');
+    this.sql.exec('CREATE TABLE IF NOT EXISTS push_subs (endpoint TEXT PRIMARY KEY, uid TEXT, p256dh TEXT, auth TEXT, created INTEGER)');
+    try { this.sql.exec("ALTER TABLE members ADD COLUMN notify TEXT DEFAULT 'all'"); } catch (e) { /* already there */ }
+    try { this.sql.exec('ALTER TABLE members ADD COLUMN push_unread INTEGER DEFAULT 0'); } catch (e) { /* already there */ }
     if (!this.one("SELECT v FROM meta WHERE k = 'modlog_backfill'")) {
       // what happened before the history existed: deleted messages, removed and muted members
       const now = Date.now();
@@ -192,6 +248,46 @@ export class Room {
       for (const m of this.all('SELECT uid, muted_until FROM members WHERE muted_until > ?', now)) this.sql.exec("INSERT INTO modlog (created, actor, action, target, detail) VALUES (?, '', 'mute', ?, ?)", now, m.uid, JSON.stringify({ earlier: true, prev: 0 }));
       this.sql.exec("INSERT OR REPLACE INTO meta (k, v) VALUES ('modlog_backfill', '1')");
     }
+  }
+
+  async vapid() {
+    const row = this.one("SELECT v FROM meta WHERE k = 'vapid'");
+    if (row) return JSON.parse(row.v);
+    const kp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+    const v = { pub: b64u(await crypto.subtle.exportKey('raw', kp.publicKey)), jwk: await crypto.subtle.exportKey('jwk', kp.privateKey) };
+    this.sql.exec("INSERT OR REPLACE INTO meta (k, v) VALUES ('vapid', ?)", JSON.stringify(v));
+    return v;
+  }
+
+  // members looking at the chat right now get it live; everyone else subscribed gets a push, by their setting
+  async pushOut(m, author) {
+    try {
+      const subs = this.all('SELECT s.*, m.notify, m.push_unread FROM push_subs s JOIN members m ON m.uid = s.uid WHERE s.uid != ? AND m.banned = 0 AND m.profile_done = 1', author.uid);
+      if (!subs.length) return;
+      const looking = new Set();
+      for (const ws of this.state.getWebSockets()) {
+        if (ws.readyState !== 1) continue;
+        const a = ws.deserializeAttachment();
+        if (a && a.uid && a.ready && !a.away) looking.add(a.uid);
+      }
+      const vapid = await this.vapid();
+      const mentions = Array.isArray(m.mentions) ? m.mentions : [];
+      const bumped = new Map();
+      for (const s of subs) {
+        if (looking.has(s.uid)) continue;
+        const level = s.notify || 'all';
+        const tagged = mentions.includes(s.uid);
+        if (level === 'none' || (level === 'mentions' && !tagged)) continue;
+        if (!bumped.has(s.uid)) { this.sql.exec('UPDATE members SET push_unread = push_unread + 1 WHERE uid = ?', s.uid); bumped.set(s.uid, (s.push_unread || 0) + 1); }
+        const name = author.name || 'A member';
+        const body = m.kind === 'join' ? `${name} joined the chat` : (m.text ? m.text.slice(0, 180) : 'Sent an image');
+        const payload = JSON.stringify({ title: tagged ? `${name} mentioned you` : m.kind === 'join' ? 'Inner Circle' : `${name} in the Inner Circle`, body, tag: 'ivc-' + m.id, url: '/app/#/chat', badge: bumped.get(s.uid) });
+        try {
+          const r = await sendPush(s, payload, vapid);
+          if (r.status === 404 || r.status === 410) this.sql.exec('DELETE FROM push_subs WHERE endpoint = ?', s.endpoint);
+        } catch (e) { /* try again next message */ }
+      }
+    } catch (e) { /* pushes never break the chat */ }
   }
 
   log(actor, action, target, msgId, detail) {
@@ -226,6 +322,29 @@ export class Room {
   }
 
   async fetch(req) {
+    const path = new URL(req.url).pathname;
+    if (path === '/push-key') return json({ key: (await this.vapid()).pub });
+    if (path === '/subscribe' || path === '/unsubscribe' || path === '/test') {
+      const { uid, body } = await req.json();
+      const me = this.member(uid);
+      if (!me || me.banned) return json({ error: 'not in the Circle' }, 403);
+      if (path === '/subscribe') {
+        const s = body && body.sub;
+        if (!s || typeof s.endpoint !== 'string' || !(/^https:\/\//.test(s.endpoint) || (this.env.DEV_AUTH === '1' && /^http:\/\/127\.0\.0\.1:/.test(s.endpoint))) || !s.keys || !s.keys.p256dh || !s.keys.auth) return json({ error: 'bad subscription' }, 400);
+        this.sql.exec('INSERT OR REPLACE INTO push_subs (endpoint, uid, p256dh, auth, created) VALUES (?, ?, ?, ?, ?)', s.endpoint, uid, String(s.keys.p256dh), String(s.keys.auth), Date.now());
+        if (['all', 'mentions', 'none'].includes(body.level)) this.sql.exec('UPDATE members SET notify = ? WHERE uid = ?', body.level, uid);
+        return json({ ok: true });
+      }
+      if (path === '/unsubscribe') { this.sql.exec('DELETE FROM push_subs WHERE endpoint = ? AND uid = ?', String(body && body.endpoint || ''), uid); return json({ ok: true }); }
+      const subs = this.all('SELECT * FROM push_subs WHERE uid = ?', uid);
+      const vapid = await this.vapid();
+      const results = [];
+      for (const s of subs) {
+        try { const r = await sendPush(s, JSON.stringify({ title: 'InnerVerse', body: 'Notifications are working.', tag: 'ivc-test', url: '/app/#/chat' }), vapid); results.push(r.status); if (r.status === 404 || r.status === 410) this.sql.exec('DELETE FROM push_subs WHERE endpoint = ?', s.endpoint); }
+        catch (e) { results.push(String(e).slice(0, 80)); }
+      }
+      return json({ sent: subs.length, results });
+    }
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     this.state.acceptWebSocket(server);
@@ -347,6 +466,7 @@ export class Room {
       m = this.member(who.uid);
       if (m.banned) { this.send(ws, { t: 'denied', why: 'removed' }); return ws.close(4003, 'removed'); }
       ws.serializeAttachment({ uid: who.uid, ready: !!(m.rules_ok && m.profile_done) });
+      this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', who.uid);
       const msgs = this.page();
       const pins = this.pins();
       this.send(ws, {
@@ -389,6 +509,7 @@ export class Room {
           const row = this.one("INSERT INTO messages (uid, text, image, reply_to, created, kind) VALUES (?, '', '', NULL, ?, 'join') RETURNING *", me.uid, now);
           const m = this.shape(row);
           this.broadcast({ t: 'msg', m, people: this.peopleFor([m]) });
+          this.state.waitUntil(this.pushOut(m, this.member(me.uid)));
         }
         return;
       }
@@ -409,6 +530,7 @@ export class Room {
         const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created, mentions) VALUES (?, ?, ?, ?, ?, ?) RETURNING *', me.uid, text, image, reply, now, JSON.stringify(mentions));
         const m = this.shape(row);
         this.broadcast({ t: 'msg', m, cid: clean(msg.cid, 40), people: this.peopleFor([m]) });
+        this.state.waitUntil(this.pushOut(m, this.member(me.uid)));
         if (reply) this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', reply)) });
         return;
       }
@@ -676,6 +798,13 @@ export class Room {
         this.sql.exec('UPDATE modlog SET undone = 1, undone_at = ?, undone_by = ? WHERE id = ?', Date.now(), me.uid, e.id);
         this.send(ws, { t: 'notice', text: note });
         return this.send(ws, this.modlogFor());
+      }
+
+      case 'away': { ws.serializeAttachment(Object.assign({}, att, { away: !!msg.on })); if (!msg.on) this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', me.uid); return; }
+
+      case 'notify': {
+        if (['all', 'mentions', 'none'].includes(msg.level)) this.sql.exec('UPDATE members SET notify = ? WHERE uid = ?', msg.level, me.uid);
+        return;
       }
 
       case 'ping': return this.send(ws, { t: 'pong' });
