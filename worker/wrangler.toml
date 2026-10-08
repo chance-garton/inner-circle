@@ -26,3 +26,8 @@ new_sqlite_classes = ["Room"]
 [[r2_buckets]]
 binding = "MEDIA"
 bucket_name = "innerverse-circle-media"
+
+# Direct link to the members' Worker for login checks.
+[[services]]
+binding = "AUTH_SVC"
+service = "innerverse-plus"

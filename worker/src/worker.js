@@ -29,7 +29,10 @@ async function verify(token, env) {
   if (hit && Date.now() - hit.at < 5 * 60 * 1000) return hit.who;
   let who = null;
   try {
-    const r = await fetch(env.AUTH_URL + '/auth/status', { headers: { Authorization: 'Bearer ' + token } });
+    // A Worker cannot reach another Worker on the same account through its workers.dev
+    // address (Cloudflare error 1042), so use the service binding when it exists.
+    const init = { headers: { Authorization: 'Bearer ' + token } };
+    const r = env.AUTH_SVC ? await env.AUTH_SVC.fetch(env.AUTH_URL + '/auth/status', init) : await fetch(env.AUTH_URL + '/auth/status', init);
     if (r.ok) {
       const s = await r.json();
       if (s && s.signedIn) {
