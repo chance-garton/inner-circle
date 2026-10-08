@@ -183,6 +183,9 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .pmenu{width:min(250px,100%);background:var(--card);border:1px solid rgba(233,238,246,0.14);border-radius:16px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,0.5);flex:none}
 .pmenu .mi{min-height:44px;font-size:15.5px;border-top:0;padding:0 16px;gap:14px}
 .pmenu .mi svg{width:20px;height:20px}
+.pmenu .mi.hot{background:rgba(233,238,246,0.1)}
+.plift .reactbar button.hot{transform:scale(1.3);background:rgba(233,238,246,0.1)}
+.plift .reactbar .more.hot{transform:none}
 .pmenu .mhead{padding:9px 16px 5px;font-size:10px}
 .pmenu .picking,.pmenu:has(.picking){width:100%}
 .pmenu .picking emoji-picker{height:320px}
@@ -1074,11 +1077,30 @@ function phoneMenu(id, reactHtml, menuHtml) {
   }
   s.dataset.top = r.top;
   s.addEventListener('click', e => { if (e.target === s || e.target.classList.contains('plift')) closeOverlay(); });
-  // the finger that opened the menu is still down: ignore it until it lifts, so nothing under it fires or gets selected
+  // the finger that opened the menu is still down. Like Telegram: slide it onto a reaction or an
+  // option (it lights up as you pass over it) and let go to choose it; let go without sliding and
+  // the menu simply stays open for a normal tap.
   s.style.pointerEvents = 'none';
-  const release = () => { setTimeout(() => { if (s.isConnected) s.style.pointerEvents = ''; }, 60); document.removeEventListener('touchend', release); document.removeEventListener('touchcancel', release); };
-  document.addEventListener('touchend', release); document.addEventListener('touchcancel', release);
-  setTimeout(release, 1500);
+  let hot = null, done = false;
+  const items = () => [...s.querySelectorAll('.plift [data-k], .plift [data-allemoji], .plift [data-a]')];
+  const under = t => items().find(b => { const r = b.getBoundingClientRect(); return t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom; }) || null;
+  const onMove = e => {
+    const t = e.touches && e.touches[0]; if (!t) return;
+    e.preventDefault();
+    const el = under(t);
+    if (el !== hot) { if (hot) hot.classList.remove('hot'); hot = el; if (hot) { hot.classList.add('hot'); if (navigator.vibrate) navigator.vibrate(5); } }
+  };
+  const finish = pick => {
+    if (done) return; done = true;
+    document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onEnd); document.removeEventListener('touchcancel', onCancel);
+    const chosen = pick ? hot : null;
+    if (hot) hot.classList.remove('hot');
+    setTimeout(() => { if (s.isConnected) s.style.pointerEvents = ''; }, 60);
+    if (chosen) chosen.click();
+  };
+  const onEnd = () => finish(true), onCancel = () => finish(false);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('touchend', onEnd); document.addEventListener('touchcancel', onCancel);
   document.body.appendChild(s);
   placePhoneMenu(s);
   return s;
