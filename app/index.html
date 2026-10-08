@@ -277,7 +277,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08e';
+const VERSION = '2026-10-08f';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
 const SITE = 'https://www.innerversepodcast.com';
@@ -691,7 +691,7 @@ function renderMe() {
   v.innerHTML = `<header class="hdr"><div class="row"><h1>${S.member ? 'Account' : 'Plus+'}</h1></div></header>
   <div class="wrap">${body}
     ${!standalone ? `<div class="sec"><button class="btn line block" data-act="install">Add InnerVerse to your Home Screen</button></div>` : ''}
-    <p class="note" style="text-align:center;margin-top:28px">InnerVerse app ${VERSION} · fit ${esc(getComputedStyle(document.documentElement).getPropertyValue('--gap').trim() || '0px')}</p>
+    <p class="note" style="text-align:center;margin-top:28px">InnerVerse app ${VERSION}</p><p class="note" style="text-align:center;margin-top:4px">${esc(screenReport())}</p>
   </div>`;
   const ct = $('#copyTok');
   if (ct) ct.addEventListener('click', async () => { try { await navigator.clipboard.writeText(S.token); toast('Copied. Paste it in the app on your home screen.'); } catch (e) { toast('Copy did not work on this browser.'); } });
@@ -1267,7 +1267,13 @@ function measureGap() {
     const kb = window.visualViewport && window.visualViewport.height < window.innerHeight - 120;
     if (kb) return;
   } catch (e) { gap = 0; }
-  document.documentElement.style.setProperty('--gap', gap + 'px');
+  window.__ivaGap = gap;
+}
+function screenReport() {
+  try {
+    const probe = (css) => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;top:0;width:1px;visibility:hidden;pointer-events:none;' + css; document.body.appendChild(d); const h = d.getBoundingClientRect().height; d.remove(); return Math.round(h); };
+    return 'screen ' + screen.height + ' · window ' + window.innerHeight + ' · vh ' + probe('height:100vh') + ' · lvh ' + probe('height:100lvh') + ' · top ' + probe('height:env(safe-area-inset-top)') + ' · bottom ' + probe('height:env(safe-area-inset-bottom)') + ' · gap ' + (window.__ivaGap || 0);
+  } catch (e) { return ''; }
 }
 measureGap();
 window.addEventListener('resize', measureGap);
