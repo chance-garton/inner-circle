@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#0A0F1C">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="InnerVerse">
 <meta name="description" content="InnerVerse on your phone: every episode, the full Plus+ episodes for members, and the Inner Circle.">
 <title>InnerVerse</title>
@@ -277,7 +277,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08g';
+const VERSION = '2026-10-08h';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
 const SITE = 'https://www.innerversepodcast.com';
@@ -1272,7 +1272,6 @@ function measureGap() {
       if (short > 0) gap = top > 0 ? Math.min(short, top) : (short <= 70 ? short : 0);
     }
     window.__ivaGap = gap;
-    document.documentElement.style.setProperty('--gap', gap + 'px');
   } catch (e) {}
 }
 function screenReport() {
