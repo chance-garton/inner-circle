@@ -43,7 +43,6 @@ html.member{--accent:var(--gold)}
 html.playing{--minih:66px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
-body{overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 a{color:inherit;text-decoration:none}
 img{display:block}
@@ -52,7 +51,7 @@ input{font:inherit;color:inherit}
 [hidden]{display:none!important}
 
 /* views */
-.view{position:fixed;top:0;left:0;right:0;bottom:calc(-1 * var(--gap));overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;background:var(--ground);padding-bottom:calc(var(--tabh) + var(--minih) + max(4px,calc(var(--sb) - 24px)) + 16px)}
+.view{position:fixed;top:0;left:0;right:0;bottom:calc(-1 * var(--gap));overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;background:var(--ground);padding-bottom:calc(var(--tabh) + var(--minih) + max(12px,calc(var(--sb) - 22px)) + 16px)}
 #ep{z-index:5;animation:slidein .22s ease-out}
 @keyframes slidein{from{transform:translateX(28px);opacity:.4}to{transform:none;opacity:1}}
 .wrap{max-width:720px;margin:0 auto;padding:0 16px}
@@ -193,12 +192,12 @@ html.member .chap.now{background:rgba(216,170,60,0.1)}
 
 /* tab bar + mini player */
 .tabs::after{content:'';position:absolute;left:0;right:0;top:100%;height:120px;background:#0A0F1C}
-.tabs{position:fixed;left:0;right:0;bottom:calc(-1 * var(--gap));z-index:10;--tb:max(4px,calc(var(--sb) - 24px));height:calc(var(--tabh) + var(--tb));padding-bottom:var(--tb);display:flex;background:#0A0F1C;border-top:1px solid var(--line)}
+.tabs{position:fixed;left:0;right:0;bottom:calc(-1 * var(--gap));z-index:10;--tb:max(12px,calc(var(--sb) - 22px));height:calc(var(--tabh) + var(--tb));padding-bottom:var(--tb);display:flex;background:#0A0F1C;border-top:1px solid var(--line)}
 .tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:2px;gap:3px;font-size:11px;font-weight:700;color:var(--muted);position:relative}
 .tabs button.on{color:var(--accent)}
 .tabs .dot{position:absolute;top:7px;left:calc(50% + 8px);min-width:8px;height:8px;border-radius:4px;background:var(--gold)}
 html.kb .tabs,html.kb .mini{display:none}
-.mini{position:fixed;left:8px;right:8px;bottom:calc(-1 * var(--gap) + var(--tabh) + max(4px,calc(var(--sb) - 24px)) + 6px);z-index:10;height:58px;border-radius:14px;background:var(--card2);box-shadow:0 10px 30px rgba(0,0,0,0.5);display:none;align-items:center;gap:10px;padding:0 6px 0 7px;overflow:hidden;border:1px solid var(--line)}
+.mini{position:fixed;left:8px;right:8px;bottom:calc(-1 * var(--gap) + var(--tabh) + max(12px,calc(var(--sb) - 22px)) + 6px);z-index:10;height:58px;border-radius:14px;background:var(--card2);box-shadow:0 10px 30px rgba(0,0,0,0.5);display:none;align-items:center;gap:10px;padding:0 6px 0 7px;overflow:hidden;border:1px solid var(--line)}
 html.playing .mini{display:flex}
 .mini img{width:44px;height:44px;border-radius:9px;object-fit:cover;flex:none;background:var(--card)}
 .mini .mt{flex:1;min-width:0;text-align:left}
@@ -227,7 +226,7 @@ html:not(.member) .np .ctl .big{background:var(--lapis);color:#fff}
 
 /* chat */
 #chatv{overflow:hidden;padding:0}
-#chatv iframe{position:absolute;left:0;right:0;top:var(--st);width:100%;height:calc(100% - var(--st) - var(--tabh) - max(4px,calc(var(--sb) - 24px)) - var(--minih));border:0;background:var(--ground)}
+#chatv iframe{position:absolute;left:0;right:0;top:var(--st);width:100%;height:calc(100% - var(--st) - var(--tabh) - max(12px,calc(var(--sb) - 22px)) - var(--minih));border:0;background:var(--ground)}
 html.kb #chatv iframe{height:calc(100% - var(--st))}
 .loading{display:grid;place-items:center;padding:60px 0;color:var(--muted)}
 .spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(233,238,246,0.15);border-top-color:var(--accent);animation:sp 0.8s linear infinite}
@@ -251,7 +250,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 .sheet h3{font-family:var(--display);font-size:22px;margin:0 0 8px;font-weight:600}
 .sheet ol{margin:8px 0 16px;padding-left:22px}
 .sheet li{margin:6px 0}
-.toast{position:fixed;left:50%;bottom:calc(-1 * var(--gap) + var(--tabh) + var(--minih) + max(4px,calc(var(--sb) - 24px)) + 18px);transform:translateX(-50%);z-index:50;background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,0.5);max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;bottom:calc(-1 * var(--gap) + var(--tabh) + var(--minih) + max(12px,calc(var(--sb) - 22px)) + 18px);transform:translateX(-50%);z-index:50;background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,0.5);max-width:calc(100% - 32px)}
 .empty{padding:40px 0;text-align:center;color:var(--muted)}
 @media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .art{width:176px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -273,11 +272,12 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <nav class="tabs" id="tabs" aria-label="App"></nav>
 <div class="np" id="np" aria-hidden="true"></div>
 <audio id="aud" preload="none" playsinline></audio>
+<div id="saprobe" aria-hidden="true" style="position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)"></div>
 
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08f';
+const VERSION = '2026-10-08g';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
 const SITE = 'https://www.innerversepodcast.com';
@@ -1257,23 +1257,27 @@ function showInstall(force) {
 // ------------------------------------------------------------ fill the whole screen
 // On some iPhones a home-screen app's page stops short of the bottom of the screen (by about the status bar's height),
 // leaving a blank strip under fixed bars. Measure it and let the bars and pages reach the real bottom.
+function insets() {
+  try { const cs = getComputedStyle($('#saprobe')); return { top: Math.round(parseFloat(cs.paddingTop) || 0), bottom: Math.round(parseFloat(cs.paddingBottom) || 0) }; } catch (e) { return { top: 0, bottom: 0 }; }
+}
 function measureGap() {
-  let gap = 0;
   try {
-    const portrait = window.innerHeight > window.innerWidth;
-    const sh = portrait ? Math.max(screen.height, screen.width) : Math.min(screen.height, screen.width);
-    if (standalone && isIOS) gap = Math.round(sh - window.innerHeight);
-    if (gap < 4 || gap > 140) gap = 0;
-    const kb = window.visualViewport && window.visualViewport.height < window.innerHeight - 120;
-    if (kb) return;
-  } catch (e) { gap = 0; }
-  window.__ivaGap = gap;
+    if (window.visualViewport && window.visualViewport.height < window.innerHeight - 120) return; // keyboard open
+    let gap = 0;
+    if (standalone && isIOS) {
+      const portrait = window.innerHeight > window.innerWidth;
+      const sh = portrait ? Math.max(screen.height, screen.width) : Math.min(screen.height, screen.width);
+      const short = Math.round(sh - window.innerHeight);
+      const top = insets().top;
+      if (short > 0) gap = top > 0 ? Math.min(short, top) : (short <= 70 ? short : 0);
+    }
+    window.__ivaGap = gap;
+    document.documentElement.style.setProperty('--gap', gap + 'px');
+  } catch (e) {}
 }
 function screenReport() {
-  try {
-    const probe = (css) => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;top:0;width:1px;visibility:hidden;pointer-events:none;' + css; document.body.appendChild(d); const h = d.getBoundingClientRect().height; d.remove(); return Math.round(h); };
-    return 'screen ' + screen.height + ' · window ' + window.innerHeight + ' · vh ' + probe('height:100vh') + ' · lvh ' + probe('height:100lvh') + ' · top ' + probe('height:env(safe-area-inset-top)') + ' · bottom ' + probe('height:env(safe-area-inset-bottom)') + ' · gap ' + (window.__ivaGap || 0);
-  } catch (e) { return ''; }
+  const i = insets();
+  return 'screen ' + screen.height + ' · window ' + window.innerHeight + ' · top ' + i.top + ' · bottom ' + i.bottom + ' · gap ' + (window.__ivaGap || 0);
 }
 measureGap();
 window.addEventListener('resize', measureGap);
@@ -1289,7 +1293,14 @@ loadLibrary().then(() => {
   $('#home').innerHTML = `<header class="hdr"><div class="row">${headerBrand()}</div></header><div class="wrap"><div class="empty">The episodes could not load. Check your connection and pull this screen down or reopen the app.<br><br><button class="btn line" onclick="location.reload()">Try again</button></div></div>`;
 });
 checkStatus();
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkStatus(); else if (cur && aud.currentTime) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); });
+function checkUpdate() {
+  fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(v => {
+    v = (v || '').trim();
+    if (v && v !== VERSION && !(cur && !aud.paused) && !videoOwns) location.reload();
+  }).catch(() => {});
+}
+setTimeout(checkUpdate, 1500);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { checkStatus(); checkUpdate(); } else if (cur && aud.currentTime) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); });
 setTimeout(() => showInstall(false), 2500);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
