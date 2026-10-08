@@ -175,7 +175,7 @@ html:not(.member) .listen .pp{background:var(--lapis);color:#fff}
 html.member .chap.now{background:rgba(216,170,60,0.1)}
 .chap.locked{opacity:.6;cursor:default}
 .chap.locked .tm{color:var(--muted)}
-.mtag{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-left:6px;white-space:nowrap}
+.mtag{font-size:17px;font-weight:800;line-height:1;color:var(--gold);margin-left:6px;white-space:nowrap}
 .theme{padding:4px 0 14px}
 .theme h4{margin:0 0 4px;font-size:16px;font-weight:800;line-height:1.3}
 .theme p{margin:0;color:#D5DCE8;font-size:15px}
@@ -285,7 +285,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08p';
+const VERSION = '2026-10-08q';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -984,8 +984,8 @@ function renderEpisode() {
     ${E.notes ? `<div class="card" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Members' show notes</div><p style="margin-top:6px">The full research notes for this episode, as a document.</p><button class="btn gold" id="notesBtn">${I.doc(18)} Download the show notes</button><p class="note" id="notesMsg"></p></div>` : ''}
     ${freePlus && !S.member ? `<div class="card goldline" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Plus+ full episode</div><h3>${more ? `There are ${more} more minutes of this conversation.` : 'There is more to this conversation.'}</h3><p>Members hear the whole thing${E.plusDuration ? ', ' + esc(E.plusDuration) + ' in all' : ''}, uncut and ad free.</p><div class="acts"><a class="btn gold" href="${SITE}/plus" target="_blank" rel="noopener">Start your 7-day free trial</a><button class="btn line" data-act="login" style="--accent:var(--gold)">Log in</button></div></div>` : ''}
     ${E.chapters.length || E.locked.length ? `<div class="acc open" id="chapAcc"><button>Chapters ${I.down(22)}</button><div class="in" id="chapters">${chaptersHtml()}</div></div>` : ''}
-    ${E.themes.length ? `<div class="acc"><button>Core themes ${I.down(22)}</button><div class="in">${E.themes.map(t => `<div class="theme"><h4>${esc(t.title)}${t.m ? '<span class="mtag">Plus+</span>' : ''}</h4><p>${esc(t.body)}</p></div>`).join('')}</div></div>` : ''}
-    ${E.quotes.length ? `<div class="acc"><button>Memorable ${I.down(22)}</button><div class="in">${E.quotes.map(q => `<div class="quote"><blockquote>${esc(q.text)}</blockquote><div class="who"><img loading="lazy" src="${esc(q.author === HOST ? HOST_PORTRAIT : img(q.portrait, 100))}" alt="">${esc(q.author)}${q.m ? '<span class="mtag">Plus+</span>' : ''}</div></div>`).join('')}</div></div>` : ''}
+    ${E.themes.length ? `<div class="acc"><button>Core themes ${I.down(22)}</button><div class="in">${E.themes.map(t => `<div class="theme"><h4>${esc(t.title)}${t.m ? '<span class="mtag" title="Plus+ members" aria-label="Plus+ members">+</span>' : ''}</h4><p>${esc(t.body)}</p></div>`).join('')}</div></div>` : ''}
+    ${E.quotes.length ? `<div class="acc"><button>Memorable ${I.down(22)}</button><div class="in">${E.quotes.map(q => `<div class="quote"><blockquote>${esc(q.text)}</blockquote><div class="who"><img loading="lazy" src="${esc(q.author === HOST ? HOST_PORTRAIT : img(q.portrait, 100))}" alt="">${esc(q.author)}${q.m ? '<span class="mtag" title="Plus+ members" aria-label="Plus+ members">+</span>' : ''}</div></div>`).join('')}</div></div>` : ''}
     ${E.guests.length ? `<div class="acc open"><button>${E.guests.length > 1 ? 'Guests' : 'Guest'} ${I.down(22)}</button><div class="in">${E.guests.map(guestHtml).join('')}</div></div>` : ''}
     ${related.length ? `<div class="sec"><div class="sechead"><h2 class="h2">You might also like</h2></div><div class="hscroll">${related.map(tile).join('')}</div></div>` : ''}
   </div>`;
@@ -1007,7 +1007,7 @@ function durMin(s) { const h = /(\d+)\s*h/.exec(s || ''), m = /(\d+)\s*m/.exec(s
 function chaptersHtml() {
   const E = EPV; if (!E) return '';
   const now = (cur && cur.key === E.key) ? currentChapterIndex() : -1;
-  return E.chapters.map((c, i) => `<button class="chap${i === now ? ' now' : ''}" data-seek="${c.seek}"><span class="tm">${esc(clock(c.seek))}</span><span class="ct">${esc(c.title)}${c.m ? '<span class="mtag">Plus+</span>' : ''}</span></button>`).join('')
+  return E.chapters.map((c, i) => `<button class="chap${i === now ? ' now' : ''}" data-seek="${c.seek}"><span class="tm">${esc(clock(c.seek))}</span><span class="ct">${esc(c.title)}${c.m ? '<span class="mtag" title="Plus+ members" aria-label="Plus+ members">+</span>' : ''}</span></button>`).join('')
     + (E.locked.length ? `<div class="eyebrow" style="color:var(--gold);margin:16px 8px 4px">${I.lock(13)} In the Plus+ full episode</div>` + E.locked.map(c => `<div class="chap locked"><span class="tm">${esc(clock(c.seek))}</span><span class="ct">${esc(c.title)}</span></div>`).join('') : '');
 }
 function guestHtml(g) {
