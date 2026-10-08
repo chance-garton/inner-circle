@@ -172,6 +172,21 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .joined{align-self:center;display:flex;align-items:center;gap:7px;margin:10px 0;padding:5px 14px 5px 6px;border-radius:999px;background:rgba(216,170,60,0.09);border:1px solid rgba(216,170,60,0.3);font-size:13.5px;color:var(--muted);flex-wrap:wrap;justify-content:center}
 .joined button{display:inline-flex;align-items:center;gap:7px;color:var(--gold)}
 .joined .time{margin-left:4px}
+.pscrim{display:block;padding:0;background:rgba(5,8,15,0.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.scrim,.scrim *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.scrim input,.scrim textarea,.scrim emoji-picker{-webkit-user-select:text;user-select:text}
+.plift{position:fixed;left:12px;right:12px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-height:calc(100dvh - 24px)}
+.plift .reactbar{width:100%;max-width:420px;background:var(--card);border:1px solid rgba(233,238,246,0.16);border-radius:999px;padding:5px 6px;box-shadow:0 12px 30px rgba(0,0,0,0.45)}
+.plift .reactbar button{width:40px;height:40px;font-size:25px}
+.pclone{pointer-events:none;max-height:34vh;overflow:hidden;border-radius:16px;flex:none}
+.pclone .bub{box-shadow:0 12px 30px rgba(0,0,0,0.45)}
+.pmenu{width:min(250px,100%);background:var(--card);border:1px solid rgba(233,238,246,0.14);border-radius:16px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,0.5);flex:none}
+.pmenu .mi{min-height:44px;font-size:15.5px;border-top:0;padding:0 16px;gap:14px}
+.pmenu .mi svg{width:20px;height:20px}
+.pmenu .mhead{padding:9px 16px 5px;font-size:10px}
+.pmenu .picking,.pmenu:has(.picking){width:100%}
+.pmenu .picking emoji-picker{height:320px}
+@media (hover:none){.bub{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}}
 .typing{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);padding:6px 0 0 46px;min-height:22px}
 .dots{display:flex;gap:3px}.dots i{width:5px;height:5px;border-radius:50%;background:var(--muted);display:block;animation:blink 1.2s infinite}
 .dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
@@ -1042,6 +1057,39 @@ function overlay(html, bottom, label, at) {
   const first = s.querySelector('button,a,[tabindex]'); first && first.focus();
   return s;
 }
+// phones: the message lifts out of the chat, reactions above it, a compact menu below (Telegram style)
+function phoneMenu(id, reactHtml, menuHtml) {
+  closeOverlay();
+  const src = document.querySelector(`#thread .row[data-id="${id}"] .bub`) || document.querySelector(`#msgs .row[data-id="${id}"] .bub`);
+  const r = src ? src.getBoundingClientRect() : { left: 12, top: innerHeight / 3, width: innerWidth - 24 };
+  const s = document.createElement('div');
+  s.className = 'scrim pscrim'; s.id = 'ovl';
+  s.innerHTML = `<div class="plift" role="dialog" aria-modal="true" aria-label="Message actions">${reactHtml}<div class="pclone"></div><div class="pmenu">${menuHtml}</div></div>`;
+  if (src) {
+    const c = src.cloneNode(true); c.removeAttribute('data-press');
+    const clone = s.querySelector('.pclone'); clone.appendChild(c);
+    clone.style.width = Math.min(r.width, innerWidth - 24) + 'px';
+    clone.style.marginLeft = Math.max(0, Math.min(r.left - 12, innerWidth - 24 - r.width)) + 'px';
+    s.querySelector('.pmenu').style.marginLeft = clone.style.marginLeft;
+  }
+  s.dataset.top = r.top;
+  s.addEventListener('click', e => { if (e.target === s || e.target.classList.contains('plift')) closeOverlay(); });
+  // the finger that opened the menu is still down: ignore it until it lifts, so nothing under it fires or gets selected
+  s.style.pointerEvents = 'none';
+  const release = () => { setTimeout(() => { if (s.isConnected) s.style.pointerEvents = ''; }, 60); document.removeEventListener('touchend', release); document.removeEventListener('touchcancel', release); };
+  document.addEventListener('touchend', release); document.addEventListener('touchcancel', release);
+  setTimeout(release, 1500);
+  document.body.appendChild(s);
+  placePhoneMenu(s);
+  return s;
+}
+function placePhoneMenu(s) {
+  const box = s.querySelector('.plift'); if (!box) return;
+  const bar = s.querySelector('.reactbar');
+  const h = box.offsetHeight, barH = bar ? bar.offsetHeight + 8 : 0;
+  const want = Number(s.dataset.top) - barH;
+  box.style.top = Math.max(12, Math.min(want, innerHeight - h - 12)) + 'px';
+}
 function closeOverlay() { const o = $('#ovl'); if (o) o.remove(); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
 
@@ -1056,8 +1104,8 @@ function openActions(id, x, y) {
   const picked = k => m.reacts && Object.keys(m.reacts).some(r => (OLD_R[r] || r) === k && m.reacts[r].includes(S.me.uid));
   const linkIcon = P('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>');
   const threadIcon = P('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5z"/><path d="M8 8h8M8 11h5"/>');
-  const html = `<div class="reactbar" role="toolbar" aria-label="React">${QUICK.map(k => `<button class="${picked(k) ? 'pick' : ''}" data-k="${esc(k)}" aria-label="React ${esc(k)}">${esc(k)}</button>`).join('')}<button class="more" data-allemoji="1" aria-label="All emojis">${I.down(20)}</button></div>
-    <div id="actmenu">
+  const reactHtml = `<div class="reactbar" role="toolbar" aria-label="React">${QUICK.map(k => `<button class="${picked(k) ? 'pick' : ''}" data-k="${esc(k)}" aria-label="React ${esc(k)}">${esc(k)}</button>`).join('')}<button class="more" data-allemoji="1" aria-label="All emojis">${I.down(20)}</button></div>`;
+  const menuHtml = `<div id="actmenu">
     <button class="mi" data-a="reply">${I.reply()}Reply</button>
     ${mine && S.messages.some(x => x.id === id) ? `<button class="mi" data-a="edit">${I.edit()}Edit</button>` : ''}
     ${m.text ? `<button class="mi" data-a="copy">${I.copy()}Copy</button>` : ''}
@@ -1070,13 +1118,14 @@ function openActions(id, x, y) {
       <button class="mi" data-a="mute" style="border-top:0">${I.mute()}${p.muted ? 'Unmute ' : 'Mute '}${esc(p.name)}${p.muted ? '' : ' for 24 hours'}</button>
       <button class="mi danger" data-a="remove">${I.remove()}Remove from the Circle</button>` : ''}
     </div>`;
-  const o = overlay(html, true, 'Message actions', at);
+  const o = at ? overlay(reactHtml + menuHtml, true, 'Message actions', at) : phoneMenu(id, reactHtml, menuHtml);
   const react = k => { sendWs({ t: 'react', id, kind: k }); closeOverlay(); };
   o.querySelectorAll('[data-k]').forEach(b => b.onclick = () => react(b.dataset.k));
   o.querySelector('[data-allemoji]').onclick = () => {
     const menu = o.querySelector('#actmenu'); menu.innerHTML = '';
     o.querySelector('.reactbar').remove();
     menu.appendChild(emojiPicker(react));
+    if (o.classList.contains('pscrim')) { menu.classList.add('picking'); menu.parentElement.style.marginLeft = '0'; menu.parentElement.style.width = '100%'; placePhoneMenu(o); }
     if (at) { const box = o.firstElementChild; box.style.width = '360px'; const r = box.getBoundingClientRect(); box.style.left = Math.max(8, Math.min(r.left, innerWidth - 368)) + 'px'; box.style.top = Math.max(8, Math.min(r.top, innerHeight - 380)) + 'px'; }
   };
   o.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
