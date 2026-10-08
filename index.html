@@ -154,6 +154,11 @@ svg{display:block;flex:none}
 .react{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px 0 8px;border-radius:999px;background:rgba(233,238,246,0.06);border:1px solid var(--line);font-size:12.5px;font-weight:700;line-height:1}
 .react.mine{border-color:rgba(216,170,60,0.75);background:rgba(216,170,60,0.13)}
 .react .em{font-size:15px;line-height:1}
+.react{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.rxtabs{display:flex;gap:6px;padding:0 16px 8px;overflow-x:auto;scrollbar-width:none}
+.rxtabs button{flex:none;height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.rxtabs button .em{font-size:16px}
+.rxtabs button.on{background:var(--gold);border-color:var(--gold);color:var(--on-gold)}
 .rcount{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px 0 8px;border-radius:999px;color:var(--lapis-lit);font-size:12.5px;font-weight:700;line-height:1}
 .rcount:hover{background:rgba(143,181,240,0.1)}
 .ctx{position:fixed;z-index:25;width:352px;max-height:calc(100dvh - 24px);overflow:auto;background:var(--card);border:1px solid rgba(233,238,246,0.16);border-radius:14px;box-shadow:0 18px 44px rgba(0,0,0,0.5)}
@@ -1342,6 +1347,7 @@ function renderMessages(toBottom) {
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-react],[data-replyto],[data-who],[data-goto],[data-zoom],[data-thread]');
   if (!t || !t.closest('#msgs,#thread')) return;
+  if (t.dataset.react && Date.now() - (S.reactHeld || 0) < 700) return; // that tap was a press and hold
   const inThread = !!t.closest('#thread');
   if (t.dataset.react) sendWs({ t: 'react', id: Number(t.dataset.id), kind: t.dataset.react });
   else if (t.dataset.thread) sendWs({ t: 'thread', id: Number(t.dataset.thread) });
@@ -1356,6 +1362,8 @@ document.addEventListener('click', e => {
 });
 // right-click on a computer, press and hold on a phone: the message menu
 document.addEventListener('contextmenu', e => {
+  const rb = e.target.closest('.react[data-react]');
+  if (rb && rb.closest('#msgs,#thread')) { e.preventDefault(); if (!matchMedia('(hover: none)').matches) showReactors(Number(rb.dataset.id), rb.dataset.react); return; }
   const b = e.target.closest('[data-press]'); if (!b || !b.closest('#msgs,#thread')) return;
   if (e.target.closest('a') && !matchMedia('(hover: none)').matches) return; // keep the browser menu on links
   e.preventDefault();
@@ -1364,12 +1372,41 @@ document.addEventListener('contextmenu', e => {
 });
 let pressTimer = null, pressXY = null;
 document.addEventListener('touchstart', e => {
+  const rb = e.target.closest('.react[data-react]');
+  if (rb && rb.closest('#msgs,#thread')) {
+    const t = e.touches[0]; pressXY = [t.clientX, t.clientY];
+    pressTimer = setTimeout(() => { pressTimer = null; S.reactHeld = Date.now(); haptic(12); showReactors(Number(rb.dataset.id), rb.dataset.react); }, 420);
+    return;
+  }
   const b = e.target.closest('[data-press]'); if (!b || !b.closest('#msgs,#thread') || e.target.closest('button')) return;
   const t = e.touches[0]; pressXY = [t.clientX, t.clientY];
   pressTimer = setTimeout(() => { pressTimer = null; haptic(12); openActions(Number(b.dataset.press)); }, 450);
 }, { passive: true });
 document.addEventListener('touchmove', e => { if (!pressTimer || !pressXY) return; const t = e.touches[0]; if (Math.abs(t.clientX - pressXY[0]) + Math.abs(t.clientY - pressXY[1]) > 10) { clearTimeout(pressTimer); pressTimer = null; } }, { passive: true });
 ['touchend', 'touchcancel'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(pressTimer); pressTimer = null; }, { passive: true }));
+
+// press and hold (phone) or right-click (computer) on a reaction: who reacted, Telegram style
+function showReactors(id, first) {
+  const m = findMsg(id); if (!m || !m.reacts) return;
+  const kinds = Object.keys(m.reacts).filter(k => m.reacts[k] && m.reacts[k].length);
+  if (!kinds.length) return;
+  const all = []; kinds.forEach(k => m.reacts[k].forEach(uid => all.push([uid, OLD_R[k] || k])));
+  const tabs = [['', 'All', all.length]].concat(kinds.map(k => [OLD_R[k] || k, OLD_R[k] || k, m.reacts[k].length]));
+  let cur = first && kinds.some(k => (OLD_R[k] || k) === first) && kinds.length > 1 ? first : '';
+  const o = overlay(`<div style="padding:16px 12px 8px 18px;display:flex;align-items:center;gap:10px"><h2 class="h1" style="font-size:22px;flex:1">Reactions</h2><button class="ibtn" id="rxclose" aria-label="Close">${I.close()}</button></div>
+    ${kinds.length > 1 ? `<div class="rxtabs" role="tablist">${tabs.map(t => `<button role="tab" data-rx="${esc(t[0])}">${t[0] ? `<span class="em">${esc(t[1])}</span>` : t[1]} ${t[2]}</button>`).join('')}</div>` : ''}
+    <div id="rxlist" style="padding:4px 10px 14px;display:flex;flex-direction:column;gap:2px"></div>`, true, 'Reactions');
+  const draw = () => {
+    o.querySelectorAll('[data-rx]').forEach(b => { b.classList.toggle('on', b.dataset.rx === cur); b.setAttribute('aria-selected', b.dataset.rx === cur); });
+    const rows = cur ? all.filter(r => r[1] === cur) : all;
+    $('#rxlist').innerHTML = rows.map(([uid, em]) => `<button class="person" data-rwho="${esc(uid)}">${avatar(uid, 32)}<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">${esc(person(uid).name || 'Member')}${S.me && uid === S.me.uid ? ' <span class="muted" style="font-weight:500">(you)</span>' : ''}</span><span class="em" style="font-size:20px">${esc(em)}</span></button>`).join('');
+    hydrateMedia(o);
+    o.querySelectorAll('[data-rwho]').forEach(b => b.onclick = () => askProfile(b.dataset.rwho));
+  };
+  o.querySelectorAll('[data-rx]').forEach(b => b.onclick = () => { cur = b.dataset.rx; haptic(6); draw(); });
+  $('#rxclose').onclick = closeOverlay;
+  draw();
+}
 
 function startReply(id) { if (S.editMsg) cancelEdit(); S.reply = id; renderReply(); $('#field') && $('#field').focus(); }
 function startEdit(id) {
