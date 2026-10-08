@@ -240,8 +240,8 @@ export class Room {
 
   page(before) {
     const rows = before
-      ? this.all('SELECT * FROM messages WHERE id < ? ORDER BY id DESC LIMIT ?', before, PAGE)
-      : this.all('SELECT * FROM messages ORDER BY id DESC LIMIT ?', PAGE);
+      ? this.all('SELECT * FROM messages WHERE id < ? AND deleted = 0 ORDER BY id DESC LIMIT ?', before, PAGE)
+      : this.all('SELECT * FROM messages WHERE deleted = 0 ORDER BY id DESC LIMIT ?', PAGE);
     return rows.reverse().map(r => this.shape(r));
   }
 
@@ -369,6 +369,7 @@ export class Room {
         this.sql.exec('UPDATE messages SET deleted = 1, pinned = 0 WHERE id = ?', row.id);
         this.sql.exec('DELETE FROM reactions WHERE msg_id = ?', row.id);
         this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', row.id)) });
+        if (row.reply_to) { const parent = this.one('SELECT * FROM messages WHERE id = ?', row.reply_to); if (parent) this.broadcast({ t: 'update', m: this.shape(parent) }); }
         return this.broadcast({ t: 'pins', pins: this.pins() });
       }
 
@@ -462,7 +463,8 @@ export class Room {
           }
           frontier = next;
         }
-        const msgs = [...seen.values()].sort((a, b) => a.id - b.id).map(r => this.shape(r));
+        const msgs = [...seen.values()].filter(r => !r.deleted).sort((a, b) => a.id - b.id).map(r => this.shape(r));
+        if (!msgs.length) return this.send(ws, { t: 'notice', text: 'That message is no longer here.' });
         return this.send(ws, { t: 'thread', id: start.id, messages: msgs, people: this.peopleFor(msgs) });
       }
 

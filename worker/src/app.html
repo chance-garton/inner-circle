@@ -521,8 +521,15 @@ function onEvent(m) {
     }
     case 'update': {
       const i = S.messages.findIndex(x => x.id === m.m.id);
-      if (i >= 0) { S.messages[i] = m.m; if (S.view === 'chat') renderMessages(false); }
+      if (i >= 0) { if (m.m.deleted) S.messages.splice(i, 1); else S.messages[i] = m.m; if (S.view === 'chat') renderMessages(false); }
+      if (m.m.deleted) {
+        let hit = false;
+        for (const x of S.messages) if (x.reply && x.reply.id === m.m.id) { x.reply.deleted = true; hit = true; }
+        if (hit && S.view === 'chat') renderMessages(false);
+        if (S.reply === m.m.id) { S.reply = null; renderReply(); }
+      }
       const ti = (S.threadMsgs || []).findIndex(x => x.id === m.m.id);
+      if (ti >= 0 && m.m.deleted) S.threadMsgs.splice(ti, 1);
       if (ti >= 0 && $('#thread')) { S.threadMsgs[ti] = m.m; sendWs({ t: 'thread', id: S.threadId }); }
       return;
     }
@@ -531,7 +538,7 @@ function onEvent(m) {
       mergePeople(m.people);
       const box = $('#msgs'); const before = box ? box.scrollHeight - box.scrollTop : 0;
       const have = new Set(S.messages.map(x => x.id));
-      S.messages = m.messages.filter(x => !have.has(x.id)).concat(S.messages);
+      S.messages = m.messages.filter(x => !have.has(x.id) && !x.deleted).concat(S.messages);
       S.oldestDone = m.done; S.loadingOlder = false;
       renderMessages(false);
       if (box) box.scrollTop = box.scrollHeight - before;
@@ -833,6 +840,7 @@ function renderReply() {
 }
 
 function msgHtml(m, i, list) {
+  if (m.deleted) return '';
   const prev = list[i - 1], next = list[i + 1];
   const mine = S.me && m.uid === S.me.uid;
   const p = person(m.uid);
@@ -842,9 +850,8 @@ function msgHtml(m, i, list) {
   const last = !next || next.uid !== m.uid || next.created - m.created > gap || new Date(next.created).toDateString() !== new Date(m.created).toDateString();
   let out = newDay ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '';
   let body = '';
-  if (m.deleted) body = `<span class="deleted">Message deleted</span>`;
-  else {
-    if (m.reply) {
+  {
+    if (m.reply && !m.reply.deleted) {
       const rp = person(m.reply.uid);
       body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b>${m.reply.deleted ? 'Message deleted' : esc(m.reply.text || (m.reply.image ? 'Image' : ''))}</button>`;
     }
