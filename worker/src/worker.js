@@ -160,7 +160,7 @@ async function route(req, env, url, path, okOrigin) {
       return room.fetch(new Request('https://room/push-key'));
     }
 
-    if ((path === '/api/push/subscribe' || path === '/api/push/unsubscribe' || path === '/api/push/test') && req.method === 'POST') {
+    if ((path === '/api/push/subscribe' || path === '/api/push/unsubscribe' || path === '/api/push/test' || path === '/api/unfurl') && req.method === 'POST') {
       if (!okOrigin) return json({ error: 'origin not allowed' }, 403);
       const who = await verify(bearer(req), env);
       if (!who || !who.entitled) return json({ error: 'not a member' }, 401);
@@ -226,6 +226,8 @@ export class Room {
     try { this.sql.exec("ALTER TABLE members ADD COLUMN no_init INTEGER DEFAULT 0"); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN kind TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN mentions TEXT DEFAULT '[]'"); } catch (e) { /* already there */ }
+    try { this.sql.exec("ALTER TABLE messages ADD COLUMN preview TEXT DEFAULT ''"); } catch (e) { /* already there */ }
+    this.sql.exec('CREATE TABLE IF NOT EXISTS link_previews (url TEXT PRIMARY KEY, data TEXT, fetched INTEGER)');
     for (const [oldKey, emoji] of Object.entries(OLD_REACTIONS)) {
       this.sql.exec('UPDATE OR IGNORE reactions SET kind = ? WHERE kind = ?', emoji, oldKey);
       this.sql.exec('DELETE FROM reactions WHERE kind = ?', oldKey);
@@ -293,6 +295,30 @@ export class Room {
     } catch (e) { /* pushes never break the chat */ }
   }
 
+  // ---- link previews, kept a week (a failed look a few hours)
+  cachedPreview(url) {
+    const r = this.one('SELECT data, fetched FROM link_previews WHERE url = ?', url);
+    if (!r) return undefined;
+    const fresh = Date.now() - r.fetched < (r.data === 'null' ? 3 * 3600e3 : 7 * 86400e3);
+    return fresh ? safeObj(r.data) : undefined;
+  }
+  async getPreview(url) {
+    const c = this.cachedPreview(url);
+    if (c !== undefined) return c;
+    let p = null;
+    try { p = await fetchPreview(url); } catch (e) { p = null; }
+    this.sql.exec('INSERT OR REPLACE INTO link_previews (url, data, fetched) VALUES (?, ?, ?)', url, JSON.stringify(p), Date.now());
+    return p;
+  }
+  async fillPreview(id, url) {
+    const p = await this.getPreview(url);
+    if (!p) return;
+    const row = this.one('SELECT * FROM messages WHERE id = ?', id);
+    if (!row || row.deleted || firstLink(row.text) !== url) return;
+    this.sql.exec('UPDATE messages SET preview = ? WHERE id = ?', JSON.stringify(p), id);
+    this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', id)) });
+  }
+
   log(actor, action, target, msgId, detail) {
     this.sql.exec('INSERT INTO modlog (created, actor, action, target, msg_id, detail) VALUES (?, ?, ?, ?, ?, ?)', Date.now(), actor || '', action, target || '', msgId || 0, JSON.stringify(detail || {}));
   }
@@ -327,10 +353,14 @@ export class Room {
   async fetch(req) {
     const path = new URL(req.url).pathname;
     if (path === '/push-key') return json({ key: (await this.vapid()).pub });
-    if (path === '/subscribe' || path === '/unsubscribe' || path === '/test') {
+    if (path === '/subscribe' || path === '/unsubscribe' || path === '/test' || path === '/unfurl') {
       const { uid, body } = await req.json();
       const me = this.member(uid);
       if (!me || me.banned) return json({ error: 'not in the Circle' }, 403);
+      if (path === '/unfurl') {
+        const link = firstLink(String(body && body.url || ''));
+        return json({ url: link, preview: link ? await this.getPreview(link) : null });
+      }
       if (path === '/subscribe') {
         const s = body && body.sub;
         if (!s || typeof s.endpoint !== 'string' || !(/^https:\/\//.test(s.endpoint) || (this.env.DEV_AUTH === '1' && /^http:\/\/127\.0\.0\.1:/.test(s.endpoint))) || !s.keys || !s.keys.p256dh || !s.keys.auth) return json({ error: 'bad subscription' }, 400);
@@ -410,6 +440,7 @@ export class Room {
       reply, created: row.created, edited: !!row.edited, deleted: !!row.deleted, pinned: !!row.pinned, reacts,
       replies: this.one('SELECT COUNT(*) AS n FROM messages WHERE reply_to = ? AND deleted = 0', row.id).n,
       kind: row.kind || '', mentions: safeArr(row.mentions),
+      preview: row.deleted ? null : safeObj(row.preview),
     };
   }
 
@@ -530,7 +561,11 @@ export class Room {
           if (p) reply = p.id;
         }
         const mentions = this.mentionsFrom(msg.mentions, me.uid);
-        const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created, mentions) VALUES (?, ?, ?, ?, ?, ?) RETURNING *', me.uid, text, image, reply, now, JSON.stringify(mentions));
+        // a link gets its preview card (left off if the sender closed it); fetched now if not seen before
+        const link = msg.nopreview || image ? '' : firstLink(text);
+        const cached = link ? this.cachedPreview(link) : undefined;
+        const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created, mentions, preview) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *', me.uid, text, image, reply, now, JSON.stringify(mentions), cached ? JSON.stringify(cached) : '');
+        if (link && cached === undefined) this.state.waitUntil(this.fillPreview(row.id, link));
         const m = this.shape(row);
         this.broadcast({ t: 'msg', m, cid: clean(msg.cid, 40), people: this.peopleFor([m]) });
         this.state.waitUntil(this.pushOut(m, this.member(me.uid)));
@@ -672,7 +707,11 @@ export class Room {
         const text = clean(msg.text, MAX_TEXT, true);
         if (!text && !row.image) return;
         if (text === row.text) return;
-        this.sql.exec('UPDATE messages SET text = ?, edited = ?, mentions = ? WHERE id = ?', text, now, JSON.stringify(this.mentionsFrom(msg.mentions, me.uid)), row.id);
+        const link = msg.nopreview || row.image ? '' : firstLink(text);
+        const old = safeObj(row.preview);
+        const cached = link ? (old && old.url === link ? old : this.cachedPreview(link)) : undefined;
+        this.sql.exec('UPDATE messages SET text = ?, edited = ?, mentions = ?, preview = ? WHERE id = ?', text, now, JSON.stringify(this.mentionsFrom(msg.mentions, me.uid)), cached ? JSON.stringify(cached) : '', row.id);
+        if (link && cached === undefined) this.state.waitUntil(this.fillPreview(row.id, link));
         this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', row.id)) });
         // replies quoting it show the new words
         for (const r of this.all('SELECT * FROM messages WHERE reply_to = ? AND deleted = 0', row.id)) this.broadcast({ t: 'update', m: this.shape(r) });
@@ -859,4 +898,93 @@ function clean(v, max, multiline) {
   return s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max);
 }
 
+// ---------------------------------------------------------------- link previews
+// The first web link in a message, unless it is one of our own episode pages (those get the episode card).
+function firstLink(text) {
+  const m = String(text || '').match(/(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/);
+  if (!m) return '';
+  try {
+    const u = new URL(m[1]);
+    if (!/^https?:$/.test(u.protocol) || u.username || u.password) return '';
+    if (/(^|\.)innerversepodcast\.com$/i.test(u.hostname) && /^\/(episodes|plus)\/[^/]+/i.test(u.pathname)) return '';
+    return u.href.slice(0, 800);
+  } catch (e) { return ''; }
+}
+const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+const unent = s => String(s || '').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (all, e) => e[0] === '#' ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : (ENT[e.toLowerCase()] ?? all));
+const trimTo = (s, n) => { s = unent(s).replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s; };
+const httpsUrl = (u, base) => { try { const x = new URL(unent(u).trim(), base); if (x.protocol === 'http:') x.protocol = 'https:'; return x.protocol === 'https:' ? x.href.slice(0, 800) : ''; } catch (e) { return ''; } };
+function ytId(u) {
+  const h = u.hostname.replace(/^(www|m|music)\./, '');
+  if (h === 'youtu.be') return { id: u.pathname.slice(1).split('/')[0], vertical: false };
+  if (h !== 'youtube.com' && h !== 'youtube-nocookie.com') return null;
+  const sh = u.pathname.match(/^\/shorts\/([\w-]{6,})/); if (sh) return { id: sh[1], vertical: true };
+  const lv = u.pathname.match(/^\/(?:live|embed)\/([\w-]{6,})/); if (lv) return { id: lv[1], vertical: false };
+  const v = u.searchParams.get('v'); return v ? { id: v, vertical: false } : null;
+}
+const secsFrom = t => { if (!t) return 0; if (/^\d+$/.test(t)) return Number(t); const m = String(t).match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/); return m ? (Number(m[1] || 0) * 3600 + Number(m[2] || 0) * 60 + Number(m[3] || 0)) : 0; };
+async function getJson(url) {
+  const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; InnerVerseBot/1.0; +https://innerversepodcast.com)', Accept: 'application/json' }, signal: AbortSignal.timeout(6000) });
+  return r.ok ? r.json() : null;
+}
+async function fetchPreview(url) {
+  const u = new URL(url);
+  // YouTube: title, channel and thumbnail from its own oEmbed; plays right in the chat
+  const yt = ytId(u);
+  if (yt && /^[\w-]{6,20}$/.test(yt.id)) {
+    const o = await getJson('https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + yt.id)).catch(() => null);
+    return {
+      url, site: yt.vertical ? 'YouTube Shorts' : 'YouTube', title: trimTo(o && o.title || 'YouTube video', 200), desc: trimTo(o && o.author_name || '', 120),
+      image: yt.vertical ? `https://i.ytimg.com/vi/${yt.id}/oar2.jpg` : `https://i.ytimg.com/vi/${yt.id}/hqdefault.jpg`,
+      fallback: `https://i.ytimg.com/vi/${yt.id}/hqdefault.jpg`,
+      video: { kind: 'youtube', id: yt.id, vertical: yt.vertical, start: secsFrom(u.searchParams.get('t') || u.searchParams.get('start')) },
+    };
+  }
+  const host = u.hostname.replace(/^www\./, '');
+  // Vimeo
+  const vm = (host === 'vimeo.com' || host === 'player.vimeo.com') && u.pathname.match(/^\/(?:video\/)?(\d{5,})(?:\/([0-9a-f]{6,}))?/);
+  if (vm) {
+    const o = await getJson('https://vimeo.com/api/oembed.json?url=' + encodeURIComponent('https://vimeo.com/' + vm[1] + (vm[2] ? '/' + vm[2] : ''))).catch(() => null);
+    const video = { kind: 'vimeo', id: vm[1], hash: vm[2] || u.searchParams.get('h') || '', vertical: !!(o && o.height > o.width) };
+    if (o && o.title) return { url, site: 'Vimeo', title: trimTo(o.title, 200), desc: trimTo(o.author_name || '', 120), image: httpsUrl(o.thumbnail_url || ''), video };
+    const g = await pagePreview(url).catch(() => null);
+    return g ? Object.assign(g, { site: 'Vimeo', video }) : { url, site: 'Vimeo', title: 'Vimeo video', desc: '', image: '', video };
+  }
+  // Rumble
+  if (host === 'rumble.com') {
+    const o = await getJson('https://rumble.com/api/Media/oembed.json?url=' + encodeURIComponent(url)).catch(() => null);
+    const src = o && String(o.html || '').match(/src="(https:\/\/rumble\.com\/embed\/[^"]+)"/);
+    if (o && src) return { url, site: 'Rumble', title: trimTo(o.title, 200), desc: trimTo(o.author_name || '', 120), image: httpsUrl(o.thumbnail_url), video: { kind: 'rumble', src: src[1], vertical: o.height > o.width } };
+  }
+  return pagePreview(url);
+}
+// anything else: the page's own sharing tags (Open Graph and Twitter cards), as other apps read them
+async function pagePreview(url) {
+  const r = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(7000), headers: { 'User-Agent': 'Mozilla/5.0 (compatible; InnerVerseBot/1.0; +https://innerversepodcast.com) facebookexternalhit/1.1', Accept: 'text/html,application/xhtml+xml;q=0.9,image/*;q=0.8,*/*;q=0.5', 'Accept-Language': 'en' } });
+  if (!r.ok) return null;
+  const type = r.headers.get('Content-Type') || '';
+  const base = r.url || url;
+  if (/^image\//.test(type)) { try { r.body && r.body.cancel(); } catch (e) {} return { url, site: new URL(base).hostname.replace(/^www\./, ''), title: '', desc: '', image: httpsUrl(base) }; }
+  if (!/html/.test(type)) { try { r.body && r.body.cancel(); } catch (e) {} return null; }
+  // read at most 600 KB of the page
+  const reader = r.body.getReader(); const chunks = []; let got = 0;
+  while (got < 600000) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); got += value.length; }
+  try { reader.cancel(); } catch (e) {}
+  const html = new TextDecoder().decode(chunks.length === 1 ? chunks[0] : chunks.reduce((a, c) => { const t = new Uint8Array(a.length + c.length); t.set(a); t.set(c, a.length); return t; }, new Uint8Array()));
+  const meta = {}; let title = '', inTitle = false;
+  await new HTMLRewriter()
+    .on('meta', { element(e) { const k = (e.getAttribute('property') || e.getAttribute('name') || '').toLowerCase(); const v = e.getAttribute('content'); if (k && v != null && !(k in meta)) meta[k] = v; } })
+    .on('title', { element() { inTitle = true; }, text(t) { if (inTitle && title.length < 400) title += t.text; if (t.lastInTextNode) inTitle = false; } })
+    .transform(new Response(html, { headers: { 'Content-Type': 'text/html' } })).text();
+  const pick = (...ks) => { for (const k of ks) if (meta[k]) return meta[k]; return ''; };
+  const t = trimTo(pick('og:title', 'twitter:title') || title, 200);
+  const d = trimTo(pick('og:description', 'twitter:description', 'description'), 300);
+  const img = httpsUrl(pick('og:image:secure_url', 'og:image', 'og:image:url', 'twitter:image', 'twitter:image:src'), base);
+  if (!t && !img) return null;
+  const w = Number(meta['og:image:width'] || 0), h = Number(meta['og:image:height'] || 0);
+  const big = (meta['twitter:card'] || '') === 'summary_large_image' || (w && h ? w >= h * 1.3 && w >= 400 : !!img);
+  return { url, site: trimTo(pick('og:site_name') || new URL(base).hostname.replace(/^www\./, ''), 60), title: t, desc: d, image: img, big };
+}
+
+function safeObj(s) { try { const o = JSON.parse(s || 'null'); return o && typeof o === 'object' && !Array.isArray(o) ? o : null; } catch (e) { return null; } }
 function safeArr(s) { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }

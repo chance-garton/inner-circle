@@ -285,7 +285,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08q';
+const VERSION = '2026-10-08r';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -807,6 +807,7 @@ window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || !e.data.ivc) return;
   const d = e.data;
   if (d.level) store('iva_level', d.level === 'all' ? null : d.level);
+  if (d.videoPlaying && !aud.paused) aud.pause(); // a video started in the chat
   if (d.openNotify) { go('#/me'); setTimeout(() => { const b = $('#pushBox'); b && b.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }
   if ('unread' in d) {
     S.chatUnread = d.unread || 0; renderTabs();

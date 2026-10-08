@@ -192,6 +192,32 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .quote{display:block;width:100%;min-width:140px;max-width:100%;box-sizing:border-box;background:rgba(10,15,28,0.55);border-radius:8px;border-left:3px solid var(--lapis-lit);padding:5px 10px 6px;margin:3px 0 7px;font-size:13.5px;color:var(--muted);line-height:1.4;overflow:hidden;text-align:left}
 .quote b{display:block;color:var(--lapis-lit);font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .quote .qt{display:block;width:0;min-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lp{position:relative;margin-top:8px;max-width:420px;border-left:3px solid var(--lapis-lit);border-radius:4px 12px 12px 4px;background:rgba(143,181,240,0.07);padding:7px 10px 9px 11px;overflow:hidden}
+.lp .lpbody{display:block;color:var(--ink);text-decoration:none}
+.lpsite{display:block;font-size:13px;font-weight:700;color:var(--lapis-lit);line-height:1.35}
+.lpt{display:block;font-size:14.5px;font-weight:700;line-height:1.35;margin-top:1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lpd{display:block;font-size:13.5px;color:var(--muted);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.lp .lpmedia{position:relative;display:block;width:100%;margin-top:8px;border-radius:10px;overflow:hidden;aspect-ratio:16/9;background:rgba(0,0,0,0.35)}
+.lp .lpmedia img{width:100%;height:100%;object-fit:cover;display:block}
+.lp.vert .lpmedia,.lp.vert .lpframe{aspect-ratio:9/16;max-width:230px}
+.lp.small{display:flex;gap:10px;align-items:flex-start}
+.lp.small .lpbody{flex:1;min-width:0}
+.lp.small .lpmedia{width:72px;height:72px;flex:none;aspect-ratio:auto;margin-top:2px}
+.lpplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:50%;background:rgba(5,8,15,0.62);color:#fff;display:flex;align-items:center;justify-content:center;padding-left:4px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.lpframe{width:100%;aspect-ratio:16/9;margin-top:8px;border-radius:10px;overflow:hidden;background:#000}
+.lpframe iframe{width:100%;height:100%;border:0;display:block}
+.lpbar{display:flex;align-items:flex-start;gap:8px;padding:8px 10px 0 16px}
+.lpbar .lp{flex:1;margin-top:0;max-width:none;max-height:150px}
+.lpbar .lp .lpmedia{max-height:84px}
+.lpbar .lp.vid{display:flex;gap:10px;align-items:flex-start}
+.lpbar .lp.vid .lpbody{flex:1;min-width:0}
+.lpbar .lp.vid .lpmedia,.lpbar .lp:not(.small) .lpmedia{width:110px;height:62px;flex:none;margin-top:2px;aspect-ratio:auto}
+.lpbar .lp.vert .lpmedia{width:46px;height:78px}
+.lpbar .lpplay{width:30px;height:30px}
+.lpbar .lpplay svg{width:16px;height:16px}
+.lpbar .lp:not(.small):not(.vid){display:flex;gap:10px;align-items:flex-start}
+.lpbar .lp:not(.small):not(.vid) .lpbody{flex:1;min-width:0}
+.lpwait{flex:1;font-size:13px;color:var(--muted);padding:8px 0}
 .unfurl{display:flex;gap:12px;background:rgba(10,15,28,0.55);border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;align-items:flex-start;max-width:440px}
 .unfurl img{width:136px;height:76px;border-radius:8px;object-fit:cover;flex:none}
 .unfurl .ut{font-weight:600;font-size:14px;line-height:1.38;margin:5px 0 0}
@@ -1240,6 +1266,7 @@ function renderChat() {
       <div class="msgs" id="msgs" aria-live="polite"></div>
       <div class="typing" id="typing"></div>
       <div id="replybar"></div>
+      <div id="linkbar"></div>
       <div class="compose">
         <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
         <button class="ibtn" id="emoBtn" aria-label="Emoji">${P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',{s:21})}</button>
@@ -1389,6 +1416,7 @@ function msgHtml(m, i, list) {
       body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b><span class="qt">${m.reply.deleted ? 'Message deleted' : rk === 'join' ? 'joined the chat' : esc((m.reply.text || (m.reply.image ? 'Photo' : '')).replace(/\s+/g, ' ').slice(0, 200))}</span></button>`;
     }
     if (m.text) { const f = formatText(m.text); body += `<div class="txt">${markMentions(f.html, m)}${m.edited ? ' <span class="time" title="Edited">(edited)</span>' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
+    if (m.preview && m.preview.url) body += lpHtml(m.preview, m.id);
     if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
   }
   const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile">${esc(p.name)}</button>${badges(p)}${signRow(p)}<span class="time">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span></div>` : '';
@@ -1405,14 +1433,100 @@ function renderMessages(toBottom) {
     box.innerHTML = `<div class="empty">${I.chat(28).replace('<svg', '<svg style="margin:0 auto 12px;color:var(--gold)"')}Welcome, ${esc(S.me ? S.me.name : '')}. This room is brand new. Say hello and start the first conversation.</div>`;
     return;
   }
-  box.innerHTML = (S.oldestDone ? '<div class="day" style="margin-top:4px">The beginning of Inner Circle Chat</div>' : '') + S.messages.map((m, i, l) => msgHtml(m, i, l)).join('');
+  const html = (S.oldestDone ? '<div class="day" style="margin-top:4px">The beginning of Inner Circle Chat</div>' : '') + S.messages.map((m, i, l) => msgHtml(m, i, l)).join('');
+  const live = box.querySelector('.lpframe');
+  if (!live || !redrawAround(box, html, live)) box.innerHTML = html;
   hydrateMedia(box); hydrateUnfurls(box);
   box.querySelectorAll('img.mimg').forEach(img => img.addEventListener('load', stickDown, { once: true }));
   if (toBottom) { box.scrollTop = box.scrollHeight; S.stick = true; } else box.scrollTop = box.scrollHeight - keep;
 }
 
+// ------------------------------------------------------------ link previews, Telegram style
+// The first web link in a message (our own episode links keep their episode card).
+function clientLink(text) {
+  const m = String(text || '').match(/(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/);
+  if (!m) return '';
+  try { const u = new URL(m[1]); if (/(^|\.)innerversepodcast\.com$/i.test(u.hostname) && /^\/(episodes|plus)\/[^/]+/i.test(u.pathname)) return ''; return u.href.slice(0, 800); } catch (e) { return ''; }
+}
+const PLAY_ICON = '<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
+function lpHtml(p, id, draft) {
+  const v = p.video;
+  const site = esc(p.site || '');
+  const text = `<span class="lpsite">${site}</span>${p.title ? `<b class="lpt">${esc(p.title)}</b>` : ''}${p.desc ? `<span class="lpd">${esc(p.desc)}</span>` : ''}`;
+  const fb = p.fallback ? ` onerror="this.onerror=null;this.src='${esc(p.fallback)}'"` : '';
+  if (v) {
+    return `<div class="lp vid${v.vertical ? ' vert' : ''}"${id ? ` data-lpid="${id}"` : ''}><a class="lpbody" href="${esc(p.url)}" target="_blank" rel="noopener nofollow ugc">${text}</a>
+      <button class="lpmedia" ${draft ? 'tabindex="-1"' : `data-play="${id}"`} aria-label="Play video">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer"${fb}>` : ''}<span class="lpplay">${PLAY_ICON}</span></button></div>`;
+  }
+  const big = p.image && p.big !== false;
+  return `<div class="lp${big ? '' : ' small'}"><a class="lpbody" href="${esc(p.url)}" target="_blank" rel="noopener nofollow ugc">${text}</a>
+    ${p.image ? `<a class="lpmedia" href="${esc(p.url)}" target="_blank" rel="noopener nofollow ugc" tabindex="-1"><img src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></a>` : ''}</div>`;
+}
+// what a link will look like, shown above the message box while you type; the x leaves the card off
+function linkPreview(text) {
+  const box = $('#linkbar'); if (!box) return;
+  const link = clientLink(text);
+  if (!link || link === S.lpOff) { box.innerHTML = ''; S.lpShown = ''; return; }
+  if (link === S.lpShown) return;
+  S.lpShown = link;
+  box.innerHTML = `<div class="lpbar"><div class="lpwait">Getting the preview...</div><button class="ibtn" id="lpX" aria-label="Send without the preview">${I.close(16)}</button></div>`;
+  const wire = () => { const x = $('#lpX'); if (x) x.onclick = () => { S.lpOff = link; box.innerHTML = ''; S.lpShown = ''; }; };
+  wire();
+  (S.lpCache = S.lpCache || {});
+  const got = S.lpCache[link] ? Promise.resolve(S.lpCache[link]) : fetch(API + '/api/unfurl', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ url: link }) }).then(r => r.json()).then(j => (S.lpCache[link] = j.preview || null));
+  got.then(p => {
+    if (S.lpShown !== link) return;
+    if (!p) { box.innerHTML = ''; return; }
+    box.innerHTML = `<div class="lpbar">${lpHtml(p, 0, true)}<button class="ibtn" id="lpX" aria-label="Send without the preview">${I.close(16)}</button></div>`;
+    wire(); stickDown();
+  }).catch(() => { if (S.lpShown === link) box.innerHTML = ''; });
+}
+// tap a video card: the real player takes its place, right in the chat
+function playInline(btn) {
+  const id = Number(btn.dataset.play); const m = findMsg(id); const v = m && m.preview && m.preview.video; if (!v) return;
+  const touch = matchMedia('(hover: none)').matches; // on phones the first tap on the player itself starts it with sound
+  let src = '';
+  if (v.kind === 'youtube') src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.id)}?playsinline=1&rel=0&modestbranding=1${touch ? '' : '&autoplay=1'}${v.start ? '&start=' + v.start : ''}`;
+  if (v.kind === 'vimeo') src = `https://player.vimeo.com/video/${encodeURIComponent(v.id)}?playsinline=1${v.hash ? '&h=' + encodeURIComponent(v.hash) : ''}${touch ? '' : '&autoplay=1'}`;
+  if (v.kind === 'rumble') src = v.src + (touch ? '' : (v.src.includes('?') ? '&' : '?') + 'autoplay=2');
+  if (!src) return;
+  // only one video plays at a time: the one before goes back to its card
+  document.querySelectorAll('.lpframe').forEach(f => { const pm = findMsg(Number(f.dataset.for)); f.outerHTML = pm && pm.preview ? `<button class="lpmedia" data-play="${pm.id}" aria-label="Play video">${pm.preview.image ? `<img src="${esc(pm.preview.image)}" alt="" referrerpolicy="no-referrer">` : ''}<span class="lpplay">${PLAY_ICON}</span></button>` : ''; });
+  const wrap = document.createElement('div'); wrap.className = 'lpframe'; wrap.dataset.for = id;
+  wrap.innerHTML = `<iframe src="${esc(src)}" title="${esc(m.preview.title || 'Video')}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  btn.replaceWith(wrap);
+  tellApp({ videoPlaying: true });
+}
+// redraw the list without touching the message whose video is playing (moving a player restarts it)
+function redrawAround(box, html, live) {
+  const keepTop = [...box.children].find(c => c.contains(live)); if (!keepTop || !keepTop.dataset.id) return false;
+  const tmp = document.createElement('div'); tmp.innerHTML = html;
+  const match = [...tmp.children].find(c => c.dataset.id === keepTop.dataset.id);
+  if (!match || !match.querySelector('.lp.vid')) return false;
+  morphKeep(keepTop, match, live);
+  [...box.children].forEach(c => { if (c !== keepTop) c.remove(); });
+  const kids = [...tmp.children], at = kids.indexOf(match);
+  kids.slice(0, at).forEach(c => box.insertBefore(c, keepTop));
+  kids.slice(at + 1).forEach(c => box.appendChild(c));
+  hydrateMedia(box); hydrateUnfurls(box);
+  return true;
+}
+function morphKeep(o, n, live) {
+  for (const a of [...o.attributes]) if (!n.hasAttribute(a.name)) o.removeAttribute(a.name);
+  for (const a of [...n.attributes]) if (o.getAttribute(a.name) !== a.value) o.setAttribute(a.name, a.value);
+  const oc = [...o.childNodes], nc = [...n.childNodes];
+  const k = oc.findIndex(c => c === live || (c.nodeType === 1 && c.contains(live)));
+  const nk = k >= 0 && oc[k] === live ? nc.findIndex(c => c.nodeType === 1 && c.matches && c.matches('.lpmedia')) : k;
+  oc.forEach((c, i) => { if (i !== k) c.remove(); });
+  const keep = oc[k];
+  nc.forEach((c, i) => { if (i === nk) return; if (i < nk) o.insertBefore(c, keep); else o.appendChild(c); });
+  if (keep !== live && nc[nk]) morphKeep(keep, nc[nk], live);
+}
+
 // one click handler for everything inside the message list and the thread view
 document.addEventListener('click', e => {
+  const pl = e.target.closest('[data-play]');
+  if (pl && pl.closest('#msgs,#thread')) { e.preventDefault(); playInline(pl); return; }
   const t = e.target.closest('[data-react],[data-replyto],[data-who],[data-goto],[data-zoom],[data-thread]');
   if (!t || !t.closest('#msgs,#thread')) return;
   if (t.dataset.react && Date.now() - (S.reactHeld || 0) < 700) return; // that tap was a press and hold
@@ -1524,6 +1638,7 @@ function wireComposer() {
   let lastTyping = 0;
   f.addEventListener('input', () => {
     grow(); if (!S.editMsg) store('ivc_draft', f.value || null);
+    clearTimeout(S.lpTimer); S.lpTimer = setTimeout(() => linkPreview(f.value), 450);
     if (Date.now() - lastTyping > 2500 && f.value.trim()) { lastTyping = Date.now(); sendWs({ t: 'typing' }); }
   });
   f.addEventListener('keydown', e => {
@@ -1552,11 +1667,12 @@ function wireComposer() {
     if (S.editMsg) {
       const em = S.messages.find(x => x.id === S.editMsg);
       if (!text && !(em && em.image)) return;
-      if (sendWs({ t: 'edit', id: S.editMsg, text, mentions: findMentions(text) })) { S.editMsg = null; f.value = S.editDraft || ''; S.editDraft = ''; grow(); renderReply(); }
+      if (sendWs({ t: 'edit', id: S.editMsg, text, mentions: findMentions(text), nopreview: clientLink(text) && S.lpOff === clientLink(text) ? true : undefined })) { S.editMsg = null; f.value = S.editDraft || ''; S.editDraft = ''; grow(); renderReply(); }
       return;
     }
     if (!text) return;
-    if (sendWs({ t: 'send', text, reply_to: S.reply || undefined, mentions: findMentions(text) })) { f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); }
+    const lk = clientLink(text);
+    if (sendWs({ t: 'send', text, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: lk && S.lpOff === lk ? true : undefined })) { f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); S.lpOff = ''; linkPreview(''); }
   }
 }
 
