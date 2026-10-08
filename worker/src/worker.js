@@ -167,6 +167,8 @@ export class Room {
       created INTEGER, edited INTEGER DEFAULT 0, deleted INTEGER DEFAULT 0, pinned INTEGER DEFAULT 0)`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS reactions (msg_id INTEGER, uid TEXT, kind TEXT, PRIMARY KEY (msg_id, uid, kind))`);
     try { this.sql.exec("ALTER TABLE members ADD COLUMN recent TEXT DEFAULT '[]'"); } catch (e) { /* already there */ }
+    try { this.sql.exec("ALTER TABLE members ADD COLUMN titles TEXT DEFAULT '[]'"); } catch (e) { /* already there */ }
+    try { this.sql.exec("ALTER TABLE members ADD COLUMN no_init INTEGER DEFAULT 0"); } catch (e) { /* already there */ }
     for (const [oldKey, emoji] of Object.entries(OLD_REACTIONS)) {
       this.sql.exec('UPDATE OR IGNORE reactions SET kind = ? WHERE kind = ?', emoji, oldKey);
       this.sql.exec('DELETE FROM reactions WHERE kind = ?', oldKey);
@@ -205,7 +207,7 @@ export class Room {
     return {
       uid: m.uid, name: m.name, avatar: m.avatar, bio: m.bio, sun: m.sun, moon: m.moon, rising: m.rising,
       interests: safeArr(m.interests), favorites: safeArr(m.favorites), joined: m.joined, role: m.role,
-      initiator: !!(m.joined && m.joined < INITIATOR_CUTOFF), muted: m.muted_until > Date.now(),
+      initiator: !!(m.joined && m.joined < INITIATOR_CUTOFF) && !m.no_init, titles: safeArr(m.titles), muted: m.muted_until > Date.now(),
     };
   }
 
@@ -289,6 +291,9 @@ export class Room {
         this.sql.exec('UPDATE members SET email = ?, source = ? WHERE uid = ?', who.email, who.source, who.uid);
       }
       if (hosts.includes(who.email)) this.sql.exec("UPDATE members SET role = 'host' WHERE uid = ?", who.uid);
+      // people named in MOD_EMAILS become moderators on login (take them off the list to revoke for good)
+      const mods = String(this.env.MOD_EMAILS || '').toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
+      if (mods.includes(who.email) && !hosts.includes(who.email)) this.sql.exec("UPDATE members SET role = 'mod' WHERE uid = ? AND role = 'member'", who.uid);
       m = this.member(who.uid);
       if (m.banned) { this.send(ws, { t: 'denied', why: 'removed' }); return ws.close(4003, 'removed'); }
       ws.serializeAttachment({ uid: who.uid, ready: !!(m.rules_ok && m.profile_done) });
@@ -406,6 +411,33 @@ export class Room {
           this.presence();
         }
         return this.send(ws, { t: 'notice', text: msg.undo ? 'Member restored.' : `${target.name || 'Member'} was removed from the Inner Circle.` });
+      }
+
+      case 'title': {
+        // host only: give or take away a title (Initiator included)
+        if (me.role !== 'host') return;
+        const target = this.member(msg.uid);
+        if (!target) return;
+        const eligible = !!(target.joined && target.joined < INITIATOR_CUTOFF);
+        let titles = safeArr(target.titles);
+        if (typeof msg.add === 'string') {
+          const t = clean(msg.add, 32);
+          if (!t) return;
+          if (t.toLowerCase() === 'initiator' && eligible) this.sql.exec('UPDATE members SET no_init = 0 WHERE uid = ?', target.uid);
+          else if (!titles.some(x => x.toLowerCase() === t.toLowerCase())) {
+            if (titles.length >= 5) return this.send(ws, { t: 'error', text: 'Five titles at most.' });
+            titles.push(t);
+          }
+        }
+        if (typeof msg.remove === 'string') {
+          const t = msg.remove.toLowerCase();
+          if (t === 'initiator' && eligible) this.sql.exec('UPDATE members SET no_init = 1 WHERE uid = ?', target.uid);
+          titles = titles.filter(x => x.toLowerCase() !== t);
+        }
+        this.sql.exec('UPDATE members SET titles = ? WHERE uid = ?', JSON.stringify(titles), target.uid);
+        const p = this.person(this.member(target.uid));
+        this.broadcast({ t: 'person', p });
+        return this.send(ws, { t: 'who', p });
       }
 
       case 'role': {

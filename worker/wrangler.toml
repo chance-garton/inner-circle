@@ -10,6 +10,8 @@ rules = [{ type = "Text", globs = ["**/*.html"], fallthrough = true }]
 AUTH_URL = "https://innerverse-plus.chance-5da.workers.dev"
 # Accounts that get the Host role (comma separated, lower case).
 HOST_EMAILS = "chance@innerversepodcast.com,chancegarton@gmail.com"
+# Moderators set by email when they log in (Chance, 2026-10-08: Jennifer Garton).
+MOD_EMAILS = "jenngarton77@gmail.com"
 # Local testing only: lets "dev." tokens sign in. Must stay "0" when deployed.
 DEV_AUTH = "0"
 # Sites allowed to talk to this Worker (the page lives on GitHub Pages).
