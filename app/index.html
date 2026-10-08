@@ -37,7 +37,7 @@
   --display:'Fraunces',Georgia,'Times New Roman',serif;
   --sans:'Manrope','Segoe UI',Helvetica,Arial,sans-serif;
   --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
-  --tabh:56px; --minih:0px;
+  --tabh:50px; --minih:0px;
 }
 html.member{--accent:var(--gold)}
 html.playing{--minih:66px}
@@ -52,7 +52,7 @@ input{font:inherit;color:inherit}
 [hidden]{display:none!important}
 
 /* views */
-.view{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;background:var(--ground);padding-bottom:calc(var(--tabh) + var(--minih) + var(--sb) + 24px)}
+.view{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;background:var(--ground);padding-bottom:calc(var(--tabh) + var(--minih) + max(6px,calc(var(--sb) - 18px)) + 16px)}
 #ep{z-index:5;animation:slidein .22s ease-out}
 @keyframes slidein{from{transform:translateX(28px);opacity:.4}to{transform:none;opacity:1}}
 .wrap{max-width:720px;margin:0 auto;padding:0 16px}
@@ -190,12 +190,12 @@ html.member .chap.now{background:rgba(216,170,60,0.1)}
 .links a{font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;border:2px solid var(--accent)}
 
 /* tab bar + mini player */
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;height:calc(var(--tabh) + var(--sb));padding-bottom:var(--sb);display:flex;background:rgba(10,15,28,0.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;--tb:max(6px,calc(var(--sb) - 18px));height:calc(var(--tabh) + var(--tb));padding-bottom:var(--tb);display:flex;background:rgba(10,15,28,0.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
 .tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--muted);position:relative}
 .tabs button.on{color:var(--accent)}
 .tabs .dot{position:absolute;top:7px;left:calc(50% + 8px);min-width:8px;height:8px;border-radius:4px;background:var(--gold)}
 html.kb .tabs,html.kb .mini{display:none}
-.mini{position:fixed;left:8px;right:8px;bottom:calc(var(--tabh) + var(--sb) + 6px);z-index:10;height:58px;border-radius:14px;background:var(--card2);box-shadow:0 10px 30px rgba(0,0,0,0.5);display:none;align-items:center;gap:10px;padding:0 6px 0 7px;overflow:hidden;border:1px solid var(--line)}
+.mini{position:fixed;left:8px;right:8px;bottom:calc(var(--tabh) + max(6px,calc(var(--sb) - 18px)) + 6px);z-index:10;height:58px;border-radius:14px;background:var(--card2);box-shadow:0 10px 30px rgba(0,0,0,0.5);display:none;align-items:center;gap:10px;padding:0 6px 0 7px;overflow:hidden;border:1px solid var(--line)}
 html.playing .mini{display:flex}
 .mini img{width:44px;height:44px;border-radius:9px;object-fit:cover;flex:none;background:var(--card)}
 .mini .mt{flex:1;min-width:0;text-align:left}
@@ -224,7 +224,7 @@ html:not(.member) .np .ctl .big{background:var(--lapis);color:#fff}
 
 /* chat */
 #chatv{overflow:hidden;padding:0}
-#chatv iframe{position:absolute;left:0;right:0;top:var(--st);width:100%;height:calc(100% - var(--st) - var(--tabh) - var(--sb) - var(--minih));border:0;background:var(--ground)}
+#chatv iframe{position:absolute;left:0;right:0;top:var(--st);width:100%;height:calc(100% - var(--st) - var(--tabh) - max(6px,calc(var(--sb) - 18px)) - var(--minih));border:0;background:var(--ground)}
 html.kb #chatv iframe{height:calc(100% - var(--st))}
 .loading{display:grid;place-items:center;padding:60px 0;color:var(--muted)}
 .spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(233,238,246,0.15);border-top-color:var(--accent);animation:sp 0.8s linear infinite}
@@ -248,7 +248,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 .sheet h3{font-family:var(--display);font-size:22px;margin:0 0 8px;font-weight:600}
 .sheet ol{margin:8px 0 16px;padding-left:22px}
 .sheet li{margin:6px 0}
-.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + var(--minih) + var(--sb) + 18px);transform:translateX(-50%);z-index:50;background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,0.5);max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + var(--minih) + max(6px,calc(var(--sb) - 18px)) + 18px);transform:translateX(-50%);z-index:50;background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,0.5);max-width:calc(100% - 32px)}
 .empty{padding:40px 0;text-align:center;color:var(--muted)}
 @media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .art{width:176px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -274,7 +274,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08a';
+const VERSION = '2026-10-08b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
 const SITE = 'https://www.innerversepodcast.com';
@@ -577,7 +577,6 @@ function renderHome() {
     ${S.member ? '' : `<div class="sec">${plusPitch(true)}</div>`}
     ${firsts.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Good first episodes</h2></div><div class="hscroll">${firsts.map(tile).join('')}</div></div>` : ''}
     ${['Inner Whirled', 'InnerVerse', 'Vibe Rant', 'Astro-Herbalism'].map(showRow).join('')}
-    <div class="sec">${tunedCard()}</div>
   </div>`;
 }
 document.addEventListener('click', e => {
@@ -853,7 +852,6 @@ function renderEpisode() {
     ${E.themes.length ? `<div class="acc"><button>Core themes ${I.down(22)}</button><div class="in">${E.themes.map(t => `<div class="theme"><h4>${esc(t.title)}${t.m ? '<span class="mtag">Members</span>' : ''}</h4><p>${esc(t.body)}</p></div>`).join('')}</div></div>` : ''}
     ${E.quotes.length ? `<div class="acc"><button>Memorable ${I.down(22)}</button><div class="in">${E.quotes.map(q => `<div class="quote"><blockquote>${esc(q.text)}</blockquote><div class="who"><img loading="lazy" src="${esc(q.author === HOST ? HOST_PORTRAIT : img(q.portrait, 100))}" alt="">${esc(q.author)}${q.m ? '<span class="mtag">Members</span>' : ''}</div></div>`).join('')}</div></div>` : ''}
     ${E.guests.length ? `<div class="acc open"><button>${E.guests.length > 1 ? 'Guests' : 'Guest'} ${I.down(22)}</button><div class="in">${E.guests.map(guestHtml).join('')}</div></div>` : ''}
-    <div class="sec">${tunedCard()}</div>
     ${related.length ? `<div class="sec"><div class="sechead"><h2 class="h2">You might also like</h2></div><div class="hscroll">${related.map(tile).join('')}</div></div>` : ''}
   </div>`;
   bindBack();
