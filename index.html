@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0A0F1C">
+<title>Inner Circle | InnerVerse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --ground:#0A0F1C; --surface:#111827; --card:#151E33; --line:rgba(233,238,246,0.12);
+  --ink:#E9EEF6; --muted:#9AA6BA; --lapis:#3B74CC; --lapis-lit:#8FB5F0;
+  --gold:#D8AA3C; --on-gold:#0A0F1C; --danger:#F2998A;
+  --brand:'Fjalla One','Arial Narrow',Impact,sans-serif;
+  --display:'Fraunces',Georgia,'Times New Roman',serif;
+  --sans:'Manrope','Segoe UI',Helvetica,Arial,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit}
+a{color:inherit;text-decoration:none}
+p{margin:0} h1,h2,h3{margin:0;font-weight:600}
+ul,ol{list-style:none;margin:0;padding:0}
+input,textarea,select{font:inherit;color:var(--ink)}
+svg{display:block;flex:none}
+:focus-visible{outline:2px solid var(--lapis-lit);outline-offset:2px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--muted)}
+
+/* nav */
+.nav{height:76px;background:rgba(10,15,28,0.92);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 max(20px,calc((100vw - 1200px)/2));gap:24px;position:sticky;top:0;z-index:5;backdrop-filter:blur(8px)}
+.nav.member{border-top:3px solid var(--gold)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{width:44px;height:44px;object-fit:contain}
+.nav.member .brand img{filter:drop-shadow(0 0 10px rgba(216,170,60,0.5))}
+.nav.visitor .brand img{filter:drop-shadow(0 0 10px rgba(59,116,204,0.55))}
+.word{font-family:var(--brand);font-weight:700;font-size:23px;letter-spacing:5px;text-transform:uppercase;line-height:1}
+.links{flex:1;display:flex;justify-content:center;gap:26px}
+.link{font-family:var(--brand);font-size:16px;letter-spacing:2px;text-transform:uppercase;padding:9px 0 6px;border-bottom:3px solid transparent;line-height:1}
+.link.on{border-bottom-color:var(--lapis)} .nav.member .link.on{border-bottom-color:var(--gold)}
+.acts{display:flex;align-items:center;gap:18px}
+.loginlink{font-family:var(--brand);font-size:16px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.join{height:34px;padding:0 16px;border-radius:10px;background:var(--gold);color:var(--on-gold);font-weight:700;font-size:13.5px;display:inline-flex;align-items:center}
+@media (max-width:1000px){.links{display:none}.nav{justify-content:space-between}}
+
+/* type and buttons */
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);line-height:1.2}
+.label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);line-height:1.2}
+.h1{font-family:var(--display);font-weight:600;letter-spacing:-1px;line-height:1.05}
+.hook{font-family:var(--display);font-style:italic;font-weight:400;color:var(--gold);line-height:1.2}
+.btn1{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:50px;padding:0 24px;border-radius:10px;background:var(--gold);color:var(--on-gold);font-weight:700;font-size:15px;white-space:nowrap}
+.btn1[disabled]{opacity:.5;cursor:default}
+.btn2{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:50px;padding:0 22px;border-radius:10px;border:2px solid rgba(216,170,60,0.75);color:var(--ink);font-weight:700;font-size:15px;white-space:nowrap}
+.btn2.sm{min-height:36px;padding:0 13px;font-size:13px;border-radius:9px;gap:7px}
+.btn2:hover,.btn1:hover{transform:translateY(-1px)}
+.ibtn{width:42px;height:42px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink);flex:none}
+.ibtn:hover{background:rgba(233,238,246,0.06)}
+.small{font-size:13px;line-height:1.55;color:var(--muted)}
+
+/* avatars */
+.av{border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--brand);color:#0A0F1C;flex:none;overflow:hidden;line-height:1;background:#8FB5F0}
+.av img{width:100%;height:100%;object-fit:cover;display:block}
+.av.ring{box-shadow:0 0 0 2px var(--ground),0 0 0 3.5px rgba(216,170,60,0.85)}
+
+/* door */
+.door{max-width:1200px;margin:0 auto;padding:64px 20px 64px;display:flex;gap:80px;align-items:flex-start}
+.door .copy{flex:1 1 520px;min-width:0}
+.door .glimpse{flex:0 1 560px}
+.point{display:flex;gap:14px;align-items:flex-start}
+.picon{width:40px;height:40px;border-radius:12px;border:1px solid rgba(216,170,60,0.45);background:rgba(216,170,60,0.08);color:var(--gold);display:flex;align-items:center;justify-content:center;flex:none}
+.pt1{font-weight:700;font-size:15.5px;line-height:1.35}
+.pt2{font-size:14.5px;line-height:1.55;color:var(--muted);margin-top:2px}
+.soonchip{display:inline-block;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);border:1px solid rgba(216,170,60,0.5);border-radius:999px;padding:3px 8px 2px;line-height:1.2;vertical-align:2px;margin-left:6px}
+.glimpse{position:relative;border-radius:18px;border:1px solid rgba(216,170,60,0.4);background:var(--surface);box-shadow:0 0 40px rgba(216,170,60,0.32);overflow:hidden;height:560px;display:flex;flex-direction:column}
+.ghost{background:rgba(233,238,246,0.09);border-radius:14px 14px 14px 5px;padding:14px;display:flex;flex-direction:column;gap:9px}
+.ghost.me{background:rgba(59,116,204,0.26);border-radius:14px 14px 5px 14px}
+.gline{height:9px;border-radius:5px;background:rgba(233,238,246,0.16)}
+.lockmed{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 28px;border-radius:18px;background:rgba(10,15,28,0.86);border:1px solid rgba(216,170,60,0.5);text-align:center}
+.lockring{width:56px;height:56px;border-radius:50%;background:var(--gold);color:var(--on-gold);display:flex;align-items:center;justify-content:center;box-shadow:0 0 28px rgba(216,170,60,0.55)}
+.note{margin-top:18px;padding:12px 14px;border-radius:12px;border:1px solid rgba(242,153,138,0.5);background:rgba(242,153,138,0.08);font-size:14px;line-height:1.5}
+@media (max-width:900px){.door{flex-direction:column;gap:32px;padding-top:34px}.door .glimpse{width:100%;height:340px;flex:none}.door .h1{font-size:44px!important}}
+
+/* onboarding */
+.onb{max-width:460px;margin:0 auto;padding:28px 22px 32px;min-height:calc(100dvh - 76px);display:flex;flex-direction:column}
+.steps{display:flex;gap:6px}.steps span{width:22px;height:5px;border-radius:3px;background:rgba(233,238,246,0.2)}.steps span.on{background:var(--gold)}
+.rnum{width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(216,170,60,0.7);color:var(--gold);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex:none}
+.flabel{display:block;font-size:13px;font-weight:700;margin-bottom:8px}
+.finput{display:block;width:100%;height:50px;border-radius:12px;background:var(--card);border:1px solid rgba(233,238,246,0.2);padding:0 15px;font-size:16px;outline:none}
+.ftext{display:block;width:100%;height:64px;border-radius:12px;background:var(--card);border:1px solid rgba(233,238,246,0.2);padding:12px 15px;font-size:15px;line-height:1.45;outline:none;resize:none}
+.finput::placeholder,.ftext::placeholder{color:#8794AA}
+.fhelp{font-size:12.5px;color:var(--muted);margin-top:7px;line-height:1.45}
+.chip{display:inline-flex;align-items:center;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(233,238,246,0.2);font-size:13px;font-weight:700;white-space:nowrap}
+.chip.on{border-color:rgba(216,170,60,0.85);background:rgba(216,170,60,0.14)}
+.sym{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0A0F1C;flex:none}
+.sym.on{box-shadow:0 0 0 2px var(--ground),0 0 0 4px var(--gold)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.suggest{margin-top:6px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.suggest button{display:flex;gap:10px;align-items:center;width:100%;padding:8px 10px;font-size:13.5px;font-weight:600;line-height:1.35;border-top:1px solid var(--line)}
+.suggest button:first-child{border-top:0}
+.suggest img,.favrow img{width:64px;height:36px;border-radius:6px;object-fit:cover;flex:none}
+.favrow{display:flex;gap:10px;align-items:center;padding:6px 0;font-size:13.5px;font-weight:600;line-height:1.35}
+
+/* chat shell */
+.shell{max-width:1200px;margin:0 auto;padding:20px 20px;display:flex;gap:28px;height:calc(100dvh - 76px)}
+.side{width:280px;flex:none;display:flex;flex-direction:column;gap:24px;overflow:auto;padding-top:4px}
+.roomrow{display:flex;align-items:center;gap:12px;min-height:46px;padding:0 14px;border-radius:10px;font-weight:600;font-size:15px}
+.roomrow.on{background:rgba(216,170,60,0.13)} .roomrow.on svg{color:var(--gold)}
+.roomrow.soon{color:var(--muted);font-weight:500}
+.roomrow .soonchip{margin-left:auto}
+.person{display:flex;align-items:center;gap:11px;min-height:40px;padding:0 6px;border-radius:10px;font-size:14.5px;font-weight:600;width:100%}
+.person:hover{background:rgba(233,238,246,0.05)}
+.person .role{margin-left:auto;font-size:12px;color:var(--muted);font-weight:500}
+.mecard{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);margin-top:auto}
+.panel{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.phead{display:flex;align-items:center;gap:10px;padding:12px 14px 12px 20px;border-bottom:1px solid var(--line);flex:none}
+.room{font-family:var(--display);font-weight:600;font-size:23px;letter-spacing:-0.4px;line-height:1.1}
+.sub{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:7px;margin-top:3px;line-height:1.2}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--lapis-lit);flex:none}
+.dot.off{background:#5B6577}
+.pinbar{display:flex;align-items:center;gap:12px;padding:9px 20px;background:rgba(216,170,60,0.07);border-bottom:1px solid var(--line);font-size:14px;color:var(--muted);flex:none;line-height:1.3;width:100%}
+.pinbar .pk{color:var(--gold);font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:800;flex:none}
+.pinbar .pt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.msgs{flex:1;min-height:0;overflow-y:auto;padding:14px 20px 8px;display:flex;flex-direction:column;gap:3px;overscroll-behavior:contain}
+.day{align-self:center;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:6px 12px;border:1px solid var(--line);border-radius:999px;margin:10px 0 8px;line-height:1}
+.row{display:flex;align-items:flex-end;gap:10px;margin-top:2px}
+.row.first{margin-top:10px}
+.row.me{justify-content:flex-end}
+.row .gap{width:36px;flex:none}
+.stack{display:flex;flex-direction:column;align-items:flex-start;min-width:0;max-width:min(680px,82%)}
+.row.me .stack{align-items:flex-end}
+.bub{position:relative;max-width:100%;background:var(--card);border:1px solid var(--line);border-radius:16px 16px 16px 6px;padding:8px 13px 9px;font-size:15px;line-height:1.55;overflow-wrap:anywhere}
+.row.me .bub{background:rgba(59,116,204,0.24);border-color:rgba(143,181,240,0.32);border-radius:16px 16px 6px 16px}
+.row.flash .bub{border-color:var(--gold)}
+.bub .txt{white-space:pre-wrap}
+.bub a.lnk{color:var(--lapis-lit);font-weight:600}
+.who{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;margin-bottom:2px;line-height:1.3;flex-wrap:wrap}
+.who.host{color:var(--gold)}
+.time{font-size:11.5px;color:var(--muted);font-weight:500}
+.metime{display:block;text-align:right;font-size:11.5px;color:rgba(233,238,246,0.6);margin-top:2px}
+.badge{font-size:9.5px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;padding:3px 7px 2px;border-radius:999px;line-height:1.2}
+.badge.host{background:var(--gold);color:var(--on-gold)}
+.badge.mod{border:1px solid rgba(143,181,240,0.6);color:var(--lapis-lit)}
+.badge.init{border:1px solid rgba(216,170,60,0.6);color:var(--gold)}
+.deleted{font-style:italic;color:var(--muted)}
+.tchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border:1.5px solid rgba(143,181,240,0.6);border-radius:999px;color:var(--lapis-lit);font-weight:700;font-size:12.5px;vertical-align:middle;line-height:1;white-space:nowrap}
+.reacts{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.react{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px 0 8px;border-radius:999px;background:rgba(233,238,246,0.06);border:1px solid var(--line);font-size:12.5px;font-weight:700;line-height:1}
+.react svg{color:var(--lapis-lit)}
+.react.mine{border-color:rgba(216,170,60,0.75);background:rgba(216,170,60,0.13)} .react.mine svg{color:var(--gold)}
+.quote{display:block;width:100%;background:rgba(10,15,28,0.55);border-radius:10px;padding:6px 11px 7px;margin:3px 0 7px;font-size:13.5px;color:var(--muted);line-height:1.45;overflow:hidden;text-overflow:ellipsis}
+.quote b{display:block;color:var(--lapis-lit);font-size:12.5px;font-weight:700}
+.unfurl{display:flex;gap:12px;background:rgba(10,15,28,0.55);border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;align-items:flex-start;max-width:440px}
+.unfurl img{width:136px;height:76px;border-radius:8px;object-fit:cover;flex:none}
+.unfurl .ut{font-weight:600;font-size:14px;line-height:1.38;margin:5px 0 0}
+.unfurl .ue{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);line-height:1.2}
+.unfurl .ue.free{color:var(--lapis-lit)}
+.mimg{display:block;margin-top:6px;max-width:100%;max-height:360px;border-radius:10px;cursor:zoom-in;background:rgba(233,238,246,0.06);min-width:120px;min-height:80px}
+.tools{position:absolute;top:-18px;right:-8px;display:none;align-items:center;gap:2px;padding:4px;background:var(--card);border:1px solid rgba(233,238,246,0.18);border-radius:12px;box-shadow:0 18px 44px rgba(0,0,0,0.45);z-index:2}
+.row.me .tools{right:auto;left:-8px}
+.tools button{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.tools button:hover{background:rgba(233,238,246,0.08)}
+.tools .sep{width:1px;height:20px;background:var(--line);margin:0 3px}
+@media (hover:hover){.bub:hover .tools,.bub:focus-within .tools{display:flex}}
+.typing{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);padding:6px 0 0 46px;min-height:22px}
+.dots{display:flex;gap:3px}.dots i{width:5px;height:5px;border-radius:50%;background:var(--muted);display:block;animation:blink 1.2s infinite}
+.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.replybar{display:flex;align-items:center;gap:10px;padding:8px 14px 0 18px;font-size:13px;color:var(--muted)}
+.replybar .q{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.replybar b{color:var(--lapis-lit)}
+.compose{display:flex;align-items:flex-end;gap:8px;padding:10px 14px 12px;border-top:1px solid var(--line);background:var(--surface);flex:none}
+.compose .ibtn{color:var(--muted)}
+.field{flex:1;min-width:0;min-height:46px;max-height:160px;border-radius:14px;background:var(--card);border:1px solid var(--line);padding:12px 15px;font-size:15px;line-height:1.4;outline:none;resize:none}
+.field::placeholder{color:#8794AA}
+.send{width:46px;height:46px;border-radius:50%;background:var(--gold);color:var(--on-gold);display:flex;align-items:center;justify-content:center;flex:none}
+.send[disabled]{opacity:.45}
+.jump{position:absolute;right:18px;bottom:84px;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid rgba(233,238,246,0.2);display:none;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(0,0,0,0.4)}
+.jump.show{display:flex}
+.empty{margin:auto;text-align:center;color:var(--muted);font-size:14.5px;line-height:1.6;max-width:320px}
+.conn{position:absolute;left:50%;top:70px;transform:translateX(-50%);background:var(--card);border:1px solid rgba(233,238,246,0.2);border-radius:999px;padding:6px 14px;font-size:12.5px;color:var(--muted);z-index:3}
+
+/* phone */
+.ptop{display:none}
+@media (max-width:860px){
+  .nav{display:none}
+  .shell{padding:0;gap:0;height:100dvh}
+  .side{display:none}
+  .panel{border-radius:0;border:0}
+  .phead.desk{display:none}
+  .ptop{display:flex;align-items:center;gap:6px;height:60px;padding:0 8px 0 4px;border-bottom:1px solid var(--line);background:rgba(10,15,28,0.96);flex:none}
+  .ptop .room{font-size:20px}
+  .msgs{padding:10px 12px 6px}
+  .stack{max-width:86%}
+  .compose{padding:8px 8px calc(10px + env(safe-area-inset-bottom)) 6px}
+  .pinbar{padding:8px 14px;font-size:13.5px}
+  .unfurl img{width:92px;height:52px}
+  .typing{padding-left:40px}
+}
+
+/* overlays */
+.scrim{position:fixed;inset:0;background:rgba(5,8,15,0.66);z-index:20;display:flex;align-items:center;justify-content:center;padding:18px}
+.sheet{background:var(--card);border:1px solid rgba(233,238,246,0.16);border-radius:18px;box-shadow:0 18px 44px rgba(0,0,0,0.5);width:min(420px,100%);max-height:calc(100dvh - 36px);overflow:auto}
+@media (max-width:860px){.scrim.bottom{align-items:flex-end;padding:0}.scrim.bottom .sheet{width:100%;border-radius:22px 22px 0 0;padding-bottom:env(safe-area-inset-bottom)}}
+.mi{display:flex;align-items:center;gap:13px;width:100%;min-height:48px;padding:0 16px;font-size:15px;font-weight:600;border-top:1px solid var(--line)}
+.mi:first-child{border-top:0}
+.mi svg{color:var(--muted)}
+.mi.danger,.mi.danger svg{color:var(--danger)}
+.mhead{padding:10px 16px 8px;border-top:1px solid var(--line);font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold);background:rgba(216,170,60,0.06)}
+.reactbar{display:flex;justify-content:space-between;gap:4px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.reactbar button{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.reactbar button.pick{background:rgba(216,170,60,0.16);color:var(--gold)}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--card);border:1px solid rgba(233,238,246,0.22);border-radius:12px;padding:10px 16px;font-size:14px;z-index:30;box-shadow:0 14px 36px rgba(0,0,0,0.55);max-width:calc(100% - 32px)}
+.lightbox img{max-width:min(1100px,100%);max-height:calc(100dvh - 60px);border-radius:12px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<input type="file" id="filepick" accept="image/png,image/jpeg,image/gif,image/webp" class="sr" tabindex="-1" aria-hidden="true">
+<script>
+(function(){
+'use strict';
+const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
+const DEV = '0' === '1';
+const API = (function(){ const v = 'https://innerverse-circle.chance-5da.workers.dev'; return v.indexOf('__') === 0 ? location.origin : v.replace(/\/$/, ''); })();
+const SITE = 'https://www.innerversepodcast.com';
+const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
+const LOGO = 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-Electric-Logo-2026.png?format=300w&content-type=image%2Fpng';
+const PLUS_LOGO = 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/c3607ade-e087-4b27-af0f-e0913f4dc3d0/plus+asset.png?format=300w&content-type=image%2Fpng';
+const INTERESTS = ['Astrotheology','Mythology','Symbolism','Etymology','Tarot','Astrology','Gnosticism','Esoteric philosophy','Consciousness','Herbalism','Biofield','Sound healing','Terrain biology','Holistic health','Hidden history','Tartaria'];
+const SYM_COLORS = {sun:'#D8AA3C',moon:'#A596F5',eye:'#8FB5F0',star:'#8FB8A8',triangle:'#D49A7C',leaf:'#E9EEF6'};
+const MONO_COLORS = ['#8FB8A8','#A596F5','#8FB5F0','#D49A7C','#D8AA3C','#C9B6E4'];
+const RULES = [
+  ['Be kind, be curious.','You can debate ideas, but no ad hominem.'],
+  ['Sources are appreciated.','Help others find the knowledge!'],
+  ["What's said here stays here.","No screenshots of members' words outside the Circle."],
+  ['No selling, no spam, no recruiting.','Recommending a book or a practitioner you love is fine, but this is not a place of commerce.'],
+  ['Sharing, not prescribing.','Health talk is welcome, but nothing here is medical advice.'],
+  ['Take responsibility for the vibe.','Help make the Inner Circle a community worth participating in!']
+];
+
+// ------------------------------------------------------------ icons
+const P = (d, o) => `<svg viewBox="0 0 24 24" width="${(o&&o.s)||20}" height="${(o&&o.s)||20}" fill="none" stroke="currentColor" stroke-width="${(o&&o.w)||2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const I = {
+  chat: s => P('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5z"/><path d="M8.5 8.5h7M8.5 11.5h4.5"/>',{s}),
+  play: s => P('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',{s}),
+  hash: s => P('<path d="M5 9h14M5 15h14M10 4 8 20M16 4l-2 16"/>',{s}),
+  search: s => P('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',{s}),
+  people: s => P('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3c2.2.7 3.5 2.8 3.5 5.7"/>',{s}),
+  pin: s => P('<path d="M9 4h6l-1 6 3 3H7l3-3z"/><path d="M12 13v7"/>',{s}),
+  image: s => P('<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5L5 20"/>',{s}),
+  up: s => P('<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>',{s,w:2.4}),
+  down: s => P('<path d="m6 9 6 6 6-6"/>',{s}),
+  back: s => P('<path d="M15 5l-7 7 7 7"/>',{s,w:2.2}),
+  reply: s => P('<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v4"/>',{s}),
+  more: s => `<svg viewBox="0 0 24 24" width="${s||18}" height="${s||18}" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>`,
+  copy: s => P('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',{s}),
+  user: s => P('<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>',{s}),
+  flag: s => P('<path d="M5 21V4h11l-1.5 4L16 12H5"/>',{s}),
+  trash: s => P('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',{s}),
+  mute: s => P('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="m17 9 4 6M21 9l-4 6"/>',{s}),
+  remove: s => P('<circle cx="9" cy="8" r="4"/><path d="M2 20c0-4 3-6 7-6s7 2 7 6"/><path d="m17 8 4 4M21 8l-4 4"/>',{s}),
+  shield: s => P('<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/>',{s}),
+  close: s => P('<path d="M6 6l12 12M18 6 6 18"/>',{s}),
+  lock: s => P('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',{s,w:2.2}),
+  camera: s => P('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',{s}),
+  layers: s => P('<rect x="3" y="4" width="13" height="11" rx="2"/><rect x="9" y="10" width="12" height="10" rx="2"/>',{s}),
+  out: s => P('<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4"/><path d="M10 17l5-5-5-5M15 12H4"/>',{s}),
+  edit: s => P('<path d="M4 20h4L19 9l-4-4L4 16z"/>',{s}),
+  tri: s => `<svg viewBox="0 0 24 24" width="${s||11}" height="${s||11}" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg>`,
+};
+const R = {
+  heart:['Heart','<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'],
+  flame:['Flame','<path d="M12 21c-3.9 0-6.5-2.6-6.5-6 0-3.5 3-5.5 3.5-9 2 1.3 3.2 3 3.4 5 .9-.7 1.4-1.8 1.5-3 2.4 2 4.6 4.6 4.6 7 0 3.4-2.6 6-6.5 6z"/>'],
+  eye:['Eye','<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>'],
+  spark:['Spark','<path d="M12 2.5 13.8 10.2 21.5 12 13.8 13.8 12 21.5 10.2 13.8 2.5 12 10.2 10.2z"/>'],
+  laugh:['Laugh','<circle cx="12" cy="12" r="9"/><path d="M8 13.5h8a4 4 0 0 1-8 0z"/><path d="M9 9.5h.01M15 9.5h.01"/>'],
+  aha:['Aha','<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>']
+};
+const rIcon = (k, s) => P(R[k][1], {s: s||14, w: 2.2});
+const SYMS = {
+  sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>',
+  moon:'<path d="M15 3.5a8.5 8.5 0 1 0 5.5 13.6A7 7 0 0 1 15 3.5z"/>',
+  eye:R.eye[1], star:R.spark[1],
+  triangle:'<path d="M12 4 20.5 19h-17z"/>',
+  leaf:'<path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14z"/><path d="M5 19 13 11"/>'
+};
+
+// ------------------------------------------------------------ state
+const S = {
+  token: null, ws: null, me: null, people: {}, messages: [], pins: [], online: [],
+  signs: [], reply: null, oldestDone: false, loadingOlder: false, typing: {}, unread: 0,
+  view: 'loading', denied: null, connected: false, retry: 0, editing: false, reports: 0,
+  index: null, plusIndex: null, draft: null, stick: true,
+};
+const $ = (sel, root) => (root || document).querySelector(sel);
+const app = $('#app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+// token from the members' sign-in redirect, kept in this site's storage
+(function captureToken(){
+  const m = location.hash.match(/iv_session=([^&]+)/);
+  if (m) { store('ivc_token', decodeURIComponent(m[1])); history.replaceState(null, '', location.pathname + location.search); }
+  const q = new URLSearchParams(location.search);
+  if (DEV && q.get('dev')) {
+    const name = q.get('dev'); const id = name.toLowerCase().replace(/[^a-z0-9]/g,'') || 'tester';
+    S.token = 'dev.' + id + '.' + encodeURIComponent(name) + '.' + (q.get('email') || id + '@example.com');
+  } else S.token = load('ivc_token');
+})();
+
+const loginUrl = () => AUTH + '/auth/choose?return_to=' + encodeURIComponent(location.origin + '/');
+
+// ------------------------------------------------------------ helpers
+function person(uid) { return S.people[uid] || { uid, name: 'Member', avatar: '' }; }
+function hashColor(uid) { let h = 0; for (const c of String(uid)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return MONO_COLORS[h % MONO_COLORS.length]; }
+function avatar(uid, size, ring) {
+  const p = person(uid); const a = p.avatar || '';
+  const st = `width:${size}px;height:${size}px;font-size:${Math.round(size*0.45)}px;`;
+  if (a.startsWith('sym:')) { const k = a.slice(4); return `<span class="av${ring?' ring':''}" style="${st}background:${SYM_COLORS[k]||'#8FB5F0'}">${P(SYMS[k]||'',{s:Math.round(size*0.5),w:1.9})}</span>`; }
+  if (a.startsWith('img:')) return `<span class="av${ring?' ring':''}" style="${st}"><img data-media="${esc(a.slice(4))}" alt=""></span>`;
+  const ini = (p.name || '?').trim().charAt(0).toUpperCase() || '?';
+  return `<span class="av${ring?' ring':''}" style="${st}background:${hashColor(uid)}">${esc(ini)}</span>`;
+}
+function badges(p) {
+  let b = '';
+  if (p.role === 'host') b += '<span class="badge host">Host</span>';
+  else if (p.role === 'mod') b += '<span class="badge mod">Moderator</span>';
+  if (p.initiator && p.role !== 'host') b += '<span class="badge init">Initiator</span>';
+  return b;
+}
+const fmtTime = t => new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+function dayLabel(t) {
+  const d = new Date(t), now = new Date();
+  const same = (a, b) => a.toDateString() === b.toDateString();
+  if (same(d, now)) return 'Today';
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  if (same(d, y)) return 'Yesterday';
+  return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' });
+}
+function toast(text) {
+  const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = text;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3600);
+}
+const EP_RE = /https?:\/\/(?:www\.)?innerversepodcast\.com\/(episodes|plus)\/([a-z0-9-]+)/i;
+function secs(h, m, s) { return (Number(h) || 0) * 3600 + Number(m) * 60 + Number(s); }
+function formatText(text) {
+  const ep = text.match(EP_RE);
+  const base = ep ? `${SITE}/${ep[1].toLowerCase()}/${ep[2].toLowerCase()}` : '';
+  let out = '';
+  const urlRe = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g;
+  let last = 0, m;
+  const plain = s => esc(s).replace(/(^|[\s(])(?:(\d{1,2}):)?([0-5]?\d):([0-5]\d)(?=$|[\s.,;:!?)])/g, (all, pre, h, mm, ss) => {
+    const label = (h ? h + ':' : '') + mm + ':' + ss;
+    const chip = `<span class="tchip">${I.tri()}${label}</span>`;
+    return pre + (base ? `<a href="${base}?t=${secs(h, mm, ss)}" target="_blank" rel="noopener">${chip}</a>` : chip);
+  });
+  while ((m = urlRe.exec(text))) {
+    out += plain(text.slice(last, m.index));
+    const u = m[1];
+    out += `<a class="lnk" href="${esc(u)}" target="_blank" rel="noopener nofollow ugc">${esc(u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60))}${u.length > 70 ? '…' : ''}</a>`;
+    last = m.index + u.length;
+  }
+  out += plain(text.slice(last));
+  return { html: out, ep: ep ? { kind: ep[1].toLowerCase(), slug: ep[2].toLowerCase() } : null };
+}
+
+// media is members only: fetch with the session, show as a local blob
+const mediaCache = new Map();
+function hydrateMedia(root) {
+  (root || document).querySelectorAll('img[data-media]').forEach(img => {
+    const key = img.getAttribute('data-media'); img.removeAttribute('data-media');
+    let p = mediaCache.get(key);
+    if (!p) {
+      p = fetch(API + '/media/' + encodeURIComponent(key), { headers: { Authorization: 'Bearer ' + S.token } })
+        .then(r => r.ok ? r.blob() : Promise.reject()).then(b => URL.createObjectURL(b));
+      mediaCache.set(key, p);
+    }
+    p.then(u => { img.src = u; }).catch(() => { img.alt = 'Image unavailable'; });
+  });
+}
+
+// public episode data for link cards and favourites
+function loadIndexes() {
+  if (S.index) return S.index;
+  S.index = Promise.all([
+    fetch(DATA + 'episodes-index.json').then(r => r.json()).catch(() => ({ episodes: [] })),
+    fetch(DATA + 'plus-index.json').then(r => r.json()).catch(() => ({ episodes: [] })),
+  ]).then(([a, b]) => {
+    const free = {}, plus = {};
+    for (const e of a.episodes || []) free[e.slug] = e;
+    for (const e of b.episodes || []) plus[e.slug] = e;
+    return { free, plus, list: a.episodes || [] };
+  });
+  return S.index;
+}
+function stickDown() { const box = $('#msgs'); if (box && S.stick) box.scrollTop = box.scrollHeight; }
+function hydrateUnfurls(root) {
+  (root || document).querySelectorAll('[data-unfurl]').forEach(el => {
+    const [kind, slug] = el.getAttribute('data-unfurl').split(':'); el.removeAttribute('data-unfurl');
+    loadIndexes().then(ix => {
+      const e = kind === 'plus' ? (ix.plus[slug] || ix.free[slug]) : (ix.free[slug] || ix.plus[slug]);
+      if (!e) return;
+      const isPlus = kind === 'plus';
+      const title = String(e.title || '').replace(/\s*\(PLUS\)\s*$/i, '');
+      el.innerHTML = `<a class="unfurl" href="${esc(e.url || (SITE + '/' + kind + '/' + slug))}" target="_blank" rel="noopener">
+        <img src="${esc(e.thumb || '')}" alt="" loading="lazy">
+        <div style="min-width:0"><div class="ue${isPlus ? '' : ' free'}">${isPlus ? 'Plus+ full episode' + (e.plusDuration ? ' · ' + esc(e.plusDuration) : '') : 'Free episode'}</div>
+        <div class="ut">${esc(title)}</div></div></a>`;
+      stickDown();
+      const im = el.querySelector('img'); im && im.addEventListener('load', stickDown, { once: true });
+    });
+  });
+}
+
+// ------------------------------------------------------------ socket
+function connect() {
+  if (!S.token) { S.view = 'door'; render(); return; }
+  const ws = new WebSocket(API.replace(/^http/, 'ws') + '/ws');
+  S.ws = ws;
+  ws.onopen = () => { ws.send(JSON.stringify({ t: 'hello', token: S.token })); };
+  ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } onEvent(m); };
+  ws.onclose = ev => {
+    S.connected = false;
+    if (S.denied) return;
+    if (S.view === 'chat') renderConn();
+    const wait = Math.min(1000 * Math.pow(2, S.retry++), 15000);
+    setTimeout(connect, wait);
+  };
+}
+function sendWs(obj) { if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; } toast('Reconnecting. Try again in a moment.'); return false; }
+setInterval(() => { if (S.ws && S.ws.readyState === 1) S.ws.send('{"t":"ping"}'); }, 30000);
+
+function mergePeople(p) { if (p) Object.assign(S.people, p); }
+function onEvent(m) {
+  switch (m.t) {
+    case 'denied':
+      S.denied = m.why;
+      if (m.why === 'signed-out') store('ivc_token', null), S.token = null;
+      S.view = 'door'; render(); return;
+    case 'init':
+      S.connected = true; S.retry = 0;
+      S.me = m.me; S.people[m.me.uid] = m.me; mergePeople(m.people);
+      S.messages = m.messages; S.pins = m.pins; S.online = m.online; S.signs = m.signs;
+      S.oldestDone = m.messages.length < 50;
+      S.view = !m.me.rules_ok ? 'rules' : (!m.me.profile_done ? 'profile' : 'chat');
+      if (S.view === 'chat' && S.editing) S.view = 'profile';
+      render(); return;
+    case 'me':
+      S.me = m.me; S.people[m.me.uid] = Object.assign({}, S.people[m.me.uid], m.me);
+      if (S.view === 'rules' && m.me.rules_ok) { S.view = m.me.profile_done ? 'chat' : 'profile'; render(); }
+      else if (S.view === 'profile' && m.me.profile_done) { S.editing = false; S.view = 'chat'; render(); }
+      return;
+    case 'person':
+      S.people[m.p.uid] = Object.assign({}, S.people[m.p.uid], m.p);
+      if (S.me && m.p.uid === S.me.uid) Object.assign(S.me, m.p);
+      if (S.view === 'chat') { renderMessages(true); renderSide(); }
+      return;
+    case 'presence': S.online = m.online; if (S.view === 'chat') { renderSide(); renderHeadCounts(); } return;
+    case 'msg': {
+      mergePeople(m.people);
+      if (S.messages.some(x => x.id === m.m.id)) return;
+      S.messages.push(m.m);
+      delete S.typing[m.m.uid];
+      if (S.view === 'chat') {
+        const box = $('#msgs'); const atBottom = !box || box.scrollHeight - box.scrollTop - box.clientHeight < 140;
+        renderMessages(atBottom || m.m.uid === S.me.uid);
+        if (!atBottom && m.m.uid !== S.me.uid) $('#jump') && $('#jump').classList.add('show');
+        renderTyping();
+      }
+      if (document.hidden && m.m.uid !== S.me.uid) { S.unread++; document.title = `(${S.unread}) Inner Circle | InnerVerse`; }
+      return;
+    }
+    case 'update': {
+      const i = S.messages.findIndex(x => x.id === m.m.id);
+      if (i >= 0) { S.messages[i] = m.m; if (S.view === 'chat') renderMessages(false); }
+      return;
+    }
+    case 'pins': mergePeople(m.people); S.pins = m.pins; if (S.view === 'chat') renderPinbar(); return;
+    case 'history': {
+      mergePeople(m.people);
+      const box = $('#msgs'); const before = box ? box.scrollHeight - box.scrollTop : 0;
+      const have = new Set(S.messages.map(x => x.id));
+      S.messages = m.messages.filter(x => !have.has(x.id)).concat(S.messages);
+      S.oldestDone = m.done; S.loadingOlder = false;
+      renderMessages(false);
+      if (box) box.scrollTop = box.scrollHeight - before;
+      return;
+    }
+    case 'typing': S.typing[m.uid] = Date.now(); renderTyping(); setTimeout(renderTyping, 4200); return;
+    case 'who': S.people[m.p.uid] = Object.assign({}, S.people[m.p.uid], m.p); openProfile(m.p.uid, true); return;
+    case 'members': mergePeople(m.people); S.online = m.online; openPeople(true); return;
+    case 'reports': S.reports = m.count; renderSide(); return;
+    case 'reportlist': mergePeople(m.people); showReports(m); return;
+    case 'notice': toast(m.text); return;
+    case 'error': toast(m.text); return;
+  }
+}
+
+// ------------------------------------------------------------ views
+function render() {
+  document.body.className = '';
+  if (S.view === 'loading') { app.innerHTML = '<div class="empty" style="margin-top:40vh">Opening the Inner Circle…</div>'; return; }
+  if (S.view === 'door') return renderDoor();
+  if (S.view === 'rules') return renderRules();
+  if (S.view === 'profile') return renderProfile();
+  return renderChat();
+}
+
+function navHtml(member) {
+  const L = (label, href, on) => `<a class="link${on ? ' on' : ''}" href="${href}">${label}</a>`;
+  return `<header class="nav ${member ? 'member' : 'visitor'}">
+    <a class="brand" href="${SITE}/"><img src="${member ? PLUS_LOGO : LOGO}" alt="InnerVerse"><span class="word">InnerVerse</span></a>
+    <nav class="links" aria-label="Main">${L('Episodes', SITE + '/episodes')}${L('Plus+', SITE + '/plus')}${L('Inner Circle', '/', true)}${L('About', SITE + '/about')}${L('Get Tuned', SITE + '/biofield-tuning')}</nav>
+    <div class="acts">${member ? '' : `<a class="loginlink" href="${loginUrl()}">Log in</a><a class="join" href="${SITE}/plus">Join Plus+</a>`}</div>
+  </header>`;
+}
+
+function renderDoor() {
+  const why = S.denied === 'not-member' ? 'You are signed in, but this login is not an active Plus+ membership. Start a trial below, or log in with the account you joined with.'
+    : S.denied === 'removed' ? 'This account no longer has access to the Inner Circle. If you think this is a mistake, email chance@innerversepodcast.com.' : '';
+  const pt = (icon, a, b) => `<li class="point"><span class="picon">${icon}</span><div><div class="pt1">${a}</div><div class="pt2">${b}</div></div></li>`;
+  app.innerHTML = navHtml(false) + `<main class="door">
+    <div class="copy">
+      <div class="eyebrow">Members only</div>
+      <h1 class="h1" style="font-size:64px;margin-top:14px">The Inner Circle</h1>
+      <p class="hook" style="font-size:27px;margin-top:10px">Connect with the community.</p>
+      <p class="muted" style="font-size:17px;line-height:1.6;margin-top:20px">The members-only chat room for the InnerVerse community. Connect with open-minded others, share inspiration, compare notes, trade sources and talk with Chance between episodes.</p>
+      ${why ? `<div class="note">${esc(why)}</div>` : ''}
+      <ul style="display:flex;flex-direction:column;gap:18px;margin-top:30px">
+        ${pt(I.chat(), 'Inner Circle Chat', 'A live room with fellow listeners and Chance, open whenever you are.')}
+        ${pt(I.play(), 'A thread for every episode <span class="soonchip">Soon</span>', 'Discuss episodes and find deeper connections than ever.')}
+        ${pt(I.user(), 'A member profile', 'Share your name or stay anonymous. Your profile can show others your astrological Sun, Moon &amp; Rising signs, and your favorite episodes.')}
+        ${pt(I.layers(), 'Rides along as you browse', 'Keep talking while you watch. The room follows you from page to page.')}
+      </ul>
+      <div style="display:flex;gap:12px;margin-top:34px;flex-wrap:wrap">
+        <a class="btn1" href="${SITE}/plus">Start your 7-day free trial</a>
+        <a class="btn2" href="${loginUrl()}">Already a member? Log in</a>
+      </div>
+      <p class="small" style="margin-top:14px">Then $9 a month. Cancel any time. The Inner Circle comes with every Plus+ membership.</p>
+      <p class="small" style="margin-top:4px">Supporting on Substack or YouTube? The Inner Circle opens with a Plus+ membership here on the site.</p>
+    </div>
+    <div class="glimpse" aria-label="A glimpse of Inner Circle Chat, members only">
+      <div class="phead"><div style="flex:1"><div class="room" style="font-size:22px">Inner Circle Chat</div><div class="sub"><span class="dot"></span>Members talking now</div></div></div>
+      <div aria-hidden="true" style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:22px 20px;filter:blur(1.5px)">
+        <div style="display:flex;gap:10px;align-items:flex-end"><span class="av" style="width:36px;height:36px;background:#D8AA3C"></span><div class="ghost" style="width:70%"><div class="gline" style="width:30%;background:rgba(216,170,60,0.5)"></div><div class="gline" style="width:92%"></div><div class="gline" style="width:70%"></div></div></div>
+        <div style="display:flex;gap:10px;align-items:flex-end"><span class="av" style="width:36px;height:36px;background:#8FB8A8"></span><div class="ghost" style="width:55%"><div class="gline" style="width:26%"></div><div class="gline" style="width:88%"></div></div></div>
+        <div style="display:flex;justify-content:flex-end"><div class="ghost me" style="width:46%"><div class="gline" style="width:90%"></div><div class="gline" style="width:40%"></div></div></div>
+        <div style="display:flex;gap:10px;align-items:flex-end"><span class="av" style="width:36px;height:36px;background:#D49A7C"></span><div class="ghost" style="width:58%"><div class="gline" style="width:24%"></div><div class="gline" style="width:84%"></div></div></div>
+      </div>
+      <div class="lockmed"><span class="lockring">${I.lock(24)}</span><div style="font-family:var(--display);font-size:22px;font-weight:600;white-space:nowrap">Members only</div><div class="muted" style="font-size:14px">Log in with your Plus+ membership.</div></div>
+    </div>
+  </main>`;
+}
+
+function renderRules() {
+  app.innerHTML = navHtml(true) + `<main class="onb" aria-label="House rules">
+    <div style="display:flex;align-items:center;justify-content:space-between"><div class="steps" aria-label="Step 1 of 2"><span class="on"></span><span></span></div><img src="${PLUS_LOGO}" alt="" style="width:34px;height:34px"></div>
+    <div class="eyebrow" style="margin-top:22px">Before you step in</div>
+    <h1 class="h1" style="font-size:34px;margin-top:8px">House rules</h1>
+    <p class="muted" style="font-size:15px;line-height:1.55;margin-top:8px">Six guidelines that make the Inner Circle the best community on the internet.</p>
+    <ol style="margin-top:20px;display:flex;flex-direction:column;gap:14px">
+      ${RULES.map((r, i) => `<li style="display:flex;gap:13px"><span class="rnum">${i + 1}</span><div><div class="pt1">${esc(r[0])}</div><div class="pt2" style="font-size:14px">${esc(r[1])}</div></div></li>`).join('')}
+    </ol>
+    <div style="margin-top:auto;padding-top:28px">
+      <button class="btn1" id="rulesok" style="width:100%">I'm in</button>
+      <p class="small" style="text-align:center;margin-top:12px;font-size:12.5px">Chance and his moderators can remove messages, or members, that break these.</p>
+    </div>
+  </main>`;
+  $('#rulesok').onclick = () => sendWs({ t: 'rules_ok' });
+}
+
+function renderProfile() {
+  const me = S.me || {};
+  const d = S.draft || (S.draft = {
+    name: me.name || '', avatar: me.avatar || '', bio: me.bio || '', sun: me.sun || '', moon: me.moon || '', rising: me.rising || '',
+    interests: (me.interests || []).slice(), favorites: (me.favorites || []).slice(),
+  });
+  const editing = !!me.profile_done;
+  const signSel = (id, label, val) => `<label><span class="muted" style="display:block;font-size:12px;font-weight:700;margin-bottom:5px">${label}</span><select class="finput" id="${id}" style="height:46px;font-size:14px;padding:0 8px">
+      <option value="">Not set</option>${S.signs.filter(Boolean).map(s => `<option value="${s}"${s === val ? ' selected' : ''}>${s}</option>`).join('')}</select></label>`;
+  app.innerHTML = navHtml(true) + `<main class="onb" aria-label="Your profile">
+    <div style="display:flex;align-items:center;justify-content:space-between">${editing ? `<button class="btn2 sm" id="pcancel">${I.back(16)}Back to chat</button>` : '<div class="steps" aria-label="Step 2 of 2"><span class="on"></span><span class="on"></span></div>'}<img src="${PLUS_LOGO}" alt="" style="width:34px;height:34px"></div>
+    <div class="eyebrow" style="margin-top:22px">Your profile</div>
+    <h1 class="h1" style="font-size:28px;margin-top:8px;letter-spacing:-0.6px">${editing ? 'Edit your profile' : 'How should the Circle know you?'}</h1>
+    <div style="display:flex;align-items:center;gap:16px;margin-top:18px">
+      <span id="pav">${avatarDraft(d.avatar, 76)}</span>
+      <div><button class="btn2 sm" id="pphoto">${I.camera(16)}Add a photo</button><div class="muted" style="font-size:12.5px;margin-top:7px">Or pick a symbol below.</div></div>
+    </div>
+    <div role="radiogroup" aria-label="Symbol avatar" style="display:flex;gap:9px;margin-top:14px;flex-wrap:wrap">
+      ${Object.keys(SYMS).map(k => `<button class="sym${d.avatar === 'sym:' + k ? ' on' : ''}" data-sym="${k}" role="radio" aria-checked="${d.avatar === 'sym:' + k}" aria-label="${k}" style="background:${SYM_COLORS[k]}">${P(SYMS[k], {s:22, w:1.9})}</button>`).join('')}
+    </div>
+    <div style="margin-top:22px"><label class="flabel" for="pname">Display name</label><input id="pname" class="finput" maxlength="40" value="${esc(d.name)}" autocomplete="nickname"><div class="fhelp">Use your name or stay anonymous. Members see this. Change it any time.</div></div>
+    <div style="margin-top:16px"><label class="flabel" for="pbio">A line about you <span class="muted" style="font-weight:500">(optional)</span></label><textarea id="pbio" class="ftext" maxlength="160" placeholder="Herbalist, Tarot reader, long-time listener">${esc(d.bio)}</textarea></div>
+    <div style="margin-top:16px"><div class="flabel">Your Sun, Moon &amp; Rising <span class="muted" style="font-weight:500">(optional)</span></div><div class="grid3">${signSel('psun', 'Sun', d.sun)}${signSel('pmoon', 'Moon', d.moon)}${signSel('prising', 'Rising', d.rising)}</div><div class="fhelp">Shows on your profile. Leave any blank.</div></div>
+    <div style="margin-top:16px"><div class="flabel">What are you into? <span class="muted" style="font-weight:500">(optional)</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${INTERESTS.map(t => `<button class="chip${d.interests.includes(t) ? ' on' : ''}" data-int="${esc(t)}" aria-pressed="${d.interests.includes(t)}">${esc(t)}</button>`).join('')}</div></div>
+    <div style="margin-top:18px"><label class="flabel" for="pfav">My favorite episodes <span class="muted" style="font-weight:500">(up to 3, optional)</span></label>
+      <div id="pfavs"></div>
+      <input id="pfav" class="finput" placeholder="Search episodes by title" autocomplete="off" style="height:46px;font-size:15px"><div id="psug"></div></div>
+    <button class="btn1" id="psave" style="width:100%;margin-top:26px">${editing ? 'Save profile' : 'Enter the Inner Circle'}</button>
+    ${editing ? `<button class="btn2 sm" id="plogout" style="margin:18px auto 0">${I.out(16)}Log out of the Inner Circle</button>` : ''}
+  </main>`;
+
+  const pav = () => { $('#pav').innerHTML = avatarDraft(d.avatar, 76); hydrateMedia($('#pav')); };
+  hydrateMedia($('#pav'));
+  app.querySelectorAll('[data-sym]').forEach(b => b.onclick = () => {
+    d.avatar = 'sym:' + b.dataset.sym;
+    app.querySelectorAll('[data-sym]').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); });
+    pav();
+  });
+  $('#pphoto').onclick = () => pickImage(key => { d.avatar = 'img:' + key; app.querySelectorAll('[data-sym]').forEach(x => x.classList.remove('on')); pav(); });
+  $('#pname').oninput = e => d.name = e.target.value;
+  $('#pbio').oninput = e => d.bio = e.target.value;
+  $('#psun').onchange = e => d.sun = e.target.value;
+  $('#pmoon').onchange = e => d.moon = e.target.value;
+  $('#prising').onchange = e => d.rising = e.target.value;
+  app.querySelectorAll('[data-int]').forEach(b => b.onclick = () => {
+    const t = b.dataset.int, i = d.interests.indexOf(t);
+    if (i >= 0) d.interests.splice(i, 1); else d.interests.push(t);
+    b.classList.toggle('on', i < 0); b.setAttribute('aria-pressed', i < 0);
+  });
+  const drawFavs = () => loadIndexes().then(ix => {
+    $('#pfavs').innerHTML = d.favorites.map(s => { const e = ix.free[s] || {}; return `<div class="favrow"><img src="${esc(e.thumb || '')}" alt=""><span style="flex:1">${esc(e.title || s)}</span><button class="ibtn" data-unfav="${esc(s)}" aria-label="Remove">${I.close(16)}</button></div>`; }).join('');
+    $('#pfavs').querySelectorAll('[data-unfav]').forEach(b => b.onclick = () => { d.favorites = d.favorites.filter(x => x !== b.dataset.unfav); drawFavs(); });
+    $('#pfav').disabled = d.favorites.length >= 3;
+    $('#pfav').placeholder = d.favorites.length >= 3 ? 'Three chosen' : 'Search episodes by title';
+  });
+  drawFavs();
+  $('#pfav').oninput = e => {
+    const q = e.target.value.trim().toLowerCase();
+    if (q.length < 2) { $('#psug').innerHTML = ''; return; }
+    loadIndexes().then(ix => {
+      const hits = ix.list.filter(x => (x.title || '').toLowerCase().includes(q) && !d.favorites.includes(x.slug)).slice(0, 6);
+      $('#psug').innerHTML = hits.length ? `<div class="suggest">${hits.map(x => `<button data-fav="${esc(x.slug)}"><img src="${esc(x.thumb || '')}" alt="">${esc(x.title)}</button>`).join('')}</div>` : '';
+      $('#psug').querySelectorAll('[data-fav]').forEach(b => b.onclick = () => { if (d.favorites.length < 3) d.favorites.push(b.dataset.fav); $('#pfav').value = ''; $('#psug').innerHTML = ''; drawFavs(); });
+    });
+  };
+  $('#psave').onclick = () => {
+    if (!d.name.trim()) { toast('Please choose a display name.'); $('#pname').focus(); return; }
+    sendWs({ t: 'profile', ...d });
+    S.draft = null;
+  };
+  if ($('#pcancel')) $('#pcancel').onclick = () => { S.draft = null; S.editing = false; S.view = 'chat'; render(); };
+  if ($('#plogout')) $('#plogout').onclick = logout;
+}
+function avatarDraft(a, size) {
+  const fake = { uid: S.me ? S.me.uid : 'x', name: (S.draft && S.draft.name) || (S.me && S.me.name) || '?', avatar: a };
+  const keep = S.people[fake.uid]; S.people[fake.uid] = Object.assign({}, keep, fake);
+  const html = avatar(fake.uid, size, true); S.people[fake.uid] = keep; return html;
+}
+
+function logout() {
+  store('ivc_token', null); S.token = null; S.denied = null;
+  try { S.ws && S.ws.close(); } catch (e) {}
+  location.href = SITE + '/';
+}
+
+function renderChat() {
+  const hostish = S.me && (S.me.role === 'host' || S.me.role === 'mod');
+  app.innerHTML = navHtml(true) + `<div class="shell">
+    <aside class="side" id="side"></aside>
+    <main class="panel" aria-label="Inner Circle Chat">
+      <div class="ptop">
+        <a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a>
+        <img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">
+        <div style="flex:1;min-width:0;margin-left:4px"><h1 class="room">Inner Circle Chat</h1><div class="sub" id="cnt2"></div></div>
+        <button class="ibtn" id="peopleBtn2" aria-label="Who is here">${I.people(21)}</button>
+      </div>
+      <div class="phead desk">
+        <div style="flex:1;min-width:0"><h2 class="room">Inner Circle Chat</h2><div class="sub" id="cnt"></div></div>
+        <button class="ibtn" id="peopleBtn" aria-label="Who is here">${I.people()}</button>
+        ${hostish ? `<button class="ibtn" id="repBtn" aria-label="Reports">${I.shield()}</button>` : ''}
+        <a class="btn2 sm" href="/" target="ivcircle" id="popout" style="margin-left:4px">${P('<path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',{s:16})}Pop out</a>
+      </div>
+      <div id="pinbar"></div>
+      <div class="msgs" id="msgs" aria-live="polite"></div>
+      <div class="typing" id="typing"></div>
+      <div id="replybar"></div>
+      <div class="compose">
+        <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
+        <label class="sr" for="field">Message the Inner Circle</label>
+        <textarea id="field" class="field" rows="1" maxlength="2000" placeholder="Message the Inner Circle"></textarea>
+        <button class="send" id="sendBtn" aria-label="Send">${I.up(21)}</button>
+      </div>
+      <button class="jump" id="jump" aria-label="Jump to latest">${I.down()}</button>
+    </main>
+  </div>`;
+  renderSide(); renderHeadCounts(); renderPinbar(); renderMessages(true); renderReply(); renderConn();
+  wireComposer();
+  const box = $('#msgs');
+  box.addEventListener('scroll', () => {
+    if (box.scrollTop < 80 && !S.oldestDone && !S.loadingOlder && S.messages.length) {
+      S.loadingOlder = true; sendWs({ t: 'history', before: S.messages[0].id });
+    }
+    S.stick = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    if (S.stick) $('#jump').classList.remove('show');
+  });
+  $('#jump').onclick = () => { box.scrollTop = box.scrollHeight; $('#jump').classList.remove('show'); };
+  $('#peopleBtn').onclick = $('#peopleBtn2').onclick = () => sendWs({ t: 'members' });
+  if ($('#repBtn')) $('#repBtn').onclick = () => sendWs({ t: 'reports' });
+  $('#popout').onclick = e => { e.preventDefault(); window.open('/', 'ivcircle', 'width=440,height=760'); };
+}
+
+function renderConn() {
+  const panel = $('.panel'); if (!panel) return;
+  let c = $('#conn');
+  if (S.connected) { c && c.remove(); return; }
+  if (!c) { c = document.createElement('div'); c.id = 'conn'; c.className = 'conn'; panel.appendChild(c); }
+  c.textContent = 'Reconnecting…';
+}
+
+function renderHeadCounts() {
+  const n = S.online.length;
+  const t = `<span class="dot"></span>${n} here now`;
+  if ($('#cnt')) $('#cnt').innerHTML = t;
+  if ($('#cnt2')) $('#cnt2').innerHTML = t;
+}
+
+function renderSide() {
+  const side = $('#side'); if (!side || !S.me) return;
+  const hostish = S.me.role === 'host' || S.me.role === 'mod';
+  const online = S.online.slice().sort((a, b) => (person(a).role === 'host' ? -1 : 0) - (person(b).role === 'host' ? -1 : 0)).slice(0, 12);
+  side.innerHTML = `<div>
+      <div class="eyebrow">Members only</div>
+      <h1 class="h1" style="font-size:36px;margin-top:10px">The Inner Circle</h1>
+      <p class="hook" style="font-size:19px;margin-top:8px">Connect with the community.</p>
+    </div>
+    <nav aria-label="Rooms" style="display:flex;flex-direction:column;gap:4px">
+      <div class="label" style="margin:0 0 8px 14px">Rooms</div>
+      <a class="roomrow on" href="/" aria-current="page">${I.chat()}Inner Circle Chat</a>
+      <div class="roomrow soon">${I.play()}Episode threads<span class="soonchip">Soon</span></div>
+      <div class="roomrow soon">${I.hash()}Topics<span class="soonchip">Soon</span></div>
+    </nav>
+    <section aria-label="Here now" style="display:flex;flex-direction:column;gap:4px">
+      <div class="label" style="margin:0 0 6px 6px">Here now · ${S.online.length}</div>
+      ${online.map(uid => { const p = person(uid); return `<button class="person" data-who="${esc(uid)}">${avatar(uid, 32)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span>${p.role === 'host' ? '<span class="role" style="color:var(--gold)">Host</span>' : p.role === 'mod' ? '<span class="role">Moderator</span>' : ''}</button>`; }).join('')}
+      <button class="btn2 sm" id="seeAll" style="align-self:flex-start;margin:6px 0 0 6px">See everyone</button>
+      ${hostish && S.reports ? `<button class="btn2 sm" id="seeReports" style="align-self:flex-start;margin:6px 0 0 6px">${I.shield(16)}Reports (${S.reports})</button>` : ''}
+    </section>
+    <div class="mecard">${avatar(S.me.uid, 40, true)}<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(S.me.name)}</div><div class="muted" style="font-size:12.5px;margin-top:2px">Your profile</div></div><button class="btn2 sm" id="editMe">Edit</button></div>`;
+  hydrateMedia(side);
+  side.querySelectorAll('[data-who]').forEach(b => b.onclick = () => askProfile(b.dataset.who));
+  $('#seeAll').onclick = () => sendWs({ t: 'members' });
+  if ($('#seeReports')) $('#seeReports').onclick = () => sendWs({ t: 'reports' });
+  $('#editMe').onclick = editProfile;
+}
+function editProfile() { S.editing = true; S.draft = null; S.view = 'profile'; render(); }
+
+function renderPinbar() {
+  const bar = $('#pinbar'); if (!bar) return;
+  const p = S.pins[0];
+  if (!p) { bar.innerHTML = ''; return; }
+  const text = p.text || (p.image ? 'Image' : '');
+  bar.innerHTML = `<button class="pinbar" id="pinGo">${P('<path d="M9 4h6l-1 6 3 3H7l3-3z"/><path d="M12 13v7"/>',{s:16}).replace('currentColor','#D8AA3C')}<span class="pk">Pinned</span><span class="pt">${esc(text)}</span>${S.pins.length > 1 ? `<span class="muted" style="font-size:12px;flex:none">1 of ${S.pins.length}</span>` : ''}</button>`;
+  $('#pinGo').onclick = () => {
+    const el = document.querySelector(`[data-id="${p.id}"]`);
+    if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); }
+    else toast(text.slice(0, 140));
+    if (S.pins.length > 1) { S.pins.push(S.pins.shift()); renderPinbar(); }
+  };
+}
+
+function renderTyping() {
+  const el = $('#typing'); if (!el) return;
+  const now = Date.now();
+  const who = Object.keys(S.typing).filter(u => now - S.typing[u] < 4000 && (!S.me || u !== S.me.uid));
+  const was = S.stick;
+  setTimeout(() => { if (was) stickDown(); }, 0);
+  el.innerHTML = who.length ? `<span class="dots"><i></i><i></i><i></i></span>${esc(who.length === 1 ? person(who[0]).name + ' is typing' : who.length + ' people are typing')}` : '';
+}
+
+function renderReply() {
+  const el = $('#replybar'); if (!el) return;
+  if (!S.reply) { el.innerHTML = ''; return; }
+  const m = S.messages.find(x => x.id === S.reply);
+  if (!m) { S.reply = null; el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="replybar">${I.reply(16)}<span class="q">Replying to <b>${esc(person(m.uid).name)}</b>: ${esc((m.text || 'Image').slice(0, 120))}</span><button class="ibtn" id="noReply" aria-label="Cancel reply" style="width:32px;height:32px">${I.close(16)}</button></div>`;
+  $('#noReply').onclick = () => { S.reply = null; renderReply(); };
+  stickDown();
+}
+
+function msgHtml(m, i, list) {
+  const prev = list[i - 1], next = list[i + 1];
+  const mine = S.me && m.uid === S.me.uid;
+  const p = person(m.uid);
+  const gap = 5 * 60 * 1000;
+  const newDay = !prev || new Date(prev.created).toDateString() !== new Date(m.created).toDateString();
+  const first = newDay || !prev || prev.uid !== m.uid || m.created - prev.created > gap;
+  const last = !next || next.uid !== m.uid || next.created - m.created > gap || new Date(next.created).toDateString() !== new Date(m.created).toDateString();
+  let out = newDay ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '';
+  let body = '';
+  if (m.deleted) body = `<span class="deleted">Message deleted</span>`;
+  else {
+    if (m.reply) {
+      const rp = person(m.reply.uid);
+      body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b>${m.reply.deleted ? 'Message deleted' : esc(m.reply.text || (m.reply.image ? 'Image' : ''))}</button>`;
+    }
+    if (m.text) { const f = formatText(m.text); body += `<div class="txt">${f.html}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
+    if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
+  }
+  const head = !mine && first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}">${esc(p.name)}</button>${badges(p)}<span class="time">${fmtTime(m.created)}</span></div>` : '';
+  const tools = m.deleted ? '' : `<div class="tools" role="toolbar" aria-label="Message actions">
+      ${['heart', 'eye', 'spark'].map(k => `<button data-react="${k}" data-id="${m.id}" aria-label="React with ${R[k][0]}">${P(R[k][1], {s:17})}</button>`).join('')}
+      <span class="sep"></span><button data-replyto="${m.id}" aria-label="Reply">${I.reply(18)}</button><button data-more="${m.id}" aria-label="More">${I.more()}</button></div>`;
+  const reacts = Object.keys(m.reacts || {}).filter(k => R[k] && m.reacts[k].length);
+  const rx = reacts.length ? `<div class="reacts">${reacts.map(k => { const mineR = S.me && m.reacts[k].includes(S.me.uid); return `<button class="react${mineR ? ' mine' : ''}" data-react="${k}" data-id="${m.id}" aria-label="${R[k][0]}, ${m.reacts[k].length}${mineR ? ', including you' : ''}">${rIcon(k)}${m.reacts[k].length}</button>`; }).join('')}</div>` : '';
+  const av = mine ? '' : (last ? `<button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile">${avatar(m.uid, 36)}</button>` : '<span class="gap"></span>');
+  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub" data-press="${m.id}">${head}${body}${mine && last ? `<span class="metime">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span>` : ''}${tools}</div>${rx}</div></div>`;
+  return out;
+}
+
+function renderMessages(toBottom) {
+  const box = $('#msgs'); if (!box) return;
+  const keep = box.scrollHeight - box.scrollTop;
+  if (!S.messages.length) {
+    box.innerHTML = `<div class="empty">${I.chat(28).replace('<svg', '<svg style="margin:0 auto 12px;color:var(--gold)"')}Welcome, ${esc(S.me ? S.me.name : '')}. This room is brand new. Say hello and start the first conversation.</div>`;
+    return;
+  }
+  box.innerHTML = (S.oldestDone ? '<div class="day" style="margin-top:4px">The beginning of Inner Circle Chat</div>' : '') + S.messages.map((m, i, l) => msgHtml(m, i, l)).join('');
+  hydrateMedia(box); hydrateUnfurls(box);
+  box.querySelectorAll('img.mimg').forEach(img => img.addEventListener('load', stickDown, { once: true }));
+  if (toBottom) { box.scrollTop = box.scrollHeight; S.stick = true; } else box.scrollTop = box.scrollHeight - keep;
+}
+
+// one click handler for everything inside the message list
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-react],[data-replyto],[data-more],[data-who],[data-goto],[data-zoom]');
+  if (!t || !t.closest('#msgs')) return;
+  if (t.dataset.react) sendWs({ t: 'react', id: Number(t.dataset.id), kind: t.dataset.react });
+  else if (t.dataset.replyto) startReply(Number(t.dataset.replyto));
+  else if (t.dataset.more) openActions(Number(t.dataset.more));
+  else if (t.dataset.who) askProfile(t.dataset.who);
+  else if (t.dataset.goto) { const el = document.querySelector(`.row[data-id="${t.dataset.goto}"]`); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); } }
+  else if (t.dataset.zoom && t.src) openLightbox(t.src);
+});
+// long press on touch screens opens the action sheet
+let pressTimer = null;
+document.addEventListener('touchstart', e => {
+  const b = e.target.closest('[data-press]'); if (!b || e.target.closest('a,button')) return;
+  pressTimer = setTimeout(() => { pressTimer = null; if (navigator.vibrate) navigator.vibrate(10); openActions(Number(b.dataset.press)); }, 450);
+}, { passive: true });
+['touchend', 'touchmove', 'touchcancel'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(pressTimer); pressTimer = null; }, { passive: true }));
+document.addEventListener('contextmenu', e => { const b = e.target.closest('[data-press]'); if (b && matchMedia('(hover: none)').matches) e.preventDefault(); });
+
+function startReply(id) { S.reply = id; renderReply(); $('#field') && $('#field').focus(); }
+
+function wireComposer() {
+  const f = $('#field');
+  const grow = () => { f.style.height = 'auto'; f.style.height = Math.min(f.scrollHeight, 160) + 'px'; };
+  const saved = load('ivc_draft'); if (saved) { f.value = saved; grow(); }
+  let lastTyping = 0;
+  f.addEventListener('input', () => {
+    grow(); store('ivc_draft', f.value || null);
+    if (Date.now() - lastTyping > 2500 && f.value.trim()) { lastTyping = Date.now(); sendWs({ t: 'typing' }); }
+  });
+  f.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(hover: hover)').matches) { e.preventDefault(); send(); }
+    if (e.key === 'Escape' && S.reply) { S.reply = null; renderReply(); }
+  });
+  $('#sendBtn').onclick = send;
+  $('#imgBtn').onclick = () => pickImage(key => { sendWs({ t: 'send', text: f.value.trim(), image: key, reply_to: S.reply || undefined }); f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); });
+  function send() {
+    const text = f.value.trim(); if (!text) return;
+    if (sendWs({ t: 'send', text, reply_to: S.reply || undefined })) { f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); }
+  }
+}
+
+function pickImage(done) {
+  const input = $('#filepick');
+  input.value = '';
+  input.onchange = async () => {
+    const file = input.files && input.files[0]; if (!file) return;
+    if (file.size > 8 * 1024 * 1024) { toast('That image is over 8 MB.'); return; }
+    toast('Uploading…');
+    try {
+      const r = await fetch(API + '/api/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': file.type }, body: file });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'Upload failed');
+      done(j.key);
+    } catch (e) { toast(e.message || 'Upload failed'); }
+  };
+  input.click();
+}
+
+// ------------------------------------------------------------ overlays
+function overlay(html, bottom, label) {
+  closeOverlay();
+  const s = document.createElement('div');
+  s.className = 'scrim' + (bottom ? ' bottom' : ''); s.id = 'ovl';
+  s.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(label || 'Dialog')}">${html}</div>`;
+  s.addEventListener('click', e => { if (e.target === s) closeOverlay(); });
+  document.body.appendChild(s);
+  const first = s.querySelector('button,a,[tabindex]'); first && first.focus();
+  return s;
+}
+function closeOverlay() { const o = $('#ovl'); if (o) o.remove(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
+
+function openActions(id) {
+  const m = S.messages.find(x => x.id === id); if (!m || m.deleted) return;
+  const mine = m.uid === S.me.uid;
+  const mod = S.me.role === 'host' || S.me.role === 'mod';
+  const p = person(m.uid);
+  const canModTarget = mod && !mine && p.role !== 'host' && !(p.role === 'mod' && S.me.role !== 'host');
+  const o = overlay(`<div class="reactbar" role="toolbar" aria-label="React">${Object.keys(R).map(k => `<button class="${m.reacts && m.reacts[k] && m.reacts[k].includes(S.me.uid) ? 'pick' : ''}" data-k="${k}" aria-label="${R[k][0]}">${P(R[k][1], {s:22})}</button>`).join('')}</div>
+    <button class="mi" data-a="reply">${I.reply()}Reply</button>
+    ${m.text ? `<button class="mi" data-a="copy">${I.copy()}Copy text</button>` : ''}
+    ${!mine ? `<button class="mi" data-a="profile">${I.user()}View ${esc(p.name)}'s profile</button><button class="mi" data-a="report">${I.flag()}Report</button>` : ''}
+    ${mine && !mod ? `<button class="mi danger" data-a="delete">${I.trash()}Delete message</button>` : ''}
+    ${mod ? `<div class="mhead">Host tools</div>
+      <button class="mi" data-a="pin" style="border-top:0">${I.pin()}${m.pinned ? 'Unpin' : 'Pin to the top'}</button>
+      ${canModTarget ? `<button class="mi" data-a="mute">${I.mute()}${p.muted ? 'Unmute ' : 'Mute '}${esc(p.name)}${p.muted ? '' : ' for 24 hours'}</button>` : ''}
+      <button class="mi danger" data-a="delete">${I.trash()}Delete message</button>
+      ${canModTarget ? `<button class="mi danger" data-a="remove">${I.remove()}Remove from the Circle</button>` : ''}` : ''}`, true, 'Message actions');
+  o.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sendWs({ t: 'react', id, kind: b.dataset.k }); closeOverlay(); });
+  o.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
+    const a = b.dataset.a; closeOverlay();
+    if (a === 'reply') startReply(id);
+    if (a === 'copy') navigator.clipboard && navigator.clipboard.writeText(m.text).then(() => toast('Copied.'));
+    if (a === 'profile') askProfile(m.uid);
+    if (a === 'report') { const reason = prompt('What is wrong with this message? (optional)'); if (reason !== null) sendWs({ t: 'report', id, reason }); }
+    if (a === 'delete' && confirm('Delete this message for everyone?')) sendWs({ t: 'delete', id });
+    if (a === 'pin') sendWs({ t: 'pin', id, on: !m.pinned });
+    if (a === 'mute') sendWs({ t: 'mute', uid: m.uid, hours: p.muted ? 0 : 24 });
+    if (a === 'remove' && confirm(`Remove ${p.name} from the Inner Circle? They will lose access to the chat.`)) sendWs({ t: 'remove', uid: m.uid });
+  });
+}
+
+function askProfile(uid) { sendWs({ t: 'who', uid }); }
+function openProfile(uid) {
+  const p = person(uid); const me = S.me;
+  const mod = me.role === 'host' || me.role === 'mod';
+  const self = uid === me.uid;
+  const signs = [['Sun', p.sun, '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/>'], ['Moon', p.moon, SYMS.moon], ['Rising', p.rising, '<path d="M3 19h18"/><path d="M6 19a6 6 0 0 1 12 0"/><path d="M12 4v6M9.5 6.5 12 4l2.5 2.5"/>']].filter(s => s[1]);
+  const joined = p.joined ? new Date(p.joined).toLocaleDateString([], { month: 'long', year: 'numeric' }) : '';
+  const o = overlay(`<div style="padding:22px 22px 20px;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;gap:16px;align-items:center">${avatar(uid, 76, true)}<div style="flex:1;min-width:0"><h2 class="h1" style="font-size:28px;letter-spacing:-0.6px;overflow-wrap:anywhere">${esc(p.name)}</h2><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">${badges(p)}</div>${joined ? `<div class="muted" style="font-size:13px;margin-top:7px">In the Circle since ${esc(joined)}</div>` : ''}</div><button class="ibtn" id="pclose" aria-label="Close" style="align-self:flex-start;color:var(--muted)">${I.close()}</button></div>
+    ${p.bio ? `<p style="font-size:15px;line-height:1.6">${esc(p.bio)}</p>` : ''}
+    ${signs.length ? `<div style="border-top:1px solid var(--line);padding-top:16px"><div class="label" style="margin-bottom:10px">Sun, Moon &amp; Rising</div><div style="display:flex;flex-wrap:wrap;gap:6px">${signs.map(s => `<span class="chip" style="gap:6px;padding:0 10px;font-size:12.5px">${P(s[2], {s:15}).replace('currentColor', '#D8AA3C').replace('fill="currentColor"', 'fill="#D8AA3C"')}${s[0]} ${esc(s[1])}</span>`).join('')}</div></div>` : ''}
+    ${p.interests && p.interests.length ? `<div><div class="label" style="margin-bottom:10px">Into</div><div style="display:flex;flex-wrap:wrap;gap:6px">${p.interests.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div></div>` : ''}
+    ${p.favorites && p.favorites.length ? `<div><div class="label" style="margin-bottom:10px">My favorite episodes</div><div id="pfavlist"></div></div>` : ''}
+    ${self ? `<button class="btn2" id="pedit" style="min-height:46px;font-size:14px">${I.edit(16)}Edit your profile</button>` : `<button class="btn2" id="pmention" style="min-height:46px;font-size:14px">Mention ${esc(p.name)} in the chat</button>`}
+    ${mod && !self && p.role !== 'host' ? `<div style="border-top:1px solid var(--line);padding-top:12px;display:flex;flex-wrap:wrap;gap:8px">
+       ${me.role === 'host' ? `<button class="btn2 sm" data-pa="role">${p.role === 'mod' ? 'Remove moderator' : 'Make moderator'}</button>` : ''}
+       ${p.role !== 'mod' || me.role === 'host' ? `<button class="btn2 sm" data-pa="mute">${p.muted ? 'Unmute' : 'Mute 24 hours'}</button><button class="btn2 sm" data-pa="remove" style="border-color:rgba(242,153,138,0.7);color:var(--danger)">Remove from the Circle</button>` : ''}
+       </div>` : ''}
+    <div class="muted" style="display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px">${I.lock(13)}Only Inner Circle members can see this profile</div>
+  </div>`, false, p.name + "'s profile");
+  hydrateMedia(o);
+  if (p.favorites && p.favorites.length) loadIndexes().then(ix => {
+    const el = $('#pfavlist'); if (!el) return;
+    el.innerHTML = p.favorites.map(s => { const e = ix.free[s] || {}; return `<a class="favrow" href="${esc(e.url || SITE + '/episodes/' + s)}" target="_blank" rel="noopener"><img src="${esc(e.thumb || '')}" alt=""><span>${esc(e.title || s)}</span></a>`; }).join('');
+  });
+  $('#pclose').onclick = closeOverlay;
+  if ($('#pedit')) $('#pedit').onclick = () => { closeOverlay(); editProfile(); };
+  if ($('#pmention')) $('#pmention').onclick = () => { closeOverlay(); const f = $('#field'); if (f) { f.value = (f.value ? f.value + ' ' : '') + '@' + p.name + ' '; f.focus(); } };
+  o.querySelectorAll('[data-pa]').forEach(b => b.onclick = () => {
+    const a = b.dataset.pa;
+    if (a === 'role') sendWs({ t: 'role', uid, role: p.role === 'mod' ? 'member' : 'mod' });
+    if (a === 'mute') sendWs({ t: 'mute', uid, hours: p.muted ? 0 : 24 });
+    if (a === 'remove' && confirm(`Remove ${p.name} from the Inner Circle?`)) sendWs({ t: 'remove', uid });
+    closeOverlay();
+  });
+}
+
+function openPeople() {
+  const all = Object.values(S.people).filter(p => p.name);
+  const on = new Set(S.online);
+  all.sort((a, b) => (on.has(b.uid) - on.has(a.uid)) || a.name.localeCompare(b.name));
+  const o = overlay(`<div style="padding:18px 16px 10px;display:flex;align-items:center;justify-content:space-between"><h2 class="h1" style="font-size:24px">Members</h2><button class="ibtn" id="ppclose" aria-label="Close">${I.close()}</button></div>
+    <div style="padding:0 10px 14px;display:flex;flex-direction:column;gap:2px">${all.map(p => `<button class="person" data-pwho="${esc(p.uid)}">${avatar(p.uid, 32)}<span>${esc(p.name)}</span><span class="role">${on.has(p.uid) ? 'here now' : ''}</span></button>`).join('')}</div>
+    <div class="phone-only" style="border-top:1px solid var(--line);padding:12px 16px 16px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn2 sm" id="ppedit">${I.edit(16)}Edit your profile</button>${(S.me.role === 'host' || S.me.role === 'mod') ? `<button class="btn2 sm" id="pprep">${I.shield(16)}Reports${S.reports ? ' (' + S.reports + ')' : ''}</button>` : ''}</div>`, true, 'Members');
+  hydrateMedia(o);
+  $('#ppclose').onclick = closeOverlay;
+  $('#ppedit').onclick = () => { closeOverlay(); editProfile(); };
+  if ($('#pprep')) $('#pprep').onclick = () => { closeOverlay(); sendWs({ t: 'reports' }); };
+  o.querySelectorAll('[data-pwho]').forEach(b => b.onclick = () => askProfile(b.dataset.pwho));
+}
+
+function showReports(m) {
+  const byId = {}; for (const x of m.messages) byId[x.id] = x;
+  const o = overlay(`<div style="padding:18px 16px 10px;display:flex;align-items:center;justify-content:space-between"><h2 class="h1" style="font-size:24px">Reports</h2><button class="ibtn" id="rclose" aria-label="Close">${I.close()}</button></div>
+    <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:12px">${m.reports.length ? m.reports.map(r => { const msg = byId[r.msg_id] || {}; return `<div style="border:1px solid var(--line);border-radius:12px;padding:12px">
+      <div class="muted" style="font-size:12.5px">${esc(person(r.uid).name)} reported ${esc(person(msg.uid).name)}${r.reason ? ': ' + esc(r.reason) : ''}</div>
+      <div style="margin:8px 0;font-size:14.5px">${msg.deleted ? '<span class="deleted">Message deleted</span>' : esc(msg.text || 'Image')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn2 sm" data-rdel="${r.msg_id}" data-rid="${r.id}">Delete message</button><button class="btn2 sm" data-rok="${r.id}">Dismiss</button></div></div>`; }).join('') : '<p class="muted">Nothing to review.</p>'}</div>`, false, 'Reports');
+  $('#rclose').onclick = closeOverlay;
+  o.querySelectorAll('[data-rdel]').forEach(b => b.onclick = () => { sendWs({ t: 'delete', id: Number(b.dataset.rdel) }); sendWs({ t: 'resolve', id: Number(b.dataset.rid) }); b.closest('div[style]').remove(); });
+  o.querySelectorAll('[data-rok]').forEach(b => b.onclick = () => { sendWs({ t: 'resolve', id: Number(b.dataset.rok) }); b.closest('div[style]').remove(); });
+}
+
+function openLightbox(src) {
+  const s = document.createElement('div'); s.className = 'scrim lightbox'; s.id = 'ovl';
+  s.innerHTML = `<img src="${esc(src)}" alt="">`; s.onclick = closeOverlay; closeOverlay(); document.body.appendChild(s);
+}
+
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { S.unread = 0; document.title = 'Inner Circle | InnerVerse'; } });
+
+S.view = S.token ? 'loading' : 'door';
+render();
+if (S.token) connect();
+})();
+</script>
+</body>
+</html>
