@@ -169,6 +169,9 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .unfurl .ue{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);line-height:1.2}
 .unfurl .ue.free{color:var(--lapis-lit)}
 .mimg{display:block;margin-top:6px;max-width:100%;max-height:360px;border-radius:10px;cursor:zoom-in;background:rgba(233,238,246,0.06);min-width:120px;min-height:80px}
+.joined{align-self:center;display:flex;align-items:center;gap:7px;margin:10px 0;padding:5px 14px 5px 6px;border-radius:999px;background:rgba(216,170,60,0.09);border:1px solid rgba(216,170,60,0.3);font-size:13.5px;color:var(--muted);flex-wrap:wrap;justify-content:center}
+.joined button{display:inline-flex;align-items:center;gap:7px;color:var(--gold)}
+.joined .time{margin-left:4px}
 .typing{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);padding:6px 0 0 46px;min-height:22px}
 .dots{display:flex;gap:3px}.dots i{width:5px;height:5px;border-radius:50%;background:var(--muted);display:block;animation:blink 1.2s infinite}
 .dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
@@ -870,11 +873,17 @@ function renderReply() {
 
 function msgHtml(m, i, list) {
   if (m.deleted) return '';
-  const prev = list[i - 1], next = list[i + 1];
+  const prev0 = list[i - 1];
+  if (m.kind === 'join') {
+    const jp = person(m.uid);
+    const day = !prev0 || new Date(prev0.created).toDateString() !== new Date(m.created).toDateString();
+    return (day ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '') + `<div class="joined" data-id="${m.id}"><button data-who="${esc(m.uid)}" title="View profile">${avatar(m.uid, 22)}<b>${esc(jp.name || 'A new member')}</b></button> joined the chat<span class="time">${fmtTime(m.created)}</span></div>`;
+  }
+  const prev = prev0 && prev0.kind !== 'join' ? prev0 : null, next = list[i + 1] && list[i + 1].kind !== 'join' ? list[i + 1] : null;
   const mine = S.me && m.uid === S.me.uid;
   const p = person(m.uid);
   const gap = 5 * 60 * 1000;
-  const newDay = !prev || new Date(prev.created).toDateString() !== new Date(m.created).toDateString();
+  const newDay = !prev0 || new Date(prev0.created).toDateString() !== new Date(m.created).toDateString();
   const first = newDay || !prev || prev.uid !== m.uid || m.created - prev.created > gap;
   const last = !next || next.uid !== m.uid || next.created - m.created > gap || new Date(next.created).toDateString() !== new Date(m.created).toDateString();
   let out = newDay ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '';

@@ -169,6 +169,7 @@ export class Room {
     try { this.sql.exec("ALTER TABLE members ADD COLUMN recent TEXT DEFAULT '[]'"); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE members ADD COLUMN titles TEXT DEFAULT '[]'"); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE members ADD COLUMN no_init INTEGER DEFAULT 0"); } catch (e) { /* already there */ }
+    try { this.sql.exec("ALTER TABLE messages ADD COLUMN kind TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     for (const [oldKey, emoji] of Object.entries(OLD_REACTIONS)) {
       this.sql.exec('UPDATE OR IGNORE reactions SET kind = ? WHERE kind = ?', emoji, oldKey);
       this.sql.exec('DELETE FROM reactions WHERE kind = ?', oldKey);
@@ -238,6 +239,7 @@ export class Room {
       id: row.id, uid: row.uid, text: row.deleted ? '' : row.text, image: row.deleted ? '' : row.image,
       reply, created: row.created, edited: !!row.edited, deleted: !!row.deleted, pinned: !!row.pinned, reacts,
       replies: this.one('SELECT COUNT(*) AS n FROM messages WHERE reply_to = ? AND deleted = 0', row.id).n,
+      kind: row.kind || '',
     };
   }
 
@@ -334,6 +336,12 @@ export class Room {
         this.send(ws, { t: 'me', me: this.meFor(me.uid) });
         this.broadcast({ t: 'person', p: this.person(this.member(me.uid)) });
         if (!wasReady) this.presence();
+        // first profile save: tell the room they joined, under the name they chose
+        if (!me.profile_done) {
+          const row = this.one("INSERT INTO messages (uid, text, image, reply_to, created, kind) VALUES (?, '', '', NULL, ?, 'join') RETURNING *", me.uid, now);
+          const m = this.shape(row);
+          this.broadcast({ t: 'msg', m, people: this.peopleFor([m]) });
+        }
         return;
       }
 
@@ -498,7 +506,7 @@ export class Room {
         const q = clean(msg.q, 100);
         if (!q || q.length < 2) return this.send(ws, { t: 'results', q, scope: msg.scope, messages: [], people: {} });
         const like = '%' + q.replace(/[\\%_]/g, c => '\\' + c) + '%';
-        const rows = this.all("SELECT m.* FROM messages m LEFT JOIN members p ON p.uid = m.uid WHERE m.deleted = 0 AND (m.text LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\') ORDER BY m.id DESC LIMIT 60", like, like);
+        const rows = this.all("SELECT m.* FROM messages m LEFT JOIN members p ON p.uid = m.uid WHERE m.deleted = 0 AND COALESCE(m.kind, '') = '' AND (m.text LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\') ORDER BY m.id DESC LIMIT 60", like, like);
         const msgs = rows.map(r => this.shape(r));
         return this.send(ws, { t: 'results', q, scope: msg.scope, room: 'Inner Circle Chat', messages: msgs, people: this.peopleFor(msgs) });
       }
