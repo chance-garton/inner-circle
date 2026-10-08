@@ -20,6 +20,17 @@
 }
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+/* feel like an app on phones: nothing gets highlighted or called out by a stray press, except where you type */
+@media (hover:none){html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  input,textarea,[contenteditable="true"],emoji-picker{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}}
+/* iPhone only plays a haptic tick for a real tap on a switch, so tappable controls carry an invisible one */
+input[data-hx]{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;border-radius:inherit;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y;cursor:inherit}
+html.nohx input[data-hx]{display:none}
+/* animated emoji (Noto Emoji animations) over the plain emoji, which stays as the fallback */
+.ae{position:relative;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.ae .anim{position:absolute;inset:-14%;pointer-events:none}
+.ae .anim svg{display:block}
+.ae.animated .t{visibility:hidden}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit}
 a{color:inherit;text-decoration:none}
 p{margin:0} h1,h2,h3{margin:0;font-weight:600}
@@ -155,10 +166,22 @@ svg{display:block;flex:none}
 .react.mine{border-color:rgba(216,170,60,0.75);background:rgba(216,170,60,0.13)}
 .react .em{font-size:15px;line-height:1}
 .react{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-.rxtabs{display:flex;gap:6px;padding:0 16px 8px;overflow-x:auto;scrollbar-width:none}
-.rxtabs button{flex:none;height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
-.rxtabs button .em{font-size:16px}
-.rxtabs button.on{background:var(--gold);border-color:var(--gold);color:var(--on-gold)}
+.rxstack{position:fixed;width:min(290px,calc(100vw - 24px));display:flex;flex-direction:column;align-items:flex-start;gap:8px;animation:rxin .16s ease-out}
+@keyframes rxin{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.rxbig{height:92px;display:flex;align-items:flex-end;padding-left:4px}
+.ae.lg{width:88px;height:88px;font-size:68px}
+.ae.sm{width:22px;height:22px;font-size:18px}
+.rxpills{display:flex;gap:6px;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.rxpills button,.rxone{flex:none;height:36px;padding:0 12px;border-radius:999px;background:var(--card);border:1px solid rgba(233,238,246,0.16);font-size:13.5px;font-weight:700;color:var(--ink);display:inline-flex;align-items:center;gap:6px;box-shadow:0 8px 22px rgba(0,0,0,0.4)}
+.rxpills button.on{background:var(--gold);border-color:var(--gold);color:var(--on-gold)}
+.rxmini{display:inline-flex;margin-left:-4px;border-radius:50%;box-shadow:0 0 0 2px var(--card)}
+.rxmini:first-of-type{margin-left:0}
+.rxcard{width:100%;background:var(--card);border:1px solid rgba(233,238,246,0.14);border-radius:18px;box-shadow:0 18px 44px rgba(0,0,0,0.55);max-height:min(320px,50vh);overflow:auto;padding:6px}
+.rxrow{display:flex;align-items:center;gap:12px;width:100%;min-height:50px;padding:6px 10px;border-radius:12px;color:var(--ink);font-size:15px;font-weight:600;text-align:left}
+.rxrow:active{background:rgba(233,238,246,0.07)}
+.rxname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rxname .muted{font-weight:500}
+.rxem{font-size:20px}
 .rcount{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px 0 8px;border-radius:999px;color:var(--lapis-lit);font-size:12.5px;font-weight:700;line-height:1}
 .rcount:hover{background:rgba(143,181,240,0.1)}
 .ctx{position:fixed;z-index:25;width:352px;max-height:calc(100dvh - 24px);overflow:auto;background:var(--card);border:1px solid rgba(233,238,246,0.16);border-radius:14px;box-shadow:0 18px 44px rgba(0,0,0,0.5)}
@@ -635,10 +658,11 @@ function openSettings() {
         <div class="seg" role="radiogroup" aria-label="Notify me about">${[['all', 'All messages'], ['mentions', 'Only when tagged'], ['none', 'Nothing']].map(([k, l]) => `<button role="radio" aria-checked="${lvl === k}" class="${lvl === k ? 'on' : ''}" data-lvl="${k}">${l}</button>`).join('')}</div></div>
       <button class="setrow" id="sAlert" role="switch" aria-checked="${alertsOn}" ${perm === 'unsupported' || perm === 'denied' || lvl === 'none' ? 'disabled' : ''}>${P('<rect x="3" y="4" width="18" height="14" rx="3"/><path d="M8 21h8"/>',{s:20})}<span class="st"><b>Pop-ups</b><small>${alertSub}</small></span>${sw(alertsOn && lvl !== 'none')}</button>
       <button class="setrow" id="sSound" role="switch" aria-checked="${sound}">${I.note(20)}<span class="st"><b>Mention chime</b><small>A soft sound when you are mentioned</small></span>${sw(sound)}</button>
-      <button class="setrow" id="sHapt" role="switch" aria-checked="${hapt}">${P('<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M3 9v6M21 9v6"/>',{s:20})}<span class="st"><b>Haptics</b><small>A light tap when you press and hold a message</small></span>${sw(hapt)}</button>
+      <button class="setrow" id="sHapt" role="switch" aria-checked="${hapt}">${P('<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M3 9v6M21 9v6"/>',{s:20})}<span class="st"><b>Haptics</b><small>${IOS ? 'A light tick when you tap reactions and menu options' : 'A light buzz when you press, hold and slide'}</small></span>${sw(hapt)}</button>
       ${mod ? `<button class="setrow" id="sRep">${I.shield(20)}<span class="st"><b>Reports</b><small>Messages members flagged</small></span>${S.reports ? `<span class="cnt">${S.reports}</span>` : ''}${I.chev(18)}</button>` : ''}
       ${host ? `<button class="setrow" id="sLog">${I.history(20)}<span class="st"><b>Moderation history</b><small>Only you see this. Deletions, mutes, removals, roles and titles, each with undo.</small></span>${I.chev(18)}</button>` : ''}
-    </div>`, false, 'Settings');
+    </div>
+    <p class="muted" style="font-size:11.5px;padding:10px 18px 14px;margin:0;border-top:1px solid var(--line)">Animated emoji: Noto Emoji Animation by Google, CC BY 4.0.</p>`, false, 'Settings');
   o.firstElementChild.style.width = 'min(480px, 100%)';
   $('#sclose').onclick = closeOverlay;
   $('#sMent').onclick = () => { closeOverlay(); openMentions(); };
@@ -660,7 +684,7 @@ function openSettings() {
     if (b.dataset.lvl !== 'none' && perm === 'default') Notification.requestPermission().then(() => openSettings()); else openSettings();
     S.unread = 0; renderMentionBadge();
   });
-  $('#sHapt').onclick = () => { store('ivc_haptics', hapt ? 'off' : null); if (!hapt) haptic(15); openSettings(); };
+  $('#sHapt').onclick = () => { store('ivc_haptics', hapt ? 'off' : null); if (IOS) syncHx(); if (!hapt) haptic(15); openSettings(); };
   if ($('#sRep')) $('#sRep').onclick = () => { closeOverlay(); sendWs({ t: 'reports' }); };
   if ($('#sLog')) $('#sLog').onclick = () => {
     closeOverlay(); S.modlogAsked = Date.now(); sendWs({ t: 'modlog' });
@@ -707,16 +731,60 @@ function showModlog(r) {
 let hapticEl = null;
 function haptic(ms) {
   if (load('ivc_haptics') === 'off') return;
-  try { if (navigator.vibrate && navigator.vibrate(ms || 10)) return; } catch (e) {}
-  try {
-    if (!hapticEl) {
-      hapticEl = document.createElement('label'); hapticEl.setAttribute('aria-hidden', 'true');
-      hapticEl.style.cssText = 'position:fixed;left:-200px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
-      const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', ''); i.tabIndex = -1;
-      hapticEl.appendChild(i); document.body.appendChild(hapticEl);
-    }
-    hapticEl.click();
-  } catch (e) {}
+  try { if (navigator.vibrate) navigator.vibrate(ms || 10); } catch (e) {}
+}
+// animated emoji: Google's Noto animations (small Lottie files) drawn over the plain emoji when one exists
+const LOTTIE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie_light.min.js';
+let lottieP = null; const animText = {}; S.anims = [];
+function lottieLib() {
+  return lottieP || (lottieP = new Promise((res, rej) => {
+    if (window.lottie) return res(window.lottie);
+    const sc = document.createElement('script'); sc.src = LOTTIE_URL; sc.async = true;
+    sc.onload = () => window.lottie ? res(window.lottie) : rej(); sc.onerror = () => { lottieP = null; rej(); };
+    document.head.appendChild(sc);
+  }));
+}
+const emojiCode = e => [...e].map(c => c.codePointAt(0).toString(16)).filter(x => x !== 'fe0f').join('_');
+function animData(e) {
+  const k = emojiCode(e);
+  return animText[k] || (animText[k] = fetch(`https://fonts.gstatic.com/s/e/notoemoji/latest/${k}/lottie.json`).then(r => r.ok ? r.text() : null).catch(() => null));
+}
+const aeHtml = (e, cls) => `<span class="ae${cls ? ' ' + cls : ''}" data-ae="${esc(e)}"><span class="t">${esc(e)}</span></span>`;
+function animateIn(root) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  root.querySelectorAll('.ae[data-ae]:not([data-on])').forEach(el => {
+    el.dataset.on = '1';
+    Promise.all([lottieLib(), animData(el.dataset.ae)]).then(([lot, txt]) => {
+      if (!txt || !el.isConnected) return;
+      const box = document.createElement('span'); box.className = 'anim'; el.appendChild(box);
+      const a = lot.loadAnimation({ container: box, renderer: 'svg', loop: true, autoplay: true, animationData: JSON.parse(txt) });
+      a.addEventListener('DOMLoaded', () => el.classList.add('animated'));
+      S.anims.push(a);
+    }).catch(() => {});
+  });
+}
+function stopAnims() { S.anims.forEach(a => { try { a.destroy(); } catch (e) {} }); S.anims = []; }
+
+// iPhone: Safari plays its tick only when a finger really taps a switch (iOS 17.4 and later), never from
+// code, so every tappable control in menus and reactions gets an invisible switch laid over it.
+// Press-and-hold and sliding cannot tick on iPhone; Android buzzes for those through haptic().
+const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const HX_SEL = 'button.react, .reactbar button, button.mi, .rxpills button, button.rxrow, button.setrow, .seg button, button.rcount, button.chip';
+function addHx(root) {
+  if (!IOS || !root || !root.querySelectorAll) return;
+  const els = root.matches && root.matches(HX_SEL) ? [root] : [];
+  root.querySelectorAll(HX_SEL).forEach(e => els.push(e));
+  for (const el of els) {
+    if (el.disabled || el.querySelector(':scope > input[data-hx]')) continue;
+    const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', ''); i.setAttribute('data-hx', ''); i.setAttribute('aria-hidden', 'true'); i.tabIndex = -1;
+    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+    el.appendChild(i);
+  }
+}
+function syncHx() { document.documentElement.classList.toggle('nohx', load('ivc_haptics') === 'off'); }
+if (IOS) {
+  syncHx();
+  new MutationObserver(list => { for (const m of list) m.addedNodes.forEach(n => n.nodeType === 1 && addHx(n)); }).observe(document.documentElement, { childList: true, subtree: true });
 }
 // typing "@" in the message box suggests members
 function wireMentionPicker(f) {
@@ -1363,7 +1431,7 @@ document.addEventListener('click', e => {
 // right-click on a computer, press and hold on a phone: the message menu
 document.addEventListener('contextmenu', e => {
   const rb = e.target.closest('.react[data-react]');
-  if (rb && rb.closest('#msgs,#thread')) { e.preventDefault(); if (!matchMedia('(hover: none)').matches) showReactors(Number(rb.dataset.id), rb.dataset.react); return; }
+  if (rb && rb.closest('#msgs,#thread')) { e.preventDefault(); if (!matchMedia('(hover: none)').matches) showReactors(Number(rb.dataset.id), rb.dataset.react, rb); return; }
   const b = e.target.closest('[data-press]'); if (!b || !b.closest('#msgs,#thread')) return;
   if (e.target.closest('a') && !matchMedia('(hover: none)').matches) return; // keep the browser menu on links
   e.preventDefault();
@@ -1375,7 +1443,7 @@ document.addEventListener('touchstart', e => {
   const rb = e.target.closest('.react[data-react]');
   if (rb && rb.closest('#msgs,#thread')) {
     const t = e.touches[0]; pressXY = [t.clientX, t.clientY];
-    pressTimer = setTimeout(() => { pressTimer = null; S.reactHeld = Date.now(); haptic(12); showReactors(Number(rb.dataset.id), rb.dataset.react); }, 420);
+    pressTimer = setTimeout(() => { pressTimer = null; S.reactHeld = Date.now(); haptic(12); showReactors(Number(rb.dataset.id), rb.dataset.react, rb); }, 420);
     return;
   }
   const b = e.target.closest('[data-press]'); if (!b || !b.closest('#msgs,#thread') || e.target.closest('button')) return;
@@ -1385,27 +1453,55 @@ document.addEventListener('touchstart', e => {
 document.addEventListener('touchmove', e => { if (!pressTimer || !pressXY) return; const t = e.touches[0]; if (Math.abs(t.clientX - pressXY[0]) + Math.abs(t.clientY - pressXY[1]) > 10) { clearTimeout(pressTimer); pressTimer = null; } }, { passive: true });
 ['touchend', 'touchcancel'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(pressTimer); pressTimer = null; }, { passive: true }));
 
-// press and hold (phone) or right-click (computer) on a reaction: who reacted, Telegram style
-function showReactors(id, first) {
+// press and hold (phone) or right-click (computer) on a reaction: who reacted, Telegram style. The
+// list pops up where the reaction is, over a blurred chat, with the emoji big and animated above it.
+function showReactors(id, first, chip) {
   const m = findMsg(id); if (!m || !m.reacts) return;
   const kinds = Object.keys(m.reacts).filter(k => m.reacts[k] && m.reacts[k].length);
   if (!kinds.length) return;
-  const all = []; kinds.forEach(k => m.reacts[k].forEach(uid => all.push([uid, OLD_R[k] || k])));
-  const tabs = [['', 'All', all.length]].concat(kinds.map(k => [OLD_R[k] || k, OLD_R[k] || k, m.reacts[k].length]));
-  let cur = first && kinds.some(k => (OLD_R[k] || k) === first) && kinds.length > 1 ? first : '';
-  const o = overlay(`<div style="padding:16px 12px 8px 18px;display:flex;align-items:center;gap:10px"><h2 class="h1" style="font-size:22px;flex:1">Reactions</h2><button class="ibtn" id="rxclose" aria-label="Close">${I.close()}</button></div>
-    ${kinds.length > 1 ? `<div class="rxtabs" role="tablist">${tabs.map(t => `<button role="tab" data-rx="${esc(t[0])}">${t[0] ? `<span class="em">${esc(t[1])}</span>` : t[1]} ${t[2]}</button>`).join('')}</div>` : ''}
-    <div id="rxlist" style="padding:4px 10px 14px;display:flex;flex-direction:column;gap:2px"></div>`, true, 'Reactions');
+  const E = k => OLD_R[k] || k;
+  const all = []; kinds.forEach(k => m.reacts[k].forEach(uid => all.push([uid, E(k)])));
+  const many = kinds.length > 1;
+  let cur = many ? '' : E(kinds[0]);
+  const big0 = first && kinds.some(k => E(k) === first) ? first : E(kinds[0]);
+  closeOverlay();
+  const sc = document.createElement('div'); sc.className = 'scrim pscrim'; sc.id = 'ovl';
+  const minis = uids => uids.slice(0, 3).map(u => `<span class="rxmini">${avatar(u, 22)}</span>`).join('');
+  const pills = many
+    ? [['', `All ${all.length}`]].concat(kinds.map(k => [E(k), `${aeHtml(E(k), 'sm')}<span>${m.reacts[k].length}</span>`])).map(([k, html]) => `<button role="tab" data-rx="${esc(k)}">${html}</button>`).join('')
+    : `<span class="rxone">${aeHtml(E(kinds[0]), 'sm')}${minis(m.reacts[kinds[0]])}</span>`;
+  sc.innerHTML = `<div class="rxstack" role="dialog" aria-modal="true" aria-label="Reactions">
+    <div class="rxbig">${aeHtml(big0, 'lg')}</div>
+    <div class="rxpills" role="tablist">${pills}</div>
+    <div class="rxcard"><div id="rxlist"></div></div></div>`;
+  sc.addEventListener('click', e => { if (e.target === sc || e.target.classList.contains('rxstack')) closeOverlay(); });
+  sc.addEventListener('contextmenu', e => { e.preventDefault(); if (e.target === sc) closeOverlay(); });
+  // opened by a press and hold: the finger is still down, so ignore it until it lifts
+  if (S.reactHeld && Date.now() - S.reactHeld < 300) {
+    sc.style.pointerEvents = 'none';
+    const lift = () => { document.removeEventListener('touchend', lift); document.removeEventListener('touchcancel', lift); setTimeout(() => { if (sc.isConnected) sc.style.pointerEvents = ''; }, 350); };
+    document.addEventListener('touchend', lift); document.addEventListener('touchcancel', lift);
+  }
+  document.body.appendChild(sc);
+  const stack = sc.querySelector('.rxstack');
   const draw = () => {
-    o.querySelectorAll('[data-rx]').forEach(b => { b.classList.toggle('on', b.dataset.rx === cur); b.setAttribute('aria-selected', b.dataset.rx === cur); });
+    sc.querySelectorAll('[data-rx]').forEach(b => { const on = b.dataset.rx === cur; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
     const rows = cur ? all.filter(r => r[1] === cur) : all;
-    $('#rxlist').innerHTML = rows.map(([uid, em]) => `<button class="person" data-rwho="${esc(uid)}">${avatar(uid, 32)}<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">${esc(person(uid).name || 'Member')}${S.me && uid === S.me.uid ? ' <span class="muted" style="font-weight:500">(you)</span>' : ''}</span><span class="em" style="font-size:20px">${esc(em)}</span></button>`).join('');
-    hydrateMedia(o);
-    o.querySelectorAll('[data-rwho]').forEach(b => b.onclick = () => askProfile(b.dataset.rwho));
+    $('#rxlist').innerHTML = rows.map(([uid, em]) => `<button class="rxrow" data-rwho="${esc(uid)}">${avatar(uid, 34)}<span class="rxname">${esc(person(uid).name || 'Member')}${S.me && uid === S.me.uid ? ' <span class="muted">(you)</span>' : ''}</span>${many ? `<span class="rxem">${esc(em)}</span>` : ''}</button>`).join('');
+    hydrateMedia(sc);
+    sc.querySelectorAll('[data-rwho]').forEach(b => b.onclick = () => askProfile(b.dataset.rwho));
   };
-  o.querySelectorAll('[data-rx]').forEach(b => b.onclick = () => { cur = b.dataset.rx; haptic(6); draw(); });
-  $('#rxclose').onclick = closeOverlay;
-  draw();
+  const setBig = e => { const host = sc.querySelector('.rxbig'); stopAnims(); host.innerHTML = aeHtml(e, 'lg'); animateIn(sc); };
+  sc.querySelectorAll('[data-rx]').forEach(b => b.onclick = () => { cur = b.dataset.rx; haptic(6); draw(); setBig(cur || big0); place(); });
+  // place it where the reaction was pressed: the pills sit on the reaction, the big emoji above,
+  // the list below; moved in from the edges and up if the screen runs out
+  const place = () => {
+    const r = chip ? chip.getBoundingClientRect() : { left: 16, top: innerHeight / 2, height: 0 };
+    const w = stack.offsetWidth, h = stack.offsetHeight, bigH = sc.querySelector('.rxbig').offsetHeight + 6;
+    stack.style.left = Math.max(12, Math.min(r.left - 6, innerWidth - w - 12)) + 'px';
+    stack.style.top = Math.max(12, Math.min(r.top - bigH - 4, innerHeight - h - 12)) + 'px';
+  };
+  draw(); place(); animateIn(sc);
 }
 
 function startReply(id) { if (S.editMsg) cancelEdit(); S.reply = id; renderReply(); $('#field') && $('#field').focus(); }
@@ -1551,7 +1647,7 @@ function placePhoneMenu(s) {
   const want = Number(s.dataset.top) - barH;
   box.style.top = Math.max(12, Math.min(want, innerHeight - h - 12)) + 'px';
 }
-function closeOverlay() { const o = $('#ovl'); if (o) o.remove(); }
+function closeOverlay() { const o = $('#ovl'); if (o) o.remove(); stopAnims(); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
 
 function findMsg(id) { return S.messages.find(x => x.id === id) || (S.threadMsgs || []).find(x => x.id === id); }
@@ -1566,7 +1662,7 @@ function openActions(id, x, y) {
   const picked = k => m.reacts && Object.keys(m.reacts).some(r => (OLD_R[r] || r) === k && m.reacts[r].includes(S.me.uid));
   const linkIcon = P('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>');
   const threadIcon = P('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5z"/><path d="M8 8h8M8 11h5"/>');
-  const reactHtml = `<div class="reactbar" role="toolbar" aria-label="React">${QUICK.map(k => `<button class="${picked(k) ? 'pick' : ''}" data-k="${esc(k)}" aria-label="React ${esc(k)}">${esc(k)}</button>`).join('')}<button class="more" data-allemoji="1" aria-label="All emojis">${I.down(20)}</button></div>`;
+  const reactHtml = `<div class="reactbar" role="toolbar" aria-label="React">${QUICK.map(k => `<button class="${picked(k) ? 'pick' : ''}" data-k="${esc(k)}" aria-label="React ${esc(k)}">${aeHtml(k)}</button>`).join('')}<button class="more" data-allemoji="1" aria-label="All emojis">${I.down(20)}</button></div>`;
   const menuHtml = `<div id="actmenu">
     <button class="mi" data-a="reply">${I.reply()}Reply</button>
     ${mine && !isJoin && S.messages.some(x => x.id === id) ? `<button class="mi" data-a="edit">${I.edit()}Edit</button>` : ''}
@@ -1581,6 +1677,7 @@ function openActions(id, x, y) {
       <button class="mi danger" data-a="remove">${I.remove()}Remove from the Circle</button>` : ''}
     </div>`;
   const o = at ? overlay(reactHtml + menuHtml, true, 'Message actions', at) : phoneMenu(id, reactHtml, menuHtml);
+  animateIn(o);
   const react = k => { sendWs({ t: 'react', id, kind: k }); closeOverlay(); };
   o.querySelectorAll('[data-k]').forEach(b => b.onclick = () => react(b.dataset.k));
   o.querySelector('[data-allemoji]').onclick = () => {
