@@ -277,7 +277,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08i';
+const VERSION = '2026-10-08j';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
 const SITE = 'https://www.innerversepodcast.com';
@@ -1241,16 +1241,36 @@ function updateNP() {
 (function () { const n = $('#np'); let y0 = null; n.addEventListener('touchstart', e => { if (n.scrollTop <= 0) y0 = e.touches[0].clientY; }, { passive: true }); n.addEventListener('touchend', e => { if (y0 != null && e.changedTouches[0].clientY - y0 > 90) closeNP(); y0 = null; }, { passive: true }); })();
 
 // ------------------------------------------------------------ install help (iPhone Safari)
+// Android Chrome offers its own install prompt; keep it for the Install button
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+const isAndroid = /Android/i.test(navigator.userAgent);
 function showInstall(force) {
   if (standalone) return;
-  if (!force && (!isIOS || load('iva_noinstall'))) return;
+  if (!force && (!(isIOS || isAndroid) || load('iva_noinstall'))) return;
+  const dots = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true" style="vertical-align:-3px"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>';
+  const steps = {
+    iphone: `<ol><li>Open this page in <b>Safari</b>.</li><li>Tap the Share button ${I.share(18)} in Safari's toolbar.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>, then open InnerVerse from your Home Screen.</li></ol>`,
+    android: `<ol><li>Open this page in <b>Chrome</b>.</li><li>Tap the menu ${dots} at the top right.</li><li>Tap <b>Add to Home screen</b> or <b>Install app</b>.</li><li>Tap <b>Install</b>, then open InnerVerse from your home screen.</li></ol>`
+  };
+  let pick = isAndroid ? 'android' : 'iphone';
   const w = document.createElement('div'); w.className = 'sheetwrap';
   w.innerHTML = `<div class="sheet" role="dialog" aria-label="Add to Home Screen"><h3>Put InnerVerse on your Home Screen</h3><p class="muted" style="margin:0">It opens like an app, keeps playing while you browse, and updates itself.</p>
-  <ol><li>Tap the Share button ${I.share(18)} in Safari's toolbar.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>, then open InnerVerse from your Home Screen.</li></ol>
-  <button class="btn block${S.member ? ' gold' : ''}" id="instOk">Got it</button></div>`;
+  <div class="toggle" role="tablist" style="margin:16px 0 0;background:var(--ground)"><button role="tab" data-os="iphone">iPhone</button><button role="tab" data-os="android">Android</button></div>
+  <div id="instSteps"></div>
+  <button class="btn block${S.member ? ' gold' : ''}" id="instGo" hidden>Install InnerVerse</button>
+  <button class="btn block${S.member ? ' gold' : ''}" id="instOk" style="margin-top:10px">Got it</button></div>`;
   document.body.appendChild(w);
+  const paint = () => {
+    $$('[data-os]', w).forEach(b => { const on = b.dataset.os === pick; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    $('#instSteps', w).innerHTML = steps[pick];
+    $('#instGo', w).hidden = !(pick === 'android' && installEvt);
+  };
+  paint();
+  $$('[data-os]', w).forEach(b => b.addEventListener('click', () => { pick = b.dataset.os; paint(); }));
   const close = () => { w.remove(); store('iva_noinstall', '1'); };
   $('#instOk', w).addEventListener('click', close);
+  $('#instGo', w).addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; close(); });
   w.addEventListener('click', e => { if (e.target === w) close(); });
 }
 
