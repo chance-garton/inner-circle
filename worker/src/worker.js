@@ -227,6 +227,7 @@ export class Room {
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN kind TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN mentions TEXT DEFAULT '[]'"); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN preview TEXT DEFAULT ''"); } catch (e) { /* already there */ }
+    try { this.sql.exec('ALTER TABLE members ADD COLUMN join_alerts INTEGER DEFAULT 1'); } catch (e) { /* already there */ }
     this.sql.exec('CREATE TABLE IF NOT EXISTS link_previews (url TEXT PRIMARY KEY, data TEXT, fetched INTEGER)');
     // who has had a message on screen (only the count is ever shown, never the names)
     this.sql.exec('CREATE TABLE IF NOT EXISTS views (msg_id INTEGER, uid TEXT, PRIMARY KEY (msg_id, uid)) WITHOUT ROWID');
@@ -266,7 +267,7 @@ export class Room {
   // members looking at the chat right now get it live; everyone else subscribed gets a push, by their setting
   async pushOut(m, author) {
     try {
-      const subs = this.all('SELECT s.*, m.notify, m.push_unread FROM push_subs s JOIN members m ON m.uid = s.uid WHERE s.uid != ? AND m.banned = 0 AND m.profile_done = 1', author.uid);
+      const subs = this.all('SELECT s.*, m.notify, m.push_unread, m.role, m.join_alerts FROM push_subs s JOIN members m ON m.uid = s.uid WHERE s.uid != ? AND m.banned = 0 AND m.profile_done = 1', author.uid);
       if (!subs.length) return;
       const looking = new Set();
       for (const ws of this.state.getWebSockets()) {
@@ -281,14 +282,17 @@ export class Room {
         if (looking.has(s.uid)) continue;
         const level = s.notify || 'all';
         const tagged = mentions.includes(s.uid);
-        if (level === 'none' || (level === 'mentions' && !tagged)) continue;
+        if (m.kind === 'join') {
+          // a new member joining reaches the host only, whatever their level (Chance, 2026-10-08), unless they switched it off
+          if (s.role !== 'host' || s.join_alerts === 0) continue;
+        } else if (level === 'none' || (level === 'mentions' && !tagged)) continue;
         if (!bumped.has(s.uid)) { this.sql.exec('UPDATE members SET push_unread = push_unread + 1 WHERE uid = ?', s.uid); bumped.set(s.uid, (s.push_unread || 0) + 1); }
         // Telegram style: the room as the title, "Name: message" as the text (the phone trims it to fit)
         const name = author.name || 'A member';
         const text = (m.text || '').replace(/\s+/g, ' ').trim();
         const body = m.kind === 'join' ? `${name} joined the chat` : `${name}: ${m.image ? '\u{1F4F7} Photo' + (text ? ' ' : '') : ''}${text}`.slice(0, 600);
         const img = typeof author.avatar === 'string' && author.avatar.startsWith('img:') ? author.avatar.slice(4) : '';
-        const payload = JSON.stringify({ title: 'Inner Circle', body, tag: 'ivc-' + m.id, url: '/app/#/chat', badge: bumped.get(s.uid), avatar: img });
+        const payload = JSON.stringify({ title: m.kind === 'join' ? 'New member' : 'Inner Circle', body: m.kind === 'join' ? `${name} just joined the Inner Circle` : body, tag: 'ivc-' + m.id, url: '/app/#/chat', badge: bumped.get(s.uid), avatar: img });
         try {
           const r = await sendPush(s, payload, vapid);
           if (r.status === 404 || r.status === 410) this.sql.exec('DELETE FROM push_subs WHERE endpoint = ?', s.endpoint);
@@ -866,6 +870,12 @@ export class Room {
 
       case 'away': { ws.serializeAttachment(Object.assign({}, att, { away: !!msg.on })); if (!msg.on) this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', me.uid); return; }
 
+      case 'joinalerts': {
+        if (me.role !== 'host') return;
+        this.sql.exec('UPDATE members SET join_alerts = ? WHERE uid = ?', msg.on ? 1 : 0, me.uid);
+        return this.send(ws, { t: 'me', me: this.meFor(me.uid) });
+      }
+
       case 'notify': {
         if (['all', 'mentions', 'none'].includes(msg.level)) this.sql.exec('UPDATE members SET notify = ? WHERE uid = ?', msg.level, me.uid);
         return;
@@ -897,7 +907,7 @@ export class Room {
 
   meFor(uid) {
     const m = this.member(uid);
-    return { ...this.person(m), rules_ok: !!m.rules_ok, profile_done: !!m.profile_done, email: m.email, recent: safeArr(m.recent) };
+    return { ...this.person(m), rules_ok: !!m.rules_ok, profile_done: !!m.profile_done, email: m.email, recent: safeArr(m.recent), join_alerts: m.role === 'host' ? m.join_alerts !== 0 : undefined };
   }
 
   notifyMods(obj) {
