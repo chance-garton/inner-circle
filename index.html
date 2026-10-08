@@ -288,7 +288,13 @@ const R = {
   aha:['Aha','<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>']
 };
 const rIcon = (k, s) => P(R[k][1], {s: s||14, w: 2.2});
-let QUICK = ['\u2764\uFE0F', '\uD83D\uDE02', '\uD83D\uDD25', '\uD83E\uDD2F', '\uD83D\uDE4F', '\u2728', '\uD83D\uDC4D'];
+let DEFAULT_QUICK = ['\u2764\uFE0F', '\uD83D\uDE02', '\uD83D\uDD25', '\uD83E\uDD2F', '\uD83D\uDE4F', '\u2728', '\uD83D\uDC4D'];
+let QUICK = DEFAULT_QUICK.slice();
+// the quick row: your seven most recent emojis, topped up with the defaults
+function setQuick() {
+  const recent = (S.me && Array.isArray(S.me.recent)) ? S.me.recent : [];
+  QUICK = recent.concat(DEFAULT_QUICK.filter(e => !recent.includes(e))).slice(0, 7);
+}
 const OLD_R = { heart: '\u2764\uFE0F', flame: '\uD83D\uDD25', eye: '\uD83D\uDC41\uFE0F', spark: '\u2728', laugh: '\uD83D\uDE02', aha: '\uD83D\uDCA1' };
 // the full emoji picker loads only when someone opens it
 const PICKER_JS = 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js';
@@ -486,8 +492,8 @@ function onEvent(m) {
       S.view = 'door'; render(); return;
     case 'init':
       S.connected = true; S.retry = 0;
-      S.me = m.me; S.people[m.me.uid] = m.me; mergePeople(m.people);
-      S.messages = m.messages; S.pins = m.pins; S.online = m.online; S.signs = m.signs; if (Array.isArray(m.reactions) && m.reactions.length) QUICK = m.reactions;
+      S.me = m.me; S.people[m.me.uid] = m.me; mergePeople(m.people); setQuick();
+      S.messages = m.messages; S.pins = m.pins; S.online = m.online; S.signs = m.signs; if (Array.isArray(m.reactions) && m.reactions.length) DEFAULT_QUICK = m.reactions; setQuick();
       S.oldestDone = m.messages.length < 50;
       S.view = !m.me.rules_ok ? 'rules' : (!m.me.profile_done ? 'profile' : 'chat');
       if (S.view === 'chat' && S.editing) S.view = 'profile';
@@ -495,6 +501,7 @@ function onEvent(m) {
       if (S.view === 'chat' && S.openLink) { sendWs({ t: 'thread', id: S.openLink }); S.openLink = null; }
       return;
     case 'me':
+      if (m.me && m.me.recent) { S.me = Object.assign(S.me || {}, { recent: m.me.recent }); setQuick(); }
       S.me = m.me; S.people[m.me.uid] = Object.assign({}, S.people[m.me.uid], m.me);
       if (S.view === 'rules' && m.me.rules_ok) { S.view = m.me.profile_done ? 'chat' : 'profile'; render(); }
       else if (S.view === 'profile' && m.me.profile_done) { S.editing = false; S.view = 'chat'; render(); }
@@ -546,6 +553,7 @@ function onEvent(m) {
     }
     case 'typing': S.typing[m.uid] = Date.now(); renderTyping(); setTimeout(renderTyping, 4200); return;
     case 'thread': mergePeople(m.people); showThread(m); return;
+    case 'results': mergePeople(m.people); showResults(m); return;
     case 'who': S.people[m.p.uid] = Object.assign({}, S.people[m.p.uid], m.p); openProfile(m.p.uid, true); return;
     case 'members': mergePeople(m.people); S.online = m.online; openPeople(true); return;
     case 'reports': S.reports = m.count; renderSide(); return;
@@ -723,10 +731,12 @@ function renderChat() {
         <a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a>
         <img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">
         <div style="flex:1;min-width:0;margin-left:4px"><h1 class="room">Inner Circle Chat</h1><div class="sub" id="cnt2"></div></div>
+        <button class="ibtn" id="searchBtn2" aria-label="Search">${I.search(21)}</button>
         <button class="ibtn" id="peopleBtn2" aria-label="Who is here">${I.people(21)}</button>
       </div>
       <div class="phead desk">
         <div style="flex:1;min-width:0"><h2 class="room">Inner Circle Chat</h2><div class="sub" id="cnt"></div></div>
+        <button class="ibtn" id="searchBtn" aria-label="Search">${I.search()}</button>
         <button class="ibtn" id="peopleBtn" aria-label="Who is here">${I.people()}</button>
         ${hostish ? `<button class="ibtn" id="repBtn" aria-label="Reports">${I.shield()}</button>` : ''}
         <a class="btn2 sm" href="/" target="ivcircle" id="popout" style="margin-left:4px">${P('<path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',{s:16})}Pop out</a>
@@ -757,6 +767,7 @@ function renderChat() {
   });
   $('#jump').onclick = () => { box.scrollTop = box.scrollHeight; $('#jump').classList.remove('show'); };
   $('#peopleBtn').onclick = $('#peopleBtn2').onclick = () => sendWs({ t: 'members' });
+  $('#searchBtn').onclick = $('#searchBtn2').onclick = () => openSearch('room');
   if ($('#repBtn')) $('#repBtn').onclick = () => sendWs({ t: 'reports' });
   $('#popout').onclick = e => { e.preventDefault(); window.open('/', 'ivcircle', 'width=440,height=760'); };
 }
@@ -831,6 +842,14 @@ function renderTyping() {
 
 function renderReply() {
   const el = $('#replybar'); if (!el) return;
+  if (S.editMsg) {
+    const em = S.messages.find(x => x.id === S.editMsg);
+    if (!em) { S.editMsg = null; } else {
+      el.innerHTML = `<div class="replybar">${I.edit(16)}<span class="q"><b>Editing</b>: ${esc((em.text || '').slice(0, 120))}</span><button class="ibtn" id="noEdit" aria-label="Cancel editing" style="width:32px;height:32px">${I.close(16)}</button></div>`;
+      $('#noEdit').onclick = cancelEdit;
+      stickDown(); return;
+    }
+  }
   if (!S.reply) { el.innerHTML = ''; return; }
   const m = S.messages.find(x => x.id === S.reply);
   if (!m) { S.reply = null; el.innerHTML = ''; return; }
@@ -855,7 +874,7 @@ function msgHtml(m, i, list) {
       const rp = person(m.reply.uid);
       body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b>${m.reply.deleted ? 'Message deleted' : esc(m.reply.text || (m.reply.image ? 'Image' : ''))}</button>`;
     }
-    if (m.text) { const f = formatText(m.text); body += `<div class="txt">${f.html}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
+    if (m.text) { const f = formatText(m.text); body += `<div class="txt">${f.html}${m.edited ? ' <span class="time" title="Edited">(edited)</span>' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
     if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
   }
   const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile">${esc(p.name)}</button>${badges(p)}${signRow(p)}<span class="time">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span></div>` : '';
@@ -915,7 +934,18 @@ document.addEventListener('touchstart', e => {
 document.addEventListener('touchmove', e => { if (!pressTimer || !pressXY) return; const t = e.touches[0]; if (Math.abs(t.clientX - pressXY[0]) + Math.abs(t.clientY - pressXY[1]) > 10) { clearTimeout(pressTimer); pressTimer = null; } }, { passive: true });
 ['touchend', 'touchcancel'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(pressTimer); pressTimer = null; }, { passive: true }));
 
-function startReply(id) { S.reply = id; renderReply(); $('#field') && $('#field').focus(); }
+function startReply(id) { if (S.editMsg) cancelEdit(); S.reply = id; renderReply(); $('#field') && $('#field').focus(); }
+function startEdit(id) {
+  const m = S.messages.find(x => x.id === id); const f = $('#field'); if (!m || !f) return;
+  S.reply = null; S.editDraft = S.editMsg ? S.editDraft : f.value; S.editMsg = id;
+  f.value = m.text || ''; f.dispatchEvent(new Event('input')); renderReply(); f.focus();
+  f.selectionStart = f.selectionEnd = f.value.length;
+}
+function cancelEdit() {
+  const f = $('#field'); S.editMsg = null;
+  if (f) { f.value = S.editDraft || ''; f.dispatchEvent(new Event('input')); }
+  S.editDraft = ''; renderReply();
+}
 
 function wireComposer() {
   const f = $('#field');
@@ -923,12 +953,17 @@ function wireComposer() {
   const saved = load('ivc_draft'); if (saved) { f.value = saved; grow(); }
   let lastTyping = 0;
   f.addEventListener('input', () => {
-    grow(); store('ivc_draft', f.value || null);
+    grow(); if (!S.editMsg) store('ivc_draft', f.value || null);
     if (Date.now() - lastTyping > 2500 && f.value.trim()) { lastTyping = Date.now(); sendWs({ t: 'typing' }); }
   });
   f.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(hover: hover)').matches) { e.preventDefault(); send(); }
+    if (e.key === 'Escape' && S.editMsg) { cancelEdit(); return; }
     if (e.key === 'Escape' && S.reply) { S.reply = null; renderReply(); }
+    if (e.key === 'ArrowUp' && !f.value && !S.editMsg) {
+      const last = S.messages.slice().reverse().find(x => x.uid === S.me.uid && x.text && !x.deleted);
+      if (last) { e.preventDefault(); startEdit(last.id); }
+    }
   });
   $('#sendBtn').onclick = send;
   $('#emoBtn').onclick = () => {
@@ -936,12 +971,19 @@ function wireComposer() {
     o.querySelector('#emoHost').appendChild(emojiPicker(u => {
       const a = f.selectionStart ?? f.value.length, b = f.selectionEnd ?? f.value.length;
       f.value = f.value.slice(0, a) + u + f.value.slice(b); f.selectionStart = f.selectionEnd = a + u.length;
-      grow(); store('ivc_draft', f.value);
+      grow(); if (!S.editMsg) store('ivc_draft', f.value); sendWs({ t: 'used', e: u });
     }));
   };
   $('#imgBtn').onclick = () => pickImage(key => { sendWs({ t: 'send', text: f.value.trim(), image: key, reply_to: S.reply || undefined }); f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); });
   function send() {
-    const text = f.value.trim(); if (!text) return;
+    const text = f.value.trim();
+    if (S.editMsg) {
+      const em = S.messages.find(x => x.id === S.editMsg);
+      if (!text && !(em && em.image)) return;
+      if (sendWs({ t: 'edit', id: S.editMsg, text })) { S.editMsg = null; f.value = S.editDraft || ''; S.editDraft = ''; grow(); renderReply(); }
+      return;
+    }
+    if (!text) return;
     if (sendWs({ t: 'send', text, reply_to: S.reply || undefined })) { f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); }
   }
 }
@@ -998,6 +1040,7 @@ function openActions(id, x, y) {
   const html = `<div class="reactbar" role="toolbar" aria-label="React">${QUICK.map(k => `<button class="${picked(k) ? 'pick' : ''}" data-k="${esc(k)}" aria-label="React ${esc(k)}">${esc(k)}</button>`).join('')}<button class="more" data-allemoji="1" aria-label="All emojis">${I.down(20)}</button></div>
     <div id="actmenu">
     <button class="mi" data-a="reply">${I.reply()}Reply</button>
+    ${mine && S.messages.some(x => x.id === id) ? `<button class="mi" data-a="edit">${I.edit()}Edit</button>` : ''}
     ${m.text ? `<button class="mi" data-a="copy">${I.copy()}Copy</button>` : ''}
     <button class="mi" data-a="thread">${threadIcon}View thread</button>
     ${mod ? `<button class="mi" data-a="pin">${I.pin()}${m.pinned ? 'Unpin' : 'Pin'}</button>` : ''}
@@ -1020,6 +1063,7 @@ function openActions(id, x, y) {
   o.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
     const a = b.dataset.a; closeOverlay();
     if (a === 'reply') startReply(id);
+    if (a === 'edit') startEdit(id);
     if (a === 'copy') navigator.clipboard && navigator.clipboard.writeText(m.text).then(() => toast('Copied.'));
     if (a === 'thread') sendWs({ t: 'thread', id });
     if (a === 'link') navigator.clipboard && navigator.clipboard.writeText(location.origin + '/#m=' + id).then(() => toast('Link copied. Only members can open it.'));
@@ -1030,6 +1074,37 @@ function openActions(id, x, y) {
     if (a === 'mute') sendWs({ t: 'mute', uid: m.uid, hours: p.muted ? 0 : 24 });
     if (a === 'remove' && confirm(`Remove ${p.name} from the Inner Circle? They will lose access to the chat.`)) sendWs({ t: 'remove', uid: m.uid });
   });
+}
+
+function openSearch(scope) {
+  S.searchScope = scope || 'room';
+  const o = overlay(`<div style="padding:16px 12px 10px 18px;display:flex;align-items:center;gap:10px"><h2 class="h1" style="font-size:22px;flex:1">Search</h2><button class="ibtn" id="sclose" aria-label="Close">${I.close()}</button></div>
+    <div style="padding:0 16px 10px"><input id="sq" class="finput" type="search" placeholder="Search messages and names" autocomplete="off" style="height:46px;font-size:15px"></div>
+    <div role="radiogroup" aria-label="Where to search" style="display:flex;gap:6px;padding:0 16px 12px;border-bottom:1px solid var(--line)">
+      <button class="chip" data-scope="room" role="radio">This chat</button><button class="chip" data-scope="all" role="radio">All chats</button></div>
+    <div id="sres" style="padding:8px 8px 14px;min-height:120px"></div>`, false, 'Search');
+  o.firstElementChild.style.width = 'min(560px, 100%)';
+  const mark = () => o.querySelectorAll('[data-scope]').forEach(b => { const on = b.dataset.scope === S.searchScope; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+  mark();
+  let timer = null;
+  const run = () => { const q = $('#sq').value.trim(); if (q.length < 2) { $('#sres').innerHTML = '<p class="muted" style="padding:12px 10px;font-size:14px">Type at least two letters.</p>'; return; } sendWs({ t: 'search', q, scope: S.searchScope }); };
+  $('#sq').oninput = () => { clearTimeout(timer); timer = setTimeout(run, 280); };
+  $('#sq').onkeydown = e => { if (e.key === 'Enter') { clearTimeout(timer); run(); } };
+  o.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { S.searchScope = b.dataset.scope; mark(); run(); });
+  $('#sclose').onclick = closeOverlay;
+  run(); $('#sq').focus();
+}
+function showResults(r) {
+  const box = $('#sres'); const input = $('#sq');
+  if (!box || !input || r.q !== input.value.trim()) return;
+  if (!r.messages.length) { box.innerHTML = `<p class="muted" style="padding:12px 10px;font-size:14px">Nothing found for "${esc(r.q)}".</p>`; return; }
+  const re = new RegExp('(' + r.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+  const hl = t => esc(t).replace(re, '<mark style="background:rgba(216,170,60,0.35);color:inherit;border-radius:3px">$1</mark>');
+  const snip = t => { const i = t.toLowerCase().indexOf(r.q.toLowerCase()); const a = Math.max(0, i - 50); return (a ? '…' : '') + t.slice(a, a + 180) + (t.length > a + 180 ? '…' : ''); };
+  box.innerHTML = `<div class="muted" style="font-size:12.5px;padding:2px 10px 8px">${r.messages.length}${r.messages.length >= 60 ? '+' : ''} result${r.messages.length === 1 ? '' : 's'}${r.scope === 'all' ? ' across all chats' : ' in this chat'}</div>` + r.messages.map(m => { const p = person(m.uid);
+    return `<button class="person" data-hit="${m.id}" style="align-items:flex-start;padding:9px 10px;min-height:0;gap:11px">${avatar(m.uid, 32)}<span style="flex:1;min-width:0;text-align:left"><span style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><b style="font-size:14px">${hl(p.name || 'Member')}</b><span class="time">${r.scope === 'all' ? esc(r.room) + ' · ' : ''}${esc(dayLabel(m.created))} ${fmtTime(m.created)}</span></span><span style="display:block;font-weight:500;font-size:14px;line-height:1.45;margin-top:2px;color:var(--ink)">${m.text ? hl(snip(m.text)) : '<span class="muted">Image</span>'}</span></span></button>`; }).join('');
+  hydrateMedia(box);
+  box.querySelectorAll('[data-hit]').forEach(b => b.onclick = () => sendWs({ t: 'thread', id: Number(b.dataset.hit) }));
 }
 
 function showThread(t) {

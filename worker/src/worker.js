@@ -166,6 +166,7 @@ export class Room {
       id INTEGER PRIMARY KEY AUTOINCREMENT, uid TEXT, text TEXT, image TEXT, reply_to INTEGER,
       created INTEGER, edited INTEGER DEFAULT 0, deleted INTEGER DEFAULT 0, pinned INTEGER DEFAULT 0)`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS reactions (msg_id INTEGER, uid TEXT, kind TEXT, PRIMARY KEY (msg_id, uid, kind))`);
+    try { this.sql.exec("ALTER TABLE members ADD COLUMN recent TEXT DEFAULT '[]'"); } catch (e) { /* already there */ }
     for (const [oldKey, emoji] of Object.entries(OLD_REACTIONS)) {
       this.sql.exec('UPDATE OR IGNORE reactions SET kind = ? WHERE kind = ?', emoji, oldKey);
       this.sql.exec('DELETE FROM reactions WHERE kind = ?', oldKey);
@@ -294,7 +295,7 @@ export class Room {
       const msgs = this.page();
       const pins = this.pins();
       this.send(ws, {
-        t: 'init', me: { ...this.person(m), rules_ok: !!m.rules_ok, profile_done: !!m.profile_done, email: m.email },
+        t: 'init', me: this.meFor(who.uid),
         messages: msgs, pins, online: this.online(),
         people: this.peopleFor(msgs.concat(pins), this.online()),
         signs: SIGNS, symbols: SYMBOLS, reactions: REACTIONS,
@@ -356,7 +357,7 @@ export class Room {
           && this.one('SELECT COUNT(DISTINCT kind) AS n FROM reactions WHERE msg_id = ?', msg.id).n >= 20) return;
         const exists = this.one('SELECT 1 AS x FROM reactions WHERE msg_id = ? AND uid = ? AND kind = ?', msg.id, me.uid, msg.kind);
         if (exists) this.sql.exec('DELETE FROM reactions WHERE msg_id = ? AND uid = ? AND kind = ?', msg.id, me.uid, msg.kind);
-        else this.sql.exec('INSERT INTO reactions (msg_id, uid, kind) VALUES (?, ?, ?)', msg.id, me.uid, msg.kind);
+        else { this.sql.exec('INSERT INTO reactions (msg_id, uid, kind) VALUES (?, ?, ?)', msg.id, me.uid, msg.kind); this.useEmoji(me.uid, msg.kind); this.send(ws, { t: 'me', me: this.meFor(me.uid) }); }
         const row = this.one('SELECT * FROM messages WHERE id = ?', msg.id);
         if (row) this.broadcast({ t: 'update', m: this.shape(row) });
         return;
@@ -442,6 +443,34 @@ export class Room {
         return this.send(ws, { t: 'history', messages: msgs, people: this.peopleFor(msgs), done: msgs.length < PAGE });
       }
 
+      case 'used': {
+        this.useEmoji(me.uid, msg.e);
+        return this.send(ws, { t: 'me', me: this.meFor(me.uid) });
+      }
+
+      case 'edit': {
+        const row = this.one('SELECT * FROM messages WHERE id = ?', Number(msg.id));
+        if (!row || row.deleted || row.uid !== me.uid) return;
+        if (me.muted_until > now) return this.send(ws, { t: 'error', text: 'You are muted for now. Try again later.' });
+        const text = clean(msg.text, MAX_TEXT, true);
+        if (!text && !row.image) return;
+        if (text === row.text) return;
+        this.sql.exec('UPDATE messages SET text = ?, edited = ? WHERE id = ?', text, now, row.id);
+        this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', row.id)) });
+        // replies quoting it show the new words
+        for (const r of this.all('SELECT * FROM messages WHERE reply_to = ? AND deleted = 0', row.id)) this.broadcast({ t: 'update', m: this.shape(r) });
+        return;
+      }
+
+      case 'search': {
+        const q = clean(msg.q, 100);
+        if (!q || q.length < 2) return this.send(ws, { t: 'results', q, scope: msg.scope, messages: [], people: {} });
+        const like = '%' + q.replace(/[\\%_]/g, c => '\\' + c) + '%';
+        const rows = this.all("SELECT m.* FROM messages m LEFT JOIN members p ON p.uid = m.uid WHERE m.deleted = 0 AND (m.text LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\') ORDER BY m.id DESC LIMIT 60", like, like);
+        const msgs = rows.map(r => this.shape(r));
+        return this.send(ws, { t: 'results', q, scope: msg.scope, room: 'Inner Circle Chat', messages: msgs, people: this.peopleFor(msgs) });
+      }
+
       case 'thread': {
         // the message, everything it replies to, and every reply beneath it
         const start = this.one('SELECT * FROM messages WHERE id = ?', Number(msg.id));
@@ -493,9 +522,16 @@ export class Room {
     }
   }
 
+  useEmoji(uid, e) {
+    if (!isEmoji(e)) return;
+    const m = this.member(uid); if (!m) return;
+    const list = [e].concat(safeArr(m.recent).filter(x => x !== e)).slice(0, 24);
+    this.sql.exec('UPDATE members SET recent = ? WHERE uid = ?', JSON.stringify(list), uid);
+  }
+
   meFor(uid) {
     const m = this.member(uid);
-    return { ...this.person(m), rules_ok: !!m.rules_ok, profile_done: !!m.profile_done, email: m.email };
+    return { ...this.person(m), rules_ok: !!m.rules_ok, profile_done: !!m.profile_done, email: m.email, recent: safeArr(m.recent) };
   }
 
   notifyMods(obj) {
