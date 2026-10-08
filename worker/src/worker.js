@@ -10,7 +10,14 @@ const INITIATOR_CUTOFF = Date.UTC(2027, 0, 1); // joined before 1 Jan 2027
 const MAX_TEXT = 2000;
 const MAX_IMAGE = 8 * 1024 * 1024;
 const PAGE = 50;
-const REACTIONS = ['heart', 'flame', 'eye', 'spark', 'laugh', 'aha'];
+// Quick reactions shown first; any single real emoji is accepted.
+const REACTIONS = ['\u2764\uFE0F', '\uD83D\uDE02', '\uD83D\uDD25', '\uD83E\uDD2F', '\uD83D\uDE4F', '\u2728', '\uD83D\uDC4D'];
+const OLD_REACTIONS = { heart: '\u2764\uFE0F', flame: '\uD83D\uDD25', eye: '\uD83D\uDC41\uFE0F', spark: '\u2728', laugh: '\uD83D\uDE02', aha: '\uD83D\uDCA1' };
+function isEmoji(k) {
+  if (typeof k !== 'string' || !k || k.length > 32) return false;
+  if (!/^[\p{Extended_Pictographic}\p{Emoji_Component}\p{Emoji_Modifier}\p{Regional_Indicator}\u200d\ufe0f\u20e3\u{E0020}-\u{E007F}]+$/u.test(k)) return false;
+  return /[\p{Extended_Pictographic}\p{Regional_Indicator}\u20e3]/u.test(k);
+}
 const SIGNS = ['', 'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
 const SYMBOLS = ['sun', 'moon', 'eye', 'star', 'triangle', 'leaf'];
 
@@ -159,6 +166,10 @@ export class Room {
       id INTEGER PRIMARY KEY AUTOINCREMENT, uid TEXT, text TEXT, image TEXT, reply_to INTEGER,
       created INTEGER, edited INTEGER DEFAULT 0, deleted INTEGER DEFAULT 0, pinned INTEGER DEFAULT 0)`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS reactions (msg_id INTEGER, uid TEXT, kind TEXT, PRIMARY KEY (msg_id, uid, kind))`);
+    for (const [oldKey, emoji] of Object.entries(OLD_REACTIONS)) {
+      this.sql.exec('UPDATE OR IGNORE reactions SET kind = ? WHERE kind = ?', emoji, oldKey);
+      this.sql.exec('DELETE FROM reactions WHERE kind = ?', oldKey);
+    }
     this.sql.exec(`CREATE TABLE IF NOT EXISTS reports (id INTEGER PRIMARY KEY AUTOINCREMENT, msg_id INTEGER, uid TEXT, reason TEXT, created INTEGER, resolved INTEGER DEFAULT 0)`);
   }
 
@@ -223,6 +234,7 @@ export class Room {
     return {
       id: row.id, uid: row.uid, text: row.deleted ? '' : row.text, image: row.deleted ? '' : row.image,
       reply, created: row.created, edited: !!row.edited, deleted: !!row.deleted, pinned: !!row.pinned, reacts,
+      replies: this.one('SELECT COUNT(*) AS n FROM messages WHERE reply_to = ? AND deleted = 0', row.id).n,
     };
   }
 
@@ -333,11 +345,15 @@ export class Room {
         }
         const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created) VALUES (?, ?, ?, ?, ?) RETURNING *', me.uid, text, image, reply, now);
         const m = this.shape(row);
-        return this.broadcast({ t: 'msg', m, cid: clean(msg.cid, 40), people: this.peopleFor([m]) });
+        this.broadcast({ t: 'msg', m, cid: clean(msg.cid, 40), people: this.peopleFor([m]) });
+        if (reply) this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', reply)) });
+        return;
       }
 
       case 'react': {
-        if (!me.profile_done || !REACTIONS.includes(msg.kind) || !Number.isInteger(msg.id)) return;
+        if (!me.profile_done || !isEmoji(msg.kind) || !Number.isInteger(msg.id)) return;
+        if (!this.one('SELECT 1 AS x FROM reactions WHERE msg_id = ? AND kind = ?', msg.id, msg.kind)
+          && this.one('SELECT COUNT(DISTINCT kind) AS n FROM reactions WHERE msg_id = ?', msg.id).n >= 20) return;
         const exists = this.one('SELECT 1 AS x FROM reactions WHERE msg_id = ? AND uid = ? AND kind = ?', msg.id, me.uid, msg.kind);
         if (exists) this.sql.exec('DELETE FROM reactions WHERE msg_id = ? AND uid = ? AND kind = ?', msg.id, me.uid, msg.kind);
         else this.sql.exec('INSERT INTO reactions (msg_id, uid, kind) VALUES (?, ?, ?)', msg.id, me.uid, msg.kind);
@@ -423,6 +439,31 @@ export class Room {
       case 'history': {
         const msgs = this.page(Number(msg.before) || 0);
         return this.send(ws, { t: 'history', messages: msgs, people: this.peopleFor(msgs), done: msgs.length < PAGE });
+      }
+
+      case 'thread': {
+        // the message, everything it replies to, and every reply beneath it
+        const start = this.one('SELECT * FROM messages WHERE id = ?', Number(msg.id));
+        if (!start) return this.send(ws, { t: 'notice', text: 'That message is no longer here.' });
+        const seen = new Map([[start.id, start]]);
+        let up = start;
+        for (let i = 0; i < 50 && up.reply_to; i++) {
+          up = this.one('SELECT * FROM messages WHERE id = ?', up.reply_to);
+          if (!up || seen.has(up.id)) break;
+          seen.set(up.id, up);
+        }
+        let frontier = [start.id];
+        while (frontier.length && seen.size < 300) {
+          const next = [];
+          for (const id of frontier) {
+            for (const r of this.all('SELECT * FROM messages WHERE reply_to = ? ORDER BY id LIMIT 200', id)) {
+              if (!seen.has(r.id)) { seen.set(r.id, r); next.push(r.id); }
+            }
+          }
+          frontier = next;
+        }
+        const msgs = [...seen.values()].sort((a, b) => a.id - b.id).map(r => this.shape(r));
+        return this.send(ws, { t: 'thread', id: start.id, messages: msgs, people: this.peopleFor(msgs) });
       }
 
       case 'typing': {

@@ -151,8 +151,15 @@ svg{display:block;flex:none}
 .tchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border:1.5px solid rgba(143,181,240,0.6);border-radius:999px;color:var(--lapis-lit);font-weight:700;font-size:12.5px;vertical-align:middle;line-height:1;white-space:nowrap}
 .reacts{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
 .react{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px 0 8px;border-radius:999px;background:rgba(233,238,246,0.06);border:1px solid var(--line);font-size:12.5px;font-weight:700;line-height:1}
-.react svg{color:var(--lapis-lit)}
-.react.mine{border-color:rgba(216,170,60,0.75);background:rgba(216,170,60,0.13)} .react.mine svg{color:var(--gold)}
+.react.mine{border-color:rgba(216,170,60,0.75);background:rgba(216,170,60,0.13)}
+.react .em{font-size:15px;line-height:1}
+.rcount{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px 0 8px;border-radius:999px;color:var(--lapis-lit);font-size:12.5px;font-weight:700;line-height:1}
+.rcount:hover{background:rgba(143,181,240,0.1)}
+.ctx{position:fixed;z-index:25;width:352px;max-height:calc(100dvh - 24px);overflow:auto;background:var(--card);border:1px solid rgba(233,238,246,0.16);border-radius:14px;box-shadow:0 18px 44px rgba(0,0,0,0.5)}
+.ctx .mi{min-height:42px;font-size:14.5px}
+emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--indicator-color:var(--gold);--input-border-color:rgba(233,238,246,0.2);--input-font-color:var(--ink);--input-placeholder-color:#8794AA;--outline-color:var(--lapis-lit);--category-font-color:var(--muted);--button-active-background:rgba(216,170,60,0.2);--button-hover-background:rgba(233,238,246,0.08);width:100%;height:360px;display:block}
+.thread-list{padding:6px 16px 16px;display:flex;flex-direction:column;gap:3px}
+.row.focus .bub{border-color:var(--gold);box-shadow:0 0 0 1px rgba(216,170,60,0.4)}
 .quote{display:block;width:100%;background:rgba(10,15,28,0.55);border-radius:10px;padding:6px 11px 7px;margin:3px 0 7px;font-size:13.5px;color:var(--muted);line-height:1.45;overflow:hidden;text-overflow:ellipsis}
 .quote b{display:block;color:var(--lapis-lit);font-size:12.5px;font-weight:700}
 .unfurl{display:flex;gap:12px;background:rgba(10,15,28,0.55);border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;align-items:flex-start;max-width:440px}
@@ -161,11 +168,6 @@ svg{display:block;flex:none}
 .unfurl .ue{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);line-height:1.2}
 .unfurl .ue.free{color:var(--lapis-lit)}
 .mimg{display:block;margin-top:6px;max-width:100%;max-height:360px;border-radius:10px;cursor:zoom-in;background:rgba(233,238,246,0.06);min-width:120px;min-height:80px}
-.tools{position:absolute;top:-4px;left:calc(100% + 6px);display:none;align-items:center;gap:2px;padding:4px;background:var(--card);border:1px solid rgba(233,238,246,0.18);border-radius:12px;box-shadow:0 18px 44px rgba(0,0,0,0.45);z-index:2}
-.tools button{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
-.tools button:hover{background:rgba(233,238,246,0.08)}
-.tools .sep{width:1px;height:20px;background:var(--line);margin:0 3px}
-@media (hover:hover){.bub:hover .tools,.bub:focus-within .tools{display:flex}.stack{max-width:min(680px,calc(100% - 250px))}}
 .typing{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);padding:6px 0 0 46px;min-height:22px}
 .dots{display:flex;gap:3px}.dots i{width:5px;height:5px;border-radius:50%;background:var(--muted);display:block;animation:blink 1.2s infinite}
 .dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
@@ -212,7 +214,10 @@ svg{display:block;flex:none}
 .mi.danger,.mi.danger svg{color:var(--danger)}
 .mhead{padding:10px 16px 8px;border-top:1px solid var(--line);font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold);background:rgba(216,170,60,0.06)}
 .reactbar{display:flex;justify-content:space-between;gap:4px;padding:8px 10px;border-bottom:1px solid var(--line)}
-.reactbar button{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.reactbar{align-items:center}
+.reactbar button{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;transition:transform .12s}
+.reactbar button:hover{transform:scale(1.18);background:rgba(233,238,246,0.06)}
+.reactbar .more{font-size:0;color:var(--ink);background:rgba(233,238,246,0.08)}
 .reactbar button.pick{background:rgba(216,170,60,0.16);color:var(--gold)}
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--card);border:1px solid rgba(233,238,246,0.22);border-radius:12px;padding:10px 16px;font-size:14px;z-index:30;box-shadow:0 14px 36px rgba(0,0,0,0.55);max-width:calc(100% - 32px)}
 .lightbox img{max-width:min(1100px,100%);max-height:calc(100dvh - 60px);border-radius:12px}
@@ -283,6 +288,20 @@ const R = {
   aha:['Aha','<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>']
 };
 const rIcon = (k, s) => P(R[k][1], {s: s||14, w: 2.2});
+let QUICK = ['\u2764\uFE0F', '\uD83D\uDE02', '\uD83D\uDD25', '\uD83E\uDD2F', '\uD83D\uDE4F', '\u2728', '\uD83D\uDC4D'];
+const OLD_R = { heart: '\u2764\uFE0F', flame: '\uD83D\uDD25', eye: '\uD83D\uDC41\uFE0F', spark: '\u2728', laugh: '\uD83D\uDE02', aha: '\uD83D\uDCA1' };
+// the full emoji picker loads only when someone opens it
+const PICKER_JS = 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js';
+const EMOJI_DATA = 'https://cdn.jsdelivr.net/npm/emoji-picker-element-data@1.8.0/en/emojibase/data.json';
+let pickerReady = null;
+function emojiPicker(onPick) {
+  if (!pickerReady) pickerReady = import(PICKER_JS);
+  const el = document.createElement('emoji-picker');
+  el.className = 'dark'; el.setAttribute('data-source', EMOJI_DATA);
+  el.addEventListener('emoji-click', e => onPick(e.detail.unicode));
+  pickerReady.catch(() => toast('The emoji list could not load. Check your connection.'));
+  return el;
+}
 const SYMS = {
   sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>',
   moon:'<path d="M15 3.5a8.5 8.5 0 1 0 5.5 13.6A7 7 0 0 1 15 3.5z"/>',
@@ -309,6 +328,8 @@ function load(k) { try { return localStorage.getItem(k); } catch (e) { return nu
 (function captureToken(){
   const m = location.hash.match(/iv_session=([^&]+)/);
   if (m) { store('ivc_token', decodeURIComponent(m[1])); history.replaceState(null, '', location.pathname + location.search); }
+  const ml = location.hash.match(/(?:^#|&)m=(\d+)/);
+  if (ml) { S.openLink = Number(ml[1]); history.replaceState(null, '', location.pathname + location.search); }
   const q = new URLSearchParams(location.search);
   if (DEV && q.get('dev')) {
     const name = q.get('dev'); const id = name.toLowerCase().replace(/[^a-z0-9]/g,'') || 'tester';
@@ -460,11 +481,13 @@ function onEvent(m) {
     case 'init':
       S.connected = true; S.retry = 0;
       S.me = m.me; S.people[m.me.uid] = m.me; mergePeople(m.people);
-      S.messages = m.messages; S.pins = m.pins; S.online = m.online; S.signs = m.signs;
+      S.messages = m.messages; S.pins = m.pins; S.online = m.online; S.signs = m.signs; if (Array.isArray(m.reactions) && m.reactions.length) QUICK = m.reactions;
       S.oldestDone = m.messages.length < 50;
       S.view = !m.me.rules_ok ? 'rules' : (!m.me.profile_done ? 'profile' : 'chat');
       if (S.view === 'chat' && S.editing) S.view = 'profile';
-      render(); return;
+      render();
+      if (S.view === 'chat' && S.openLink) { sendWs({ t: 'thread', id: S.openLink }); S.openLink = null; }
+      return;
     case 'me':
       S.me = m.me; S.people[m.me.uid] = Object.assign({}, S.people[m.me.uid], m.me);
       if (S.view === 'rules' && m.me.rules_ok) { S.view = m.me.profile_done ? 'chat' : 'profile'; render(); }
@@ -493,6 +516,8 @@ function onEvent(m) {
     case 'update': {
       const i = S.messages.findIndex(x => x.id === m.m.id);
       if (i >= 0) { S.messages[i] = m.m; if (S.view === 'chat') renderMessages(false); }
+      const ti = (S.threadMsgs || []).findIndex(x => x.id === m.m.id);
+      if (ti >= 0 && $('#thread')) { S.threadMsgs[ti] = m.m; sendWs({ t: 'thread', id: S.threadId }); }
       return;
     }
     case 'pins': mergePeople(m.people); S.pins = m.pins; if (S.view === 'chat') renderPinbar(); return;
@@ -507,6 +532,7 @@ function onEvent(m) {
       return;
     }
     case 'typing': S.typing[m.uid] = Date.now(); renderTyping(); setTimeout(renderTyping, 4200); return;
+    case 'thread': mergePeople(m.people); showThread(m); return;
     case 'who': S.people[m.p.uid] = Object.assign({}, S.people[m.p.uid], m.p); openProfile(m.p.uid, true); return;
     case 'members': mergePeople(m.people); S.online = m.online; openPeople(true); return;
     case 'reports': S.reports = m.count; renderSide(); return;
@@ -698,6 +724,7 @@ function renderChat() {
       <div id="replybar"></div>
       <div class="compose">
         <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
+        <button class="ibtn" id="emoBtn" aria-label="Emoji">${P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',{s:21})}</button>
         <label class="sr" for="field">Message the Inner Circle</label>
         <textarea id="field" class="field" rows="1" maxlength="2000" placeholder="Message the Inner Circle"></textarea>
         <button class="send" id="sendBtn" aria-label="Send">${I.up(21)}</button>
@@ -819,13 +846,13 @@ function msgHtml(m, i, list) {
     if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
   }
   const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile">${esc(p.name)}</button>${badges(p)}${signRow(p)}<span class="time">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span></div>` : '';
-  const tools = m.deleted ? '' : `<div class="tools" role="toolbar" aria-label="Message actions">
-      ${['heart', 'eye', 'spark'].map(k => `<button data-react="${k}" data-id="${m.id}" aria-label="React with ${R[k][0]}" title="${R[k][0]}">${P(R[k][1], {s:17})}</button>`).join('')}
-      <span class="sep"></span><button data-replyto="${m.id}" aria-label="Reply" title="Reply">${I.reply(18)}</button><button data-more="${m.id}" aria-label="More" title="More options">${I.more()}</button></div>`;
-  const reacts = Object.keys(m.reacts || {}).filter(k => R[k] && m.reacts[k].length);
-  const rx = reacts.length ? `<div class="reacts">${reacts.map(k => { const mineR = S.me && m.reacts[k].includes(S.me.uid); return `<button class="react${mineR ? ' mine' : ''}" data-react="${k}" data-id="${m.id}" aria-label="${R[k][0]}, ${m.reacts[k].length}${mineR ? ', including you' : ''}">${rIcon(k)}${m.reacts[k].length}</button>`; }).join('')}</div>` : '';
+  const reacts = Object.keys(m.reacts || {}).filter(k => m.reacts[k] && m.reacts[k].length);
+  const names = uids => uids.map(u => person(u).name).slice(0, 8).join(', ') + (uids.length > 8 ? ' and ' + (uids.length - 8) + ' more' : '');
+  const chips = reacts.map(k => { const em = OLD_R[k] || k; const mineR = S.me && m.reacts[k].includes(S.me.uid); return `<button class="react${mineR ? ' mine' : ''}" data-react="${esc(em)}" data-id="${m.id}" title="${esc(names(m.reacts[k]))}" aria-label="${esc(em)} ${m.reacts[k].length}${mineR ? ', including you' : ''}"><span class="em">${esc(em)}</span>${m.reacts[k].length}</button>`; }).join('');
+  const rc = m.replies && !m.deleted ? `<button class="rcount" data-thread="${m.id}" title="View thread">${I.reply(14)}${m.replies}</button>` : '';
+  const rx = chips || rc ? `<div class="reacts">${chips}${rc}</div>` : '';
   const av = last ? `<button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile" title="${esc(p.name)}">${avatar(m.uid, 36)}</button>` : '<span class="gap"></span>';
-  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub" data-press="${m.id}">${head}${body}${tools}</div>${rx}</div></div>`;
+  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub" data-press="${m.id}">${head}${body}</div>${rx}</div></div>`;
   return out;
 }
 
@@ -842,25 +869,38 @@ function renderMessages(toBottom) {
   if (toBottom) { box.scrollTop = box.scrollHeight; S.stick = true; } else box.scrollTop = box.scrollHeight - keep;
 }
 
-// one click handler for everything inside the message list
+// one click handler for everything inside the message list and the thread view
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-react],[data-replyto],[data-more],[data-who],[data-goto],[data-zoom]');
-  if (!t || !t.closest('#msgs')) return;
+  const t = e.target.closest('[data-react],[data-replyto],[data-who],[data-goto],[data-zoom],[data-thread]');
+  if (!t || !t.closest('#msgs,#thread')) return;
+  const inThread = !!t.closest('#thread');
   if (t.dataset.react) sendWs({ t: 'react', id: Number(t.dataset.id), kind: t.dataset.react });
-  else if (t.dataset.replyto) startReply(Number(t.dataset.replyto));
-  else if (t.dataset.more) openActions(Number(t.dataset.more));
+  else if (t.dataset.thread) sendWs({ t: 'thread', id: Number(t.dataset.thread) });
   else if (t.dataset.who) askProfile(t.dataset.who);
-  else if (t.dataset.goto) { const el = document.querySelector(`.row[data-id="${t.dataset.goto}"]`); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); } }
+  else if (t.dataset.goto) {
+    if (inThread) { sendWs({ t: 'thread', id: Number(t.dataset.goto) }); return; }
+    const el = document.querySelector(`#msgs .row[data-id="${t.dataset.goto}"]`);
+    if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); }
+    else sendWs({ t: 'thread', id: Number(t.dataset.goto) });
+  }
   else if (t.dataset.zoom && t.src) openLightbox(t.src);
 });
-// long press on touch screens opens the action sheet
-let pressTimer = null;
+// right-click on a computer, press and hold on a phone: the message menu
+document.addEventListener('contextmenu', e => {
+  const b = e.target.closest('[data-press]'); if (!b || !b.closest('#msgs,#thread')) return;
+  if (e.target.closest('a') && !matchMedia('(hover: none)').matches) return; // keep the browser menu on links
+  e.preventDefault();
+  if (matchMedia('(hover: none)').matches) return; // phones use the long press below
+  openActions(Number(b.dataset.press), e.clientX, e.clientY);
+});
+let pressTimer = null, pressXY = null;
 document.addEventListener('touchstart', e => {
-  const b = e.target.closest('[data-press]'); if (!b || e.target.closest('a,button')) return;
+  const b = e.target.closest('[data-press]'); if (!b || !b.closest('#msgs,#thread') || e.target.closest('button')) return;
+  const t = e.touches[0]; pressXY = [t.clientX, t.clientY];
   pressTimer = setTimeout(() => { pressTimer = null; if (navigator.vibrate) navigator.vibrate(10); openActions(Number(b.dataset.press)); }, 450);
 }, { passive: true });
-['touchend', 'touchmove', 'touchcancel'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(pressTimer); pressTimer = null; }, { passive: true }));
-document.addEventListener('contextmenu', e => { const b = e.target.closest('[data-press]'); if (b && matchMedia('(hover: none)').matches) e.preventDefault(); });
+document.addEventListener('touchmove', e => { if (!pressTimer || !pressXY) return; const t = e.touches[0]; if (Math.abs(t.clientX - pressXY[0]) + Math.abs(t.clientY - pressXY[1]) > 10) { clearTimeout(pressTimer); pressTimer = null; } }, { passive: true });
+['touchend', 'touchcancel'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(pressTimer); pressTimer = null; }, { passive: true }));
 
 function startReply(id) { S.reply = id; renderReply(); $('#field') && $('#field').focus(); }
 
@@ -878,6 +918,14 @@ function wireComposer() {
     if (e.key === 'Escape' && S.reply) { S.reply = null; renderReply(); }
   });
   $('#sendBtn').onclick = send;
+  $('#emoBtn').onclick = () => {
+    const o = overlay('<div id="emoHost"></div>', true, 'Emoji');
+    o.querySelector('#emoHost').appendChild(emojiPicker(u => {
+      const a = f.selectionStart ?? f.value.length, b = f.selectionEnd ?? f.value.length;
+      f.value = f.value.slice(0, a) + u + f.value.slice(b); f.selectionStart = f.selectionEnd = a + u.length;
+      grow(); store('ivc_draft', f.value);
+    }));
+  };
   $('#imgBtn').onclick = () => pickImage(key => { sendWs({ t: 'send', text: f.value.trim(), image: key, reply_to: S.reply || undefined }); f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); });
   function send() {
     const text = f.value.trim(); if (!text) return;
@@ -903,40 +951,65 @@ function pickImage(done) {
 }
 
 // ------------------------------------------------------------ overlays
-function overlay(html, bottom, label) {
+function overlay(html, bottom, label, at) {
   closeOverlay();
   const s = document.createElement('div');
   s.className = 'scrim' + (bottom ? ' bottom' : ''); s.id = 'ovl';
-  s.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(label || 'Dialog')}">${html}</div>`;
+  if (at) s.style.background = 'transparent';
+  s.innerHTML = `<div class="${at ? 'ctx' : 'sheet'}" role="dialog" aria-modal="true" aria-label="${esc(label || 'Dialog')}">${html}</div>`;
   s.addEventListener('click', e => { if (e.target === s) closeOverlay(); });
+  s.addEventListener('contextmenu', e => { if (e.target === s) { e.preventDefault(); closeOverlay(); } });
   document.body.appendChild(s);
+  if (at) {
+    const box = s.firstElementChild, r = box.getBoundingClientRect();
+    box.style.left = Math.max(8, Math.min(at[0], innerWidth - r.width - 8)) + 'px';
+    box.style.top = Math.max(8, Math.min(at[1], innerHeight - r.height - 8)) + 'px';
+  }
   const first = s.querySelector('button,a,[tabindex]'); first && first.focus();
   return s;
 }
 function closeOverlay() { const o = $('#ovl'); if (o) o.remove(); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
 
-function openActions(id) {
-  const m = S.messages.find(x => x.id === id); if (!m || m.deleted) return;
+function findMsg(id) { return S.messages.find(x => x.id === id) || (S.threadMsgs || []).find(x => x.id === id); }
+function openActions(id, x, y) {
+  const m = findMsg(id); if (!m || m.deleted) return;
   const mine = m.uid === S.me.uid;
   const mod = S.me.role === 'host' || S.me.role === 'mod';
   const p = person(m.uid);
   const canModTarget = mod && !mine && p.role !== 'host' && !(p.role === 'mod' && S.me.role !== 'host');
-  const o = overlay(`<div class="reactbar" role="toolbar" aria-label="React">${Object.keys(R).map(k => `<button class="${m.reacts && m.reacts[k] && m.reacts[k].includes(S.me.uid) ? 'pick' : ''}" data-k="${k}" aria-label="${R[k][0]}">${P(R[k][1], {s:22})}</button>`).join('')}</div>
+  const at = x != null && matchMedia('(hover: hover)').matches ? [x, y] : null;
+  const picked = k => m.reacts && Object.keys(m.reacts).some(r => (OLD_R[r] || r) === k && m.reacts[r].includes(S.me.uid));
+  const linkIcon = P('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>');
+  const threadIcon = P('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5z"/><path d="M8 8h8M8 11h5"/>');
+  const html = `<div class="reactbar" role="toolbar" aria-label="React">${QUICK.map(k => `<button class="${picked(k) ? 'pick' : ''}" data-k="${esc(k)}" aria-label="React ${esc(k)}">${esc(k)}</button>`).join('')}<button class="more" data-allemoji="1" aria-label="All emojis">${I.down(20)}</button></div>
+    <div id="actmenu">
     <button class="mi" data-a="reply">${I.reply()}Reply</button>
-    ${m.text ? `<button class="mi" data-a="copy">${I.copy()}Copy text</button>` : ''}
+    ${m.text ? `<button class="mi" data-a="copy">${I.copy()}Copy</button>` : ''}
+    <button class="mi" data-a="thread">${threadIcon}View thread</button>
+    ${mod ? `<button class="mi" data-a="pin">${I.pin()}${m.pinned ? 'Unpin' : 'Pin'}</button>` : ''}
+    <button class="mi" data-a="link">${linkIcon}Copy link</button>
     ${!mine ? `<button class="mi" data-a="profile">${I.user()}View ${esc(p.name)}'s profile</button><button class="mi" data-a="report">${I.flag()}Report</button>` : ''}
-    ${mine && !mod ? `<button class="mi danger" data-a="delete">${I.trash()}Delete message</button>` : ''}
-    ${mod ? `<div class="mhead">Host tools</div>
-      <button class="mi" data-a="pin" style="border-top:0">${I.pin()}${m.pinned ? 'Unpin' : 'Pin to the top'}</button>
-      ${canModTarget ? `<button class="mi" data-a="mute">${I.mute()}${p.muted ? 'Unmute ' : 'Mute '}${esc(p.name)}${p.muted ? '' : ' for 24 hours'}</button>` : ''}
-      <button class="mi danger" data-a="delete">${I.trash()}Delete message</button>
-      ${canModTarget ? `<button class="mi danger" data-a="remove">${I.remove()}Remove from the Circle</button>` : ''}` : ''}`, true, 'Message actions');
-  o.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sendWs({ t: 'react', id, kind: b.dataset.k }); closeOverlay(); });
+    ${mine || mod ? `<button class="mi danger" data-a="delete">${I.trash()}Delete</button>` : ''}
+    ${canModTarget ? `<div class="mhead">Host tools</div>
+      <button class="mi" data-a="mute" style="border-top:0">${I.mute()}${p.muted ? 'Unmute ' : 'Mute '}${esc(p.name)}${p.muted ? '' : ' for 24 hours'}</button>
+      <button class="mi danger" data-a="remove">${I.remove()}Remove from the Circle</button>` : ''}
+    </div>`;
+  const o = overlay(html, true, 'Message actions', at);
+  const react = k => { sendWs({ t: 'react', id, kind: k }); closeOverlay(); };
+  o.querySelectorAll('[data-k]').forEach(b => b.onclick = () => react(b.dataset.k));
+  o.querySelector('[data-allemoji]').onclick = () => {
+    const menu = o.querySelector('#actmenu'); menu.innerHTML = '';
+    o.querySelector('.reactbar').remove();
+    menu.appendChild(emojiPicker(react));
+    if (at) { const box = o.firstElementChild; box.style.width = '360px'; const r = box.getBoundingClientRect(); box.style.left = Math.max(8, Math.min(r.left, innerWidth - 368)) + 'px'; box.style.top = Math.max(8, Math.min(r.top, innerHeight - 380)) + 'px'; }
+  };
   o.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
     const a = b.dataset.a; closeOverlay();
     if (a === 'reply') startReply(id);
     if (a === 'copy') navigator.clipboard && navigator.clipboard.writeText(m.text).then(() => toast('Copied.'));
+    if (a === 'thread') sendWs({ t: 'thread', id });
+    if (a === 'link') navigator.clipboard && navigator.clipboard.writeText(location.origin + '/#m=' + id).then(() => toast('Link copied. Only members can open it.'));
     if (a === 'profile') askProfile(m.uid);
     if (a === 'report') { const reason = prompt('What is wrong with this message? (optional)'); if (reason !== null) sendWs({ t: 'report', id, reason }); }
     if (a === 'delete' && confirm('Delete this message for everyone?')) sendWs({ t: 'delete', id });
@@ -944,6 +1017,19 @@ function openActions(id) {
     if (a === 'mute') sendWs({ t: 'mute', uid: m.uid, hours: p.muted ? 0 : 24 });
     if (a === 'remove' && confirm(`Remove ${p.name} from the Inner Circle? They will lose access to the chat.`)) sendWs({ t: 'remove', uid: m.uid });
   });
+}
+
+function showThread(t) {
+  S.threadMsgs = t.messages; S.threadId = t.id;
+  const o = overlay(`<div style="padding:16px 12px 8px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)"><h2 class="h1" style="font-size:22px;flex:1">Thread</h2><button class="ibtn" id="thclose" aria-label="Close">${I.close()}</button></div>
+    <div id="thread" class="thread-list">${t.messages.map((m, i, l) => msgHtml(m, i, l)).join('')}</div>
+    <div style="padding:0 16px 16px"><button class="btn2 sm" id="threply">${I.reply(16)}Reply in the chat</button></div>`, false, 'Thread');
+  o.firstElementChild.style.width = 'min(640px, 100%)';
+  const focus = o.querySelector(`#thread .row[data-id="${t.id}"]`);
+  if (focus) { focus.classList.add('focus'); setTimeout(() => focus.scrollIntoView({ block: 'center' }), 30); }
+  hydrateMedia(o); hydrateUnfurls(o);
+  $('#thclose').onclick = closeOverlay;
+  $('#threply').onclick = () => { closeOverlay(); startReply(t.id); };
 }
 
 function askProfile(uid) { sendWs({ t: 'who', uid }); }
