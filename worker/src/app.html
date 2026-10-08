@@ -1051,7 +1051,8 @@ function onEvent(m) {
     case 'views': {
       for (const [id, n] of Object.entries(m.v || {})) {
         const x = findMsg(Number(id)); if (x) x.views = n;
-        document.querySelectorAll(`[data-vw="${id}"]`).forEach(el => { el.hidden = !n; el.lastElementChild.textContent = n; el.title = `Seen by ${n} other member${n === 1 ? '' : 's'}`; });
+        const own = x && S.me && x.uid === S.me.uid;
+        document.querySelectorAll(`[data-vw="${id}"]`).forEach(el => { el.hidden = !n && !own; el.lastElementChild.textContent = n; el.title = `Seen by ${n} other member${n === 1 ? '' : 's'}`; });
       }
       return;
     }
@@ -1479,7 +1480,8 @@ function clientLink(text) {
   try { const u = new URL(m[1]); if (/(^|\.)innerversepodcast\.com$/i.test(u.hostname) && /^\/(episodes|plus)\/[^/]+/i.test(u.pathname)) return ''; return u.href.slice(0, 800); } catch (e) { return ''; }
 }
 const EYE_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-const viewsHtml = m => `<span class="vw" data-vw="${m.id}"${m.views ? '' : ' hidden'} title="Seen by ${m.views || 0} other member${m.views === 1 ? '' : 's'}">${EYE_ICON}<span>${m.views || 0}</span></span>`;
+// your own posts always show the eye (even at 0); others' once someone has seen them
+const viewsHtml = m => `<span class="vw" data-vw="${m.id}"${m.views || (S.me && m.uid === S.me.uid) ? '' : ' hidden'} title="Seen by ${m.views || 0} other member${m.views === 1 ? '' : 's'}">${EYE_ICON}<span>${m.views || 0}</span></span>`;
 const PLAY_ICON = '<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
 function lpHtml(p, id, draft) {
   const v = p.video;
