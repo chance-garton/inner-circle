@@ -228,6 +228,8 @@ export class Room {
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN mentions TEXT DEFAULT '[]'"); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN preview TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     this.sql.exec('CREATE TABLE IF NOT EXISTS link_previews (url TEXT PRIMARY KEY, data TEXT, fetched INTEGER)');
+    // who has had a message on screen (only the count is ever shown, never the names)
+    this.sql.exec('CREATE TABLE IF NOT EXISTS views (msg_id INTEGER, uid TEXT, PRIMARY KEY (msg_id, uid)) WITHOUT ROWID');
     for (const [oldKey, emoji] of Object.entries(OLD_REACTIONS)) {
       this.sql.exec('UPDATE OR IGNORE reactions SET kind = ? WHERE kind = ?', emoji, oldKey);
       this.sql.exec('DELETE FROM reactions WHERE kind = ?', oldKey);
@@ -318,6 +320,8 @@ export class Room {
     this.sql.exec('UPDATE messages SET preview = ? WHERE id = ?', JSON.stringify(p), id);
     this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', id)) });
   }
+
+  viewCount(id) { return this.one('SELECT COUNT(*) AS n FROM views WHERE msg_id = ?', id).n; }
 
   log(actor, action, target, msgId, detail) {
     this.sql.exec('INSERT INTO modlog (created, actor, action, target, msg_id, detail) VALUES (?, ?, ?, ?, ?, ?)', Date.now(), actor || '', action, target || '', msgId || 0, JSON.stringify(detail || {}));
@@ -441,6 +445,7 @@ export class Room {
       replies: this.one('SELECT COUNT(*) AS n FROM messages WHERE reply_to = ? AND deleted = 0', row.id).n,
       kind: row.kind || '', mentions: safeArr(row.mentions),
       preview: row.deleted ? null : safeObj(row.preview),
+      views: this.viewCount(row.id),
     };
   }
 
@@ -840,6 +845,23 @@ export class Room {
         this.sql.exec('UPDATE modlog SET undone = 1, undone_at = ?, undone_by = ? WHERE id = ?', Date.now(), me.uid, e.id);
         this.send(ws, { t: 'notice', text: note });
         return this.send(ws, this.modlogFor());
+      }
+
+      // the page reports messages that were on screen while the member was looking
+      case 'seen': {
+        if (!me.profile_done || !Array.isArray(msg.ids)) return;
+        const changed = {};
+        for (const id of msg.ids.slice(0, 200)) {
+          if (!Number.isInteger(id)) continue;
+          const row = this.one('SELECT uid, deleted FROM messages WHERE id = ?', id);
+          if (!row || row.deleted || row.uid === me.uid) continue;
+          const before = this.viewCount(id);
+          this.sql.exec('INSERT OR IGNORE INTO views (msg_id, uid) VALUES (?, ?)', id, me.uid);
+          const after = this.viewCount(id);
+          if (after !== before) changed[id] = after;
+        }
+        if (Object.keys(changed).length) this.broadcast({ t: 'views', v: changed });
+        return;
       }
 
       case 'away': { ws.serializeAttachment(Object.assign({}, att, { away: !!msg.on })); if (!msg.on) this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', me.uid); return; }

@@ -153,6 +153,8 @@ svg{display:block;flex:none}
 .who{display:flex;align-items:center;gap:6px 8px;font-weight:700;font-size:13.5px;margin-bottom:2px;line-height:1.3;flex-wrap:wrap}
 .who.host{color:var(--gold)}
 .time{font-size:11.5px;color:var(--muted);font-weight:500}
+.vw{float:right;display:inline-flex;align-items:center;gap:4px;margin:3px 0 -3px 12px;font-size:11.5px;font-weight:600;color:var(--muted);line-height:1}
+.vw[hidden]{display:none}
 .metime{display:block;text-align:right;font-size:11.5px;color:rgba(233,238,246,0.6);margin-top:2px}
 .badge{font-size:9.5px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;padding:3px 7px 2px;border-radius:999px;line-height:1.2}
 .badge.host{background:var(--gold);color:var(--on-gold)}
@@ -590,10 +592,27 @@ const notified = new Set();
 function notifyLevel() { const v = load('ivc_notify'); return v === 'mentions' || v === 'none' ? v : 'all'; }
 // away: the tab is hidden, or (inside the InnerVerse app) another tab of the app is showing
 function away() { return document.hidden || !!S.appAway; }
+// views: messages that have been on screen while the member is looking, sent in small batches
+S.seenSent = new Set(); S.seenQueue = new Set(); S.seenOnScreen = new Set();
+const seenObs = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
+  for (const en of entries) { const id = Number(en.target.dataset.id); if (en.isIntersecting) S.seenOnScreen.add(id); else S.seenOnScreen.delete(id); }
+  queueSeen();
+}, { threshold: 0.5 }) : null;
+function queueSeen() {
+  if (away() || S.view !== 'chat') return;
+  for (const id of S.seenOnScreen) { if (!S.seenSent.has(id)) { const x = findMsg(id); if (x && S.me && x.uid !== S.me.uid) S.seenQueue.add(id); } }
+  if (!S.seenQueue.size || S.seenTimer) return;
+  S.seenTimer = setTimeout(() => {
+    S.seenTimer = null;
+    const ids = [...S.seenQueue].slice(0, 200);
+    if (sendWs({ t: 'seen', ids })) ids.forEach(id => { S.seenSent.add(id); S.seenQueue.delete(id); });
+  }, 1200);
+}
+function watchSeen(box) { if (!seenObs || !box) return; seenObs.disconnect(); S.seenOnScreen.clear(); box.querySelectorAll('.row[data-id]').forEach(el => seenObs.observe(el)); }
 function tellApp(obj) { try { if (window.parent !== window) window.parent.postMessage(Object.assign({ ivc: 1 }, obj), location.origin); } catch (e) {} }
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || !e.data.ivcApp) return;
-  if ('away' in e.data) { S.appAway = !!e.data.away; sendWs({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); } }
+  if ('away' in e.data) { S.appAway = !!e.data.away; sendWs({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); } }
 });
 function onIncoming(m) {
   if (!S.me || !m || m.uid === S.me.uid) return;
@@ -1026,6 +1045,13 @@ function onEvent(m) {
       onIncoming(m.m);
       return;
     }
+    case 'views': {
+      for (const [id, n] of Object.entries(m.v || {})) {
+        const x = findMsg(Number(id)); if (x) x.views = n;
+        document.querySelectorAll(`[data-vw="${id}"]`).forEach(el => { el.hidden = !n; el.lastElementChild.textContent = n; el.title = `Seen by ${n} other member${n === 1 ? '' : 's'}`; });
+      }
+      return;
+    }
     case 'update': {
       const i = S.messages.findIndex(x => x.id === m.m.id);
       if (i >= 0) { if (m.m.deleted) S.messages.splice(i, 1); else S.messages[i] = m.m; if (S.view === 'chat') renderMessages(false); }
@@ -1422,7 +1448,7 @@ function msgHtml(m, i, list) {
   const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile">${esc(p.name)}</button>${badges(p)}${signRow(p)}<span class="time">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span></div>` : '';
   const rx = reactsHtml(m);
   const av = last ? `<button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile" title="${esc(p.name)}">${avatar(m.uid, 36)}</button>` : '<span class="gap"></span>';
-  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub${mentionedMe(m) ? ' mentioned' : ''}" data-press="${m.id}">${head}${body}</div>${rx}</div></div>`;
+  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub${mentionedMe(m) ? ' mentioned' : ''}" data-press="${m.id}">${head}${body}${viewsHtml(m)}</div>${rx}</div></div>`;
   return out;
 }
 
@@ -1436,6 +1462,7 @@ function renderMessages(toBottom) {
   const html = (S.oldestDone ? '<div class="day" style="margin-top:4px">The beginning of Inner Circle Chat</div>' : '') + S.messages.map((m, i, l) => msgHtml(m, i, l)).join('');
   const live = box.querySelector('.lpframe');
   if (!live || !redrawAround(box, html, live)) box.innerHTML = html;
+  watchSeen(box);
   hydrateMedia(box); hydrateUnfurls(box);
   box.querySelectorAll('img.mimg').forEach(img => img.addEventListener('load', stickDown, { once: true }));
   if (toBottom) { box.scrollTop = box.scrollHeight; S.stick = true; } else box.scrollTop = box.scrollHeight - keep;
@@ -1448,6 +1475,8 @@ function clientLink(text) {
   if (!m) return '';
   try { const u = new URL(m[1]); if (/(^|\.)innerversepodcast\.com$/i.test(u.hostname) && /^\/(episodes|plus)\/[^/]+/i.test(u.pathname)) return ''; return u.href.slice(0, 800); } catch (e) { return ''; }
 }
+const EYE_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const viewsHtml = m => `<span class="vw" data-vw="${m.id}"${m.views ? '' : ' hidden'} title="Seen by ${m.views || 0} other member${m.views === 1 ? '' : 's'}">${EYE_ICON}<span>${m.views || 0}</span></span>`;
 const PLAY_ICON = '<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
 function lpHtml(p, id, draft) {
   const v = p.video;
@@ -1944,7 +1973,7 @@ document.addEventListener('mouseover', e => {
   const b = e.target.closest && e.target.closest('button[aria-label],a[aria-label]');
   if (b && !b.hasAttribute('title')) b.setAttribute('title', b.getAttribute('aria-label'));
 });
-document.addEventListener('visibilitychange', () => { sendWs({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); } });
+document.addEventListener('visibilitychange', () => { sendWs({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); } });
 
 S.view = S.token ? 'loading' : 'door';
 render();
