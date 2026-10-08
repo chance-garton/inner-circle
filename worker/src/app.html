@@ -8,6 +8,7 @@
 <title>Inner Circle | InnerVerse</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols&text=%E2%99%88%E2%99%89%E2%99%8A%E2%99%8B%E2%99%8C%E2%99%8D%E2%99%8E%E2%99%8F%E2%99%90%E2%99%91%E2%99%92%E2%99%93&display=swap">
 <style>
 :root{
   --ground:#0A0F1C; --surface:#111827; --card:#151E33; --line:rgba(233,238,246,0.12);
@@ -122,20 +123,23 @@ svg{display:block;flex:none}
 .pinbar{display:flex;align-items:center;gap:12px;padding:9px 20px;background:rgba(216,170,60,0.07);border-bottom:1px solid var(--line);font-size:14px;color:var(--muted);flex:none;line-height:1.3;width:100%}
 .pinbar .pk{color:var(--gold);font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:800;flex:none}
 .pinbar .pt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
-.msgs{flex:1;min-height:0;overflow-y:auto;padding:14px 20px 8px;display:flex;flex-direction:column;gap:3px;overscroll-behavior:contain}
+.msgs{flex:1;min-height:0;overflow-y:auto;padding:26px 20px 8px;display:flex;flex-direction:column;gap:3px;overscroll-behavior:contain}
 .day{align-self:center;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:6px 12px;border:1px solid var(--line);border-radius:999px;margin:10px 0 8px;line-height:1}
 .row{display:flex;align-items:flex-end;gap:10px;margin-top:2px}
 .row.first{margin-top:10px}
-.row.me{justify-content:flex-end}
+.row{position:relative}
+.row:hover,.row:focus-within{z-index:4}
 .row .gap{width:36px;flex:none}
 .stack{display:flex;flex-direction:column;align-items:flex-start;min-width:0;max-width:min(680px,82%)}
-.row.me .stack{align-items:flex-end}
 .bub{position:relative;max-width:100%;background:var(--card);border:1px solid var(--line);border-radius:16px 16px 16px 6px;padding:8px 13px 9px;font-size:15px;line-height:1.55;overflow-wrap:anywhere}
-.row.me .bub{background:rgba(59,116,204,0.24);border-color:rgba(143,181,240,0.32);border-radius:16px 16px 6px 16px}
+.row.me .bub{background:rgba(59,116,204,0.20);border-color:rgba(143,181,240,0.30)}
 .row.flash .bub{border-color:var(--gold)}
 .bub .txt{white-space:pre-wrap}
 .bub a.lnk{color:var(--lapis-lit);font-weight:600}
-.who{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;margin-bottom:2px;line-height:1.3;flex-wrap:wrap}
+.signs{display:inline-flex;align-items:center;gap:9px;color:var(--gold);font-weight:600;font-size:13px}
+.signs span{display:inline-flex;align-items:center;gap:3px}
+.zg{font-family:'Noto Sans Symbols','Segoe UI Symbol','Apple Symbols',sans-serif;font-variant-emoji:text;font-size:15px;line-height:1}
+.who{display:flex;align-items:center;gap:6px 8px;font-weight:700;font-size:13.5px;margin-bottom:2px;line-height:1.3;flex-wrap:wrap}
 .who.host{color:var(--gold)}
 .time{font-size:11.5px;color:var(--muted);font-weight:500}
 .metime{display:block;text-align:right;font-size:11.5px;color:rgba(233,238,246,0.6);margin-top:2px}
@@ -157,12 +161,11 @@ svg{display:block;flex:none}
 .unfurl .ue{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);line-height:1.2}
 .unfurl .ue.free{color:var(--lapis-lit)}
 .mimg{display:block;margin-top:6px;max-width:100%;max-height:360px;border-radius:10px;cursor:zoom-in;background:rgba(233,238,246,0.06);min-width:120px;min-height:80px}
-.tools{position:absolute;top:-18px;right:-8px;display:none;align-items:center;gap:2px;padding:4px;background:var(--card);border:1px solid rgba(233,238,246,0.18);border-radius:12px;box-shadow:0 18px 44px rgba(0,0,0,0.45);z-index:2}
-.row.me .tools{right:auto;left:-8px}
+.tools{position:absolute;top:-4px;left:calc(100% + 6px);display:none;align-items:center;gap:2px;padding:4px;background:var(--card);border:1px solid rgba(233,238,246,0.18);border-radius:12px;box-shadow:0 18px 44px rgba(0,0,0,0.45);z-index:2}
 .tools button{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 .tools button:hover{background:rgba(233,238,246,0.08)}
 .tools .sep{width:1px;height:20px;background:var(--line);margin:0 3px}
-@media (hover:hover){.bub:hover .tools,.bub:focus-within .tools{display:flex}}
+@media (hover:hover){.bub:hover .tools,.bub:focus-within .tools{display:flex}.stack{max-width:min(680px,calc(100% - 250px))}}
 .typing{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);padding:6px 0 0 46px;min-height:22px}
 .dots{display:flex;gap:3px}.dots i{width:5px;height:5px;border-radius:50%;background:var(--muted);display:block;animation:blink 1.2s infinite}
 .dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
@@ -332,6 +335,18 @@ function badges(p) {
   else if (p.role === 'mod') b += '<span class="badge mod">Moderator</span>';
   if (p.initiator && p.role !== 'host') b += '<span class="badge init">Initiator</span>';
   return b;
+}
+const ZODIAC = {Aries:'\u2648',Taurus:'\u2649',Gemini:'\u264A',Cancer:'\u264B',Leo:'\u264C',Virgo:'\u264D',Libra:'\u264E',Scorpio:'\u264F',Sagittarius:'\u2650',Capricorn:'\u2651',Aquarius:'\u2652',Pisces:'\u2653'};
+const SIGN_ICONS = {
+  Sun:'<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/>',
+  Moon:'<path d="M15 3.5a8.5 8.5 0 1 0 5.5 13.6A7 7 0 0 1 15 3.5z"/>',
+  Rising:'<path d="M12 19V6"/><path d="m6 11 6-6 6 6"/>'
+};
+function signRow(p) {
+  const parts = [['Sun', p.sun], ['Moon', p.moon], ['Rising', p.rising]].filter(x => x[1] && ZODIAC[x[1]]);
+  if (!parts.length) return '';
+  const label = parts.map(x => x[0] + ' in ' + x[1]).join(', ');
+  return `<span class="signs" title="${esc(label)}" aria-label="${esc(label)}">${parts.map(x => `<span>${P(SIGN_ICONS[x[0]], {s:13, w:2.2})}<span class="zg">${ZODIAC[x[1]]}\uFE0E</span></span>`).join('')}</span>`;
 }
 const fmtTime = t => new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 function dayLabel(t) {
@@ -803,14 +818,14 @@ function msgHtml(m, i, list) {
     if (m.text) { const f = formatText(m.text); body += `<div class="txt">${f.html}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
     if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
   }
-  const head = !mine && first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}">${esc(p.name)}</button>${badges(p)}<span class="time">${fmtTime(m.created)}</span></div>` : '';
+  const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile">${esc(p.name)}</button>${badges(p)}${signRow(p)}<span class="time">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span></div>` : '';
   const tools = m.deleted ? '' : `<div class="tools" role="toolbar" aria-label="Message actions">
-      ${['heart', 'eye', 'spark'].map(k => `<button data-react="${k}" data-id="${m.id}" aria-label="React with ${R[k][0]}">${P(R[k][1], {s:17})}</button>`).join('')}
-      <span class="sep"></span><button data-replyto="${m.id}" aria-label="Reply">${I.reply(18)}</button><button data-more="${m.id}" aria-label="More">${I.more()}</button></div>`;
+      ${['heart', 'eye', 'spark'].map(k => `<button data-react="${k}" data-id="${m.id}" aria-label="React with ${R[k][0]}" title="${R[k][0]}">${P(R[k][1], {s:17})}</button>`).join('')}
+      <span class="sep"></span><button data-replyto="${m.id}" aria-label="Reply" title="Reply">${I.reply(18)}</button><button data-more="${m.id}" aria-label="More" title="More options">${I.more()}</button></div>`;
   const reacts = Object.keys(m.reacts || {}).filter(k => R[k] && m.reacts[k].length);
   const rx = reacts.length ? `<div class="reacts">${reacts.map(k => { const mineR = S.me && m.reacts[k].includes(S.me.uid); return `<button class="react${mineR ? ' mine' : ''}" data-react="${k}" data-id="${m.id}" aria-label="${R[k][0]}, ${m.reacts[k].length}${mineR ? ', including you' : ''}">${rIcon(k)}${m.reacts[k].length}</button>`; }).join('')}</div>` : '';
-  const av = mine ? '' : (last ? `<button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile">${avatar(m.uid, 36)}</button>` : '<span class="gap"></span>');
-  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub" data-press="${m.id}">${head}${body}${mine && last ? `<span class="metime">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span>` : ''}${tools}</div>${rx}</div></div>`;
+  const av = last ? `<button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile" title="${esc(p.name)}">${avatar(m.uid, 36)}</button>` : '<span class="gap"></span>';
+  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub" data-press="${m.id}">${head}${body}${tools}</div>${rx}</div></div>`;
   return out;
 }
 
@@ -941,7 +956,7 @@ function openProfile(uid) {
   const o = overlay(`<div style="padding:22px 22px 20px;display:flex;flex-direction:column;gap:18px">
     <div style="display:flex;gap:16px;align-items:center">${avatar(uid, 76, true)}<div style="flex:1;min-width:0"><h2 class="h1" style="font-size:28px;letter-spacing:-0.6px;overflow-wrap:anywhere">${esc(p.name)}</h2><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">${badges(p)}</div>${joined ? `<div class="muted" style="font-size:13px;margin-top:7px">In the Circle since ${esc(joined)}</div>` : ''}</div><button class="ibtn" id="pclose" aria-label="Close" style="align-self:flex-start;color:var(--muted)">${I.close()}</button></div>
     ${p.bio ? `<p style="font-size:15px;line-height:1.6">${esc(p.bio)}</p>` : ''}
-    ${signs.length ? `<div style="border-top:1px solid var(--line);padding-top:16px"><div class="label" style="margin-bottom:10px">Sun, Moon &amp; Rising</div><div style="display:flex;flex-wrap:wrap;gap:6px">${signs.map(s => `<span class="chip" style="gap:6px;padding:0 10px;font-size:12.5px">${P(s[2], {s:15}).replace('currentColor', '#D8AA3C').replace('fill="currentColor"', 'fill="#D8AA3C"')}${s[0]} ${esc(s[1])}</span>`).join('')}</div></div>` : ''}
+    ${signs.length ? `<div style="border-top:1px solid var(--line);padding-top:16px"><div class="label" style="margin-bottom:10px">Sun, Moon &amp; Rising</div><div style="display:flex;flex-wrap:wrap;gap:6px">${signs.map(s => `<span class="chip" style="gap:6px;padding:0 10px;font-size:12.5px">${P(s[2], {s:15}).replace('currentColor', '#D8AA3C').replace('fill="currentColor"', 'fill="#D8AA3C"')}${s[0]} <span class="zg" style="color:var(--gold)">${ZODIAC[s[1]] ? ZODIAC[s[1]] + '\uFE0E' : ''}</span> ${esc(s[1])}</span>`).join('')}</div></div>` : ''}
     ${p.interests && p.interests.length ? `<div><div class="label" style="margin-bottom:10px">Into</div><div style="display:flex;flex-wrap:wrap;gap:6px">${p.interests.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div></div>` : ''}
     ${p.favorites && p.favorites.length ? `<div><div class="label" style="margin-bottom:10px">My favorite episodes</div><div id="pfavlist"></div></div>` : ''}
     ${self ? `<button class="btn2" id="pedit" style="min-height:46px;font-size:14px">${I.edit(16)}Edit your profile</button>` : `<button class="btn2" id="pmention" style="min-height:46px;font-size:14px">Mention ${esc(p.name)} in the chat</button>`}
@@ -999,6 +1014,11 @@ function openLightbox(src) {
   s.innerHTML = `<img src="${esc(src)}" alt="">`; s.onclick = closeOverlay; closeOverlay(); document.body.appendChild(s);
 }
 
+// every icon button shows its name on hover
+document.addEventListener('mouseover', e => {
+  const b = e.target.closest && e.target.closest('button[aria-label],a[aria-label]');
+  if (b && !b.hasAttribute('title')) b.setAttribute('title', b.getAttribute('aria-label'));
+});
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { S.unread = 0; document.title = 'Inner Circle | InnerVerse'; } });
 
 S.view = S.token ? 'loading' : 'door';
