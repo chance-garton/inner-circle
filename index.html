@@ -195,6 +195,35 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .bub.mentioned{border-color:rgba(216,170,60,0.75);box-shadow:inset 3px 0 0 var(--gold);background:linear-gradient(rgba(216,170,60,0.08),rgba(216,170,60,0.08)),var(--card)}
 .row.me .bub.mentioned{background:rgba(59,116,204,0.20)}
 .mbtn{position:relative}
+.setrow{display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;min-height:56px;text-align:left;color:var(--ink);border-top:1px solid var(--line)}
+.setrow:first-child{border-top:0}
+.setrow:hover{background:rgba(233,238,246,0.04)}
+.setrow svg{flex:none;color:var(--muted)}
+.setrow .st{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.setrow .st b{font-size:15px;font-weight:700}
+.setrow .st small{font-size:12.5px;color:var(--muted);font-weight:500;line-height:1.35}
+.setrow .cnt{min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--gold);color:var(--on-gold);font-size:12px;font-weight:800;line-height:22px;text-align:center}
+.setrow[disabled]{opacity:.55;cursor:default}
+.seg{flex-basis:100%;display:flex;gap:6px;margin:4px 0 2px 32px;flex-wrap:wrap}
+.seg button{height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--ink)}
+.seg button.on{background:var(--gold);border-color:var(--gold);color:var(--on-gold)}
+.sw{flex:none;width:46px;height:28px;border-radius:999px;background:rgba(233,238,246,0.18);position:relative;transition:background .15s}
+.sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .15s}
+.sw.on{background:var(--gold)}
+.sw.on i{transform:translateX(18px)}
+.logrow{display:flex;gap:11px;align-items:flex-start;padding:11px 14px;border-top:1px solid var(--line)}
+.logrow:first-child{border-top:0}
+.logrow .lt{flex:1;min-width:0;font-size:14px;line-height:1.45}
+.logrow .lq{display:block;margin-top:4px;padding:6px 10px;border-radius:8px;background:rgba(233,238,246,0.05);color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.logrow .done{font-size:12px;color:var(--muted);white-space:nowrap;padding-top:3px}
+.epick{display:block;padding:6px 6px 8px}
+.epick .en{font-size:12px;color:var(--muted);padding:2px 8px 6px;font-weight:600}
+.epick .er{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.epick .er::-webkit-scrollbar{display:none}
+.mpick.epick button{width:46px;height:46px;flex:none;justify-content:center;padding:0;font-size:26px;border-radius:10px}
+.jwrap{display:flex;flex-direction:column;align-items:center}
+.jwrap .reacts{justify-content:center;margin:-6px 0 8px}
+.jwrap .joined{-webkit-user-select:none;user-select:none;cursor:default}
 .mbadge{position:absolute;top:3px;right:2px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--gold);color:var(--on-gold);font-size:10.5px;font-weight:800;line-height:17px;text-align:center}
 .mpick{position:absolute;left:62px;right:70px;bottom:74px;z-index:6;background:var(--card);border:1px solid rgba(233,238,246,0.18);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,0.5);overflow:hidden;max-width:360px}
 .mpick button{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;font-size:14.5px;font-weight:600}
@@ -311,6 +340,12 @@ const I = {
   layers: s => P('<rect x="3" y="4" width="13" height="11" rx="2"/><rect x="9" y="10" width="12" height="10" rx="2"/>',{s}),
   out: s => P('<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4"/><path d="M10 17l5-5-5-5M15 12H4"/>',{s}),
   edit: s => P('<path d="M4 20h4L19 9l-4-4L4 16z"/>',{s}),
+  gear: s => P('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',{s}),
+  chev: s => P('<path d="m9 6 6 6-6 6"/>',{s}),
+  undo: s => P('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',{s}),
+  bell: s => P('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',{s}),
+  note: s => P('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',{s}),
+  history: s => P('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>',{s}),
   tri: s => `<svg viewBox="0 0 24 24" width="${s||11}" height="${s||11}" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg>`,
 };
 const R = {
@@ -496,6 +531,28 @@ function chime() {
   } catch (e) {}
 }
 const notified = new Set();
+// what a member hears about: 'all' messages, only 'mentions' (when tagged), or 'none'
+function notifyLevel() { const v = load('ivc_notify'); return v === 'mentions' || v === 'none' ? v : 'all'; }
+// away: the tab is hidden, or (inside the InnerVerse app) another tab of the app is showing
+function away() { return document.hidden || !!S.appAway; }
+function tellApp(obj) { try { if (window.parent !== window) window.parent.postMessage(Object.assign({ ivc: 1 }, obj), location.origin); } catch (e) {} }
+window.addEventListener('message', e => {
+  if (e.origin !== location.origin || !e.data || !e.data.ivcApp) return;
+  if ('away' in e.data) { S.appAway = !!e.data.away; if (!away()) { S.unread = 0; renderMentionBadge(); } }
+});
+function onIncoming(m) {
+  if (!S.me || !m || m.uid === S.me.uid) return;
+  const lvl = notifyLevel(), tagged = mentionedMe(m);
+  if (tagged) onMention(m);
+  if (lvl === 'none' || !away() || !(lvl === 'all' || tagged)) return;
+  S.unread++; renderMentionBadge();
+  const p = person(m.uid);
+  const body = m.kind === 'join' ? 'joined the chat' : (m.text || 'Image').slice(0, 140);
+  tellApp({ msg: true, name: p.name || 'Member', text: body, tagged, id: m.id });
+  if (!tagged && document.hidden && 'Notification' in window && Notification.permission === 'granted' && load('ivc_alerts') !== 'off') {
+    try { const n = new Notification(`${p.name || 'Member'} in the Inner Circle`, { body, icon: PLUS_LOGO, tag: 'ivc-' + m.id }); n.onclick = () => { window.focus(); n.close(); }; } catch (e) {}
+  }
+}
 function lastSeenMention() { return Number(load('ivc_seen_mention') || 0); }
 function countNewMentions() {
   const seen = lastSeenMention();
@@ -506,10 +563,12 @@ function renderMentionBadge() {
   document.querySelectorAll('.mbadge').forEach(b => { b.textContent = S.newMentions || ''; b.style.display = S.newMentions ? '' : 'none'; });
   const base = 'Inner Circle | InnerVerse';
   document.title = (S.newMentions ? '(@) ' : '') + (S.unread ? `(${S.unread}) ` : '') + base;
+  tellApp({ unread: S.unread || 0, mentions: S.newMentions || 0 });
 }
 function onMention(m) {
   if (!mentionedMe(m) || notified.has(m.id)) return;
   notified.add(m.id);
+  if (notifyLevel() === 'none') { countNewMentions(); return; }
   const p = person(m.uid);
   chime();
   if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
@@ -521,7 +580,7 @@ function onMention(m) {
     t.onclick = () => { t.remove(); sendWs({ t: 'thread', id: m.id }); };
     document.body.appendChild(t); setTimeout(() => t.remove(), 6000);
   }
-  if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+  if (document.hidden && 'Notification' in window && Notification.permission === 'granted' && load('ivc_alerts') !== 'off') {
     try {
       const n = new Notification(`${p.name} mentioned you in the Inner Circle`, { body: (m.text || 'Image').slice(0, 140), icon: PLUS_LOGO, tag: 'ivc-' + m.id });
       n.onclick = () => { window.focus(); n.close(); sendWs({ t: 'thread', id: m.id }); };
@@ -537,10 +596,7 @@ function showMentions(r) {
   const perm = canNotify ? Notification.permission : 'unsupported';
   const sound = load('ivc_sound') !== 'off';
   const o = overlay(`<div style="padding:16px 12px 10px 18px;display:flex;align-items:center;gap:10px"><h2 class="h1" style="font-size:22px;flex:1">Mentions</h2><button class="ibtn" id="mclose" aria-label="Close">${I.close()}</button></div>
-    <div style="padding:0 18px 12px;display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line)">
-      ${perm === 'default' ? `<button class="btn2 sm" id="mnotify">${AT(15)}Alert me when the chat is in the background</button>` : perm === 'granted' ? '<span class="muted" style="font-size:12.5px">Background alerts are on for this browser.</span>' : perm === 'denied' ? '<span class="muted" style="font-size:12.5px">Alerts are blocked for this site in your browser settings.</span>' : ''}
-      <button class="btn2 sm" id="msound">${sound ? 'Chime on' : 'Chime off'}</button>
-    </div>
+    <div style="border-bottom:1px solid var(--line)"></div>
     <div id="mres" style="padding:8px 8px 14px;min-height:100px"></div>`, false, 'Mentions');
   o.firstElementChild.style.width = 'min(560px, 100%)';
   const box = $('#mres');
@@ -550,8 +606,104 @@ function showMentions(r) {
   hydrateMedia(box);
   box.querySelectorAll('[data-hit]').forEach(b => b.onclick = e => { if (e.target.closest('.ment')) return; sendWs({ t: 'thread', id: Number(b.dataset.hit) }); });
   $('#mclose').onclick = closeOverlay;
-  if ($('#mnotify')) $('#mnotify').onclick = () => Notification.requestPermission().then(() => showMentions(r));
-  $('#msound').onclick = () => { store('ivc_sound', sound ? 'off' : null); showMentions(r); };
+}
+
+// ------------------------------------------------------------ settings (the gear in the chat header)
+function openSettings() {
+  const canNotify = 'Notification' in window;
+  const perm = canNotify ? Notification.permission : 'unsupported';
+  const alertsOn = perm === 'granted' && load('ivc_alerts') !== 'off';
+  const sound = load('ivc_sound') !== 'off';
+  const hapt = load('ivc_haptics') !== 'off';
+  const host = S.me && S.me.role === 'host', mod = host || (S.me && S.me.role === 'mod');
+  const sw = on => `<span class="sw${on ? ' on' : ''}" aria-hidden="true"><i></i></span>`;
+  const alertSub = perm === 'unsupported' ? 'Not available in this browser. On iPhone, add InnerVerse to your Home Screen first.'
+    : perm === 'denied' ? 'Blocked for this site. Turn notifications back on in your phone or browser settings.'
+    : 'A pop-up on your screen when the chat is in the background.';
+  const lvl = notifyLevel();
+  const o = overlay(`<div style="padding:16px 12px 10px 18px;display:flex;align-items:center;gap:10px"><h2 class="h1" style="font-size:22px;flex:1">Settings</h2><button class="ibtn" id="sclose" aria-label="Close">${I.close()}</button></div>
+    <div style="border-top:1px solid var(--line)">
+      <button class="setrow" id="sMent">${AT(20)}<span class="st"><b>Your mentions</b><small>Every message that names you</small></span>${S.newMentions ? `<span class="cnt">${S.newMentions}</span>` : ''}${I.chev(18)}</button>
+      <button class="setrow" id="sProf">${I.user(20)}<span class="st"><b>Edit my profile</b><small>Name, photo, signs and interests</small></span>${I.chev(18)}</button>
+      <div class="setrow" style="flex-wrap:wrap;cursor:default">${I.bell(20)}<span class="st"><b>Notify me about</b><small>Badges, pop-ups and the chime follow this.</small></span>
+        <div class="seg" role="radiogroup" aria-label="Notify me about">${[['all', 'All messages'], ['mentions', 'Only when tagged'], ['none', 'Nothing']].map(([k, l]) => `<button role="radio" aria-checked="${lvl === k}" class="${lvl === k ? 'on' : ''}" data-lvl="${k}">${l}</button>`).join('')}</div></div>
+      <button class="setrow" id="sAlert" role="switch" aria-checked="${alertsOn}" ${perm === 'unsupported' || perm === 'denied' || lvl === 'none' ? 'disabled' : ''}>${P('<rect x="3" y="4" width="18" height="14" rx="3"/><path d="M8 21h8"/>',{s:20})}<span class="st"><b>Pop-ups</b><small>${alertSub}</small></span>${sw(alertsOn && lvl !== 'none')}</button>
+      <button class="setrow" id="sSound" role="switch" aria-checked="${sound}">${I.note(20)}<span class="st"><b>Mention chime</b><small>A soft sound when you are mentioned</small></span>${sw(sound)}</button>
+      <button class="setrow" id="sHapt" role="switch" aria-checked="${hapt}">${P('<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M3 9v6M21 9v6"/>',{s:20})}<span class="st"><b>Haptics</b><small>A light tap when you press and hold a message</small></span>${sw(hapt)}</button>
+      ${mod ? `<button class="setrow" id="sRep">${I.shield(20)}<span class="st"><b>Reports</b><small>Messages members flagged</small></span>${S.reports ? `<span class="cnt">${S.reports}</span>` : ''}${I.chev(18)}</button>` : ''}
+      ${host ? `<button class="setrow" id="sLog">${I.history(20)}<span class="st"><b>Moderation history</b><small>Only you see this. Deletions, mutes, removals, roles and titles, each with undo.</small></span>${I.chev(18)}</button>` : ''}
+    </div>`, false, 'Settings');
+  o.firstElementChild.style.width = 'min(480px, 100%)';
+  $('#sclose').onclick = closeOverlay;
+  $('#sMent').onclick = () => { closeOverlay(); openMentions(); };
+  $('#sProf').onclick = () => { closeOverlay(); editProfile(); };
+  $('#sAlert').onclick = () => {
+    if (perm === 'default') { Notification.requestPermission().then(p => { if (p === 'granted') store('ivc_alerts', null); openSettings(); }); return; }
+    if (perm === 'granted') { store('ivc_alerts', alertsOn ? 'off' : null); openSettings(); }
+  };
+  $('#sSound').onclick = () => { store('ivc_sound', sound ? 'off' : null); openSettings(); };
+  o.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => {
+    store('ivc_notify', b.dataset.lvl === 'all' ? null : b.dataset.lvl);
+    if (b.dataset.lvl !== 'none' && perm === 'default') Notification.requestPermission().then(() => openSettings()); else openSettings();
+    S.unread = 0; renderMentionBadge();
+  });
+  $('#sHapt').onclick = () => { store('ivc_haptics', hapt ? 'off' : null); if (!hapt) haptic(15); openSettings(); };
+  if ($('#sRep')) $('#sRep').onclick = () => { closeOverlay(); sendWs({ t: 'reports' }); };
+  if ($('#sLog')) $('#sLog').onclick = () => {
+    closeOverlay(); S.modlogAsked = Date.now(); sendWs({ t: 'modlog' });
+    setTimeout(() => { if (S.modlogAsked && Date.now() - S.modlogAsked > 3500) { S.modlogAsked = 0; toast('Moderation history arrives with the next server update.'); } }, 4000);
+  };
+}
+
+// host only: everything moderated, with undo
+const LOG_TEXT = {
+  delete: (a, t, d) => d.self ? `${t} deleted their own message` : `${a} deleted a message by ${t}`,
+  pin: (a, t) => `${a} pinned a message by ${t}`,
+  unpin: (a, t) => `${a} unpinned a message by ${t}`,
+  mute: (a, t, d) => `${a} muted ${t}${d.hours ? ' for ' + d.hours + ' hours' : ''}`,
+  unmute: (a, t) => `${a} let ${t} post again`,
+  remove: (a, t) => `${a} removed ${t} from the Circle`,
+  restore: (a, t) => `${a} let ${t} back into the Circle`,
+  role: (a, t, d) => d.to === 'mod' ? `${a} made ${t} a moderator` : `${a} took moderator away from ${t}`,
+  title_add: (a, t, d) => `${a} gave ${t} the title "${d.title}"`,
+  title_remove: (a, t, d) => `${a} took the title "${d.title}" from ${t}`,
+};
+function showModlog(r) {
+  S.modlogAsked = 0;
+  const nm = u => u ? (person(u).name || 'Member') : 'Someone';
+  const o = overlay(`<div style="padding:16px 12px 10px 18px;display:flex;align-items:center;gap:10px"><h2 class="h1" style="font-size:22px;flex:1">Moderation history</h2><button class="ibtn" id="lclose" aria-label="Close">${I.close()}</button></div>
+    <p class="muted" style="margin:0;padding:0 18px 12px;font-size:13px;border-bottom:1px solid var(--line)">Only you can see this list. Newest first.</p>
+    <div id="lres" style="max-height:min(70vh,640px);overflow:auto"></div>`, false, 'Moderation history');
+  o.firstElementChild.style.width = 'min(600px, 100%)';
+  const box = $('#lres');
+  const rows = r.entries || [];
+  box.innerHTML = rows.length ? rows.map(e => {
+    const d = e.detail || {}; const f = LOG_TEXT[e.action];
+    const line = f ? f(esc(nm(e.actor)), esc(nm(e.target)), Object.assign({}, d, { title: esc(d.title || '') })) : esc(e.action);
+    const q = e.preview ? `<span class="lq">${e.preview.kind === 'join' ? 'joined the chat' : esc(e.preview.text || (e.preview.image ? 'Image' : ''))}</span>` : '';
+    const when = `${esc(dayLabel(e.created))} ${fmtTime(e.created)}`;
+    const right = e.undone ? `<span class="done">Undone</span>` : e.canUndo ? `<button class="btn2 sm" data-undo="${e.id}">${I.undo(15)}Undo</button>` : '';
+    return `<div class="logrow">${avatar(e.target || e.actor, 30)}<div class="lt">${line}<div class="time" style="margin-top:2px">${when}</div>${q}</div>${right}</div>`;
+  }).join('') : '<p class="muted" style="padding:16px 18px;font-size:14px">Nothing has been moderated yet.</p>';
+  hydrateMedia(box);
+  box.querySelectorAll('[data-undo]').forEach(b => b.onclick = () => { b.disabled = true; sendWs({ t: 'undo', id: Number(b.dataset.undo) }); });
+  $('#lclose').onclick = closeOverlay;
+}
+
+// a light tap of haptic feedback: Android through vibrate, iPhone (iOS 18 and later) through a hidden switch
+let hapticEl = null;
+function haptic(ms) {
+  if (load('ivc_haptics') === 'off') return;
+  try { if (navigator.vibrate && navigator.vibrate(ms || 10)) return; } catch (e) {}
+  try {
+    if (!hapticEl) {
+      hapticEl = document.createElement('label'); hapticEl.setAttribute('aria-hidden', 'true');
+      hapticEl.style.cssText = 'position:fixed;left:-200px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
+      const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', ''); i.tabIndex = -1;
+      hapticEl.appendChild(i); document.body.appendChild(hapticEl);
+    }
+    hapticEl.click();
+  } catch (e) {}
 }
 // typing "@" in the message box suggests members
 function wireMentionPicker(f) {
@@ -588,6 +740,71 @@ function wireMentionPicker(f) {
     if (e.key === 'ArrowDown') { e.preventDefault(); pick = (pick + 1) % list.length; draw(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); pick = (pick - 1 + list.length) % list.length; draw(); }
     else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); e.stopImmediatePropagation(); choose(list[pick]); }
+    else if (e.key === 'Escape') { e.stopImmediatePropagation(); close(); }
+  }, true);
+}
+
+// typing ":" and part of a name suggests emojis (Telegram style); ":name:" typed in full turns into the emoji
+let EMOJI_INDEX = null;
+function emojiIndex() {
+  if (!EMOJI_INDEX) EMOJI_INDEX = fetch(EMOJI_DATA).then(r => r.json()).then(d => d.filter(x => x && x.emoji && (x.version || 0) <= 15).map(x => ({
+    e: x.emoji, n: (x.shortcodes && x.shortcodes[0]) || String(x.annotation || '').replace(/\s+/g, '_'),
+    codes: (x.shortcodes || []).map(c => c.toLowerCase()),
+    words: [String(x.annotation || '').toLowerCase()].concat((x.tags || []).map(t => String(t).toLowerCase())), order: x.order || 9999,
+  }))).catch(() => { EMOJI_INDEX = null; return []; });
+  return EMOJI_INDEX;
+}
+function emojiMatches(list, q) {
+  const out = [];
+  for (const x of list) {
+    let s = 0;
+    for (const c of x.codes) { if (c === q) s = Math.max(s, 100); else if (c.startsWith(q)) s = Math.max(s, 70 - Math.min(c.length - q.length, 20)); else if (c.split('_').some(p => p.startsWith(q))) s = Math.max(s, 45); }
+    for (const w of x.words) { if (w === q) s = Math.max(s, 90); else if (w.startsWith(q)) s = Math.max(s, 50 - Math.min(w.length - q.length, 20) / 2); else if (w.split(/[\s_-]+/).some(p => p.startsWith(q))) s = Math.max(s, 40); else if (q.length > 2 && w.includes(q)) s = Math.max(s, 15); }
+    if (s) out.push([s, x]);
+  }
+  out.sort((a, b) => b[0] - a[0] || a[1].order - b[1].order);
+  return out.slice(0, 24).map(x => x[1]);
+}
+function wireEmojiPicker(f) {
+  let box = null, list = [], pick = 0, start = -1, seq = 0;
+  const close = () => { if (box) box.remove(); box = null; list = []; start = -1; };
+  const put = (from, to, e) => {
+    f.value = f.value.slice(0, from) + e + f.value.slice(to);
+    const pos = from + e.length; f.selectionStart = f.selectionEnd = pos;
+    sendWs({ t: 'used', e }); close(); f.dispatchEvent(new Event('input')); f.focus();
+  };
+  const draw = () => {
+    if (!list.length) return close();
+    if (!box) { box = document.createElement('div'); box.className = 'mpick epick'; box.setAttribute('role', 'listbox'); box.setAttribute('aria-label', 'Emoji suggestions'); f.closest('.panel').appendChild(box); }
+    box.innerHTML = `<div class="en">:${esc(list[pick].n)}:</div><div class="er">${list.map((x, i) => `<button role="option" aria-selected="${i === pick}" class="${i === pick ? 'on' : ''}" data-i="${i}" title=":${esc(x.n)}:" aria-label="${esc(x.n.replace(/_/g, ' '))}">${x.e}</button>`).join('')}</div>`;
+    box.querySelectorAll('[data-i]').forEach(b => b.onmousedown = e => { e.preventDefault(); put(start, f.selectionStart, list[Number(b.dataset.i)].e); });
+    const on = box.querySelector('button.on'); on && on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  };
+  const update = () => {
+    const caret = f.selectionStart, before = f.value.slice(0, caret);
+    const full = before.match(/(^|[\s(]):([a-z0-9_+-]{2,40}):$/i);
+    const part = !full && before.match(/(^|[\s(]):([a-z0-9_+-]{2,40})$/i);
+    if (!full && !part) return close();
+    const my = ++seq;
+    emojiIndex().then(idx => {
+      if (my !== seq) return;
+      if (full) {
+        const q = full[2].toLowerCase(); const hit = idx.find(x => x.codes.includes(q));
+        if (hit) put(caret - q.length - 2, caret, hit.e); else close();
+        return;
+      }
+      start = caret - part[2].length - 1;
+      list = emojiMatches(idx, part[2].toLowerCase()); pick = 0; draw();
+    });
+  };
+  f.addEventListener('input', update);
+  f.addEventListener('click', update);
+  f.addEventListener('blur', () => setTimeout(close, 150));
+  f.addEventListener('keydown', e => {
+    if (!box) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); pick = (pick + 1) % list.length; draw(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); pick = (pick - 1 + list.length) % list.length; draw(); }
+    else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); e.stopImmediatePropagation(); put(start, f.selectionStart, list[pick].e); }
     else if (e.key === 'Escape') { e.stopImmediatePropagation(); close(); }
   }, true);
 }
@@ -698,8 +915,7 @@ function onEvent(m) {
         if (!atBottom && m.m.uid !== S.me.uid) $('#jump') && $('#jump').classList.add('show');
         renderTyping();
       }
-      if (document.hidden && m.m.uid !== S.me.uid) { S.unread++; renderMentionBadge(); }
-      onMention(m.m);
+      onIncoming(m.m);
       return;
     }
     case 'update': {
@@ -736,6 +952,15 @@ function onEvent(m) {
     case 'mentionlist': mergePeople(m.people); showMentions(m); return;
     case 'reports': S.reports = m.count; renderSide(); return;
     case 'reportlist': mergePeople(m.people); showReports(m); return;
+    case 'modlog': mergePeople(m.people); showModlog(m); return;
+    case 'restore': {
+      mergePeople(m.people);
+      if (!S.messages.some(x => x.id === m.m.id) && (S.oldestDone || !S.messages.length || m.m.id > S.messages[0].id)) {
+        S.messages.push(m.m); S.messages.sort((a, b) => a.id - b.id);
+        if (S.view === 'chat') renderMessages(false);
+      }
+      return;
+    }
     case 'notice': toast(m.text); return;
     case 'error': toast(m.text); return;
   }
@@ -917,13 +1142,13 @@ function renderChat() {
         <a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a>
         <img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">
         <div style="flex:1;min-width:0;margin-left:4px"><h1 class="room">Inner Circle Chat</h1><div class="sub" id="cnt2"></div></div>
-        <button class="ibtn mbtn" id="mentBtn2" aria-label="Mentions">${AT(21)}<span class="mbadge" style="display:none"></span></button>
+        <button class="ibtn mbtn" id="mentBtn2" aria-label="Settings" title="Settings">${I.gear(21)}<span class="mbadge" style="display:none"></span></button>
         <button class="ibtn" id="searchBtn2" aria-label="Search">${I.search(21)}</button>
         <button class="ibtn" id="peopleBtn2" aria-label="Who is here">${I.people(21)}</button>
       </div>
       <div class="phead desk">
         <div style="flex:1;min-width:0"><h2 class="room">Inner Circle Chat</h2><div class="sub" id="cnt"></div></div>
-        <button class="ibtn mbtn" id="mentBtn" aria-label="Mentions">${AT()}<span class="mbadge" style="display:none"></span></button>
+        <button class="ibtn mbtn" id="mentBtn" aria-label="Settings" title="Settings">${I.gear()}<span class="mbadge" style="display:none"></span></button>
         <button class="ibtn" id="searchBtn" aria-label="Search">${I.search()}</button>
         <button class="ibtn" id="peopleBtn" aria-label="Who is here">${I.people()}</button>
         ${hostish ? `<button class="ibtn" id="repBtn" aria-label="Reports">${I.shield()}</button>` : ''}
@@ -956,7 +1181,7 @@ function renderChat() {
   $('#jump').onclick = () => { box.scrollTop = box.scrollHeight; $('#jump').classList.remove('show'); };
   $('#peopleBtn').onclick = $('#peopleBtn2').onclick = () => sendWs({ t: 'members' });
   $('#searchBtn').onclick = $('#searchBtn2').onclick = () => openSearch('room');
-  $('#mentBtn').onclick = $('#mentBtn2').onclick = openMentions;
+  $('#mentBtn').onclick = $('#mentBtn2').onclick = openSettings;
   sendWs({ t: 'members', quiet: true });
   countNewMentions();
   if ($('#repBtn')) $('#repBtn').onclick = () => sendWs({ t: 'reports' });
@@ -1044,18 +1269,27 @@ function renderReply() {
   if (!S.reply) { el.innerHTML = ''; return; }
   const m = S.messages.find(x => x.id === S.reply);
   if (!m) { S.reply = null; el.innerHTML = ''; return; }
-  el.innerHTML = `<div class="replybar">${I.reply(16)}<span class="q">Replying to <b>${esc(person(m.uid).name)}</b>: ${esc((m.text || 'Image').slice(0, 120))}</span><button class="ibtn" id="noReply" aria-label="Cancel reply" style="width:32px;height:32px">${I.close(16)}</button></div>`;
+  el.innerHTML = `<div class="replybar">${I.reply(16)}<span class="q">Replying to <b>${esc(person(m.uid).name)}</b>: ${m.kind === 'join' ? 'joined the chat' : esc((m.text || 'Image').slice(0, 120))}</span><button class="ibtn" id="noReply" aria-label="Cancel reply" style="width:32px;height:32px">${I.close(16)}</button></div>`;
   $('#noReply').onclick = () => { S.reply = null; renderReply(); };
   stickDown();
 }
 
+// reaction chips and the reply count under a message (or a join notice)
+function reactsHtml(m) {
+  const reacts = Object.keys(m.reacts || {}).filter(k => m.reacts[k] && m.reacts[k].length);
+  const names = uids => uids.map(u => person(u).name).slice(0, 8).join(', ') + (uids.length > 8 ? ' and ' + (uids.length - 8) + ' more' : '');
+  const chips = reacts.map(k => { const em = OLD_R[k] || k; const mineR = S.me && m.reacts[k].includes(S.me.uid); return `<button class="react${mineR ? ' mine' : ''}" data-react="${esc(em)}" data-id="${m.id}" title="${esc(names(m.reacts[k]))}" aria-label="${esc(em)} ${m.reacts[k].length}${mineR ? ', including you' : ''}"><span class="em">${esc(em)}</span>${m.reacts[k].length}</button>`; }).join('');
+  const rc = m.replies && !m.deleted ? `<button class="rcount" data-thread="${m.id}" title="View thread">${I.reply(14)}${m.replies}</button>` : '';
+  return chips || rc ? `<div class="reacts">${chips}${rc}</div>` : '';
+}
+const joinLabel = name => `${name} joined the chat`;
 function msgHtml(m, i, list) {
   if (m.deleted) return '';
   const prev0 = list[i - 1];
   if (m.kind === 'join') {
     const jp = person(m.uid);
     const day = !prev0 || new Date(prev0.created).toDateString() !== new Date(m.created).toDateString();
-    return (day ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '') + `<div class="joined" data-id="${m.id}"><button data-who="${esc(m.uid)}" title="View profile">${avatar(m.uid, 22)}<b>${esc(jp.name || 'A new member')}</b></button> joined the chat<span class="time">${fmtTime(m.created)}</span></div>`;
+    return (day ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '') + `<div class="jwrap" data-id="${m.id}"><div class="joined" data-press="${m.id}"><button data-who="${esc(m.uid)}" title="View profile">${avatar(m.uid, 22)}<b>${esc(jp.name || 'A new member')}</b></button> joined the chat<span class="time">${fmtTime(m.created)}</span></div>${reactsHtml(m)}</div>`;
   }
   const prev = prev0 && prev0.kind !== 'join' ? prev0 : null, next = list[i + 1] && list[i + 1].kind !== 'join' ? list[i + 1] : null;
   const mine = S.me && m.uid === S.me.uid;
@@ -1069,17 +1303,14 @@ function msgHtml(m, i, list) {
   {
     if (m.reply && !m.reply.deleted) {
       const rp = person(m.reply.uid);
-      body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b>${m.reply.deleted ? 'Message deleted' : esc(m.reply.text || (m.reply.image ? 'Image' : ''))}</button>`;
+      const rk = m.reply.kind || ((findMsg(m.reply.id) || {}).kind);
+      body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b>${m.reply.deleted ? 'Message deleted' : rk === 'join' ? 'joined the chat' : esc(m.reply.text || (m.reply.image ? 'Image' : ''))}</button>`;
     }
     if (m.text) { const f = formatText(m.text); body += `<div class="txt">${markMentions(f.html, m)}${m.edited ? ' <span class="time" title="Edited">(edited)</span>' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
     if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
   }
   const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile">${esc(p.name)}</button>${badges(p)}${signRow(p)}<span class="time">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span></div>` : '';
-  const reacts = Object.keys(m.reacts || {}).filter(k => m.reacts[k] && m.reacts[k].length);
-  const names = uids => uids.map(u => person(u).name).slice(0, 8).join(', ') + (uids.length > 8 ? ' and ' + (uids.length - 8) + ' more' : '');
-  const chips = reacts.map(k => { const em = OLD_R[k] || k; const mineR = S.me && m.reacts[k].includes(S.me.uid); return `<button class="react${mineR ? ' mine' : ''}" data-react="${esc(em)}" data-id="${m.id}" title="${esc(names(m.reacts[k]))}" aria-label="${esc(em)} ${m.reacts[k].length}${mineR ? ', including you' : ''}"><span class="em">${esc(em)}</span>${m.reacts[k].length}</button>`; }).join('');
-  const rc = m.replies && !m.deleted ? `<button class="rcount" data-thread="${m.id}" title="View thread">${I.reply(14)}${m.replies}</button>` : '';
-  const rx = chips || rc ? `<div class="reacts">${chips}${rc}</div>` : '';
+  const rx = reactsHtml(m);
   const av = last ? `<button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile" title="${esc(p.name)}">${avatar(m.uid, 36)}</button>` : '<span class="gap"></span>';
   out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub${mentionedMe(m) ? ' mentioned' : ''}" data-press="${m.id}">${head}${body}</div>${rx}</div></div>`;
   return out;
@@ -1108,7 +1339,7 @@ document.addEventListener('click', e => {
   else if (t.dataset.who) askProfile(t.dataset.who);
   else if (t.dataset.goto) {
     if (inThread) { sendWs({ t: 'thread', id: Number(t.dataset.goto) }); return; }
-    const el = document.querySelector(`#msgs .row[data-id="${t.dataset.goto}"]`);
+    const el = document.querySelector(`#msgs .row[data-id="${t.dataset.goto}"], #msgs .jwrap[data-id="${t.dataset.goto}"]`);
     if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); }
     else sendWs({ t: 'thread', id: Number(t.dataset.goto) });
   }
@@ -1126,7 +1357,7 @@ let pressTimer = null, pressXY = null;
 document.addEventListener('touchstart', e => {
   const b = e.target.closest('[data-press]'); if (!b || !b.closest('#msgs,#thread') || e.target.closest('button')) return;
   const t = e.touches[0]; pressXY = [t.clientX, t.clientY];
-  pressTimer = setTimeout(() => { pressTimer = null; if (navigator.vibrate) navigator.vibrate(10); openActions(Number(b.dataset.press)); }, 450);
+  pressTimer = setTimeout(() => { pressTimer = null; haptic(12); openActions(Number(b.dataset.press)); }, 450);
 }, { passive: true });
 document.addEventListener('touchmove', e => { if (!pressTimer || !pressXY) return; const t = e.touches[0]; if (Math.abs(t.clientX - pressXY[0]) + Math.abs(t.clientY - pressXY[1]) > 10) { clearTimeout(pressTimer); pressTimer = null; } }, { passive: true });
 ['touchend', 'touchcancel'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(pressTimer); pressTimer = null; }, { passive: true }));
@@ -1164,6 +1395,7 @@ function wireComposer() {
   });
   $('#sendBtn').onclick = send;
   wireMentionPicker(f);
+  wireEmojiPicker(f);
   $('#emoBtn').onclick = () => {
     const o = overlay('<div id="emoHost"></div>', true, 'Emoji');
     o.querySelector('#emoHost').appendChild(emojiPicker(u => {
@@ -1224,7 +1456,7 @@ function overlay(html, bottom, label, at) {
 // phones: the message lifts out of the chat, reactions above it, a compact menu below (Telegram style)
 function phoneMenu(id, reactHtml, menuHtml) {
   closeOverlay();
-  const src = document.querySelector(`#thread .row[data-id="${id}"] .bub`) || document.querySelector(`#msgs .row[data-id="${id}"] .bub`);
+  const src = document.querySelector(`#thread [data-press="${id}"]`) || document.querySelector(`#msgs [data-press="${id}"]`);
   const r = src ? src.getBoundingClientRect() : { left: 12, top: innerHeight / 3, width: innerWidth - 24 };
   const s = document.createElement('div');
   s.className = 'scrim pscrim'; s.id = 'ovl';
@@ -1249,7 +1481,7 @@ function phoneMenu(id, reactHtml, menuHtml) {
     const t = e.touches && e.touches[0]; if (!t) return;
     e.preventDefault();
     const el = under(t);
-    if (el !== hot) { if (hot) hot.classList.remove('hot'); hot = el; if (hot) { hot.classList.add('hot'); if (navigator.vibrate) navigator.vibrate(5); } }
+    if (el !== hot) { if (hot) hot.classList.remove('hot'); hot = el; if (hot) { hot.classList.add('hot'); haptic(6); } }
   };
   const finish = pick => {
     if (done) return; done = true;
@@ -1257,7 +1489,7 @@ function phoneMenu(id, reactHtml, menuHtml) {
     const chosen = pick ? hot : null;
     if (hot) hot.classList.remove('hot');
     setTimeout(() => { if (s.isConnected) s.style.pointerEvents = ''; }, 60);
-    if (chosen) chosen.click();
+    if (chosen) { haptic(10); chosen.click(); }
   };
   const onEnd = () => finish(true), onCancel = () => finish(false);
   document.addEventListener('touchmove', onMove, { passive: false });
@@ -1279,6 +1511,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay
 function findMsg(id) { return S.messages.find(x => x.id === id) || (S.threadMsgs || []).find(x => x.id === id); }
 function openActions(id, x, y) {
   const m = findMsg(id); if (!m || m.deleted) return;
+  const isJoin = m.kind === 'join';
   const mine = m.uid === S.me.uid;
   const mod = S.me.role === 'host' || S.me.role === 'mod';
   const p = person(m.uid);
@@ -1290,14 +1523,14 @@ function openActions(id, x, y) {
   const reactHtml = `<div class="reactbar" role="toolbar" aria-label="React">${QUICK.map(k => `<button class="${picked(k) ? 'pick' : ''}" data-k="${esc(k)}" aria-label="React ${esc(k)}">${esc(k)}</button>`).join('')}<button class="more" data-allemoji="1" aria-label="All emojis">${I.down(20)}</button></div>`;
   const menuHtml = `<div id="actmenu">
     <button class="mi" data-a="reply">${I.reply()}Reply</button>
-    ${mine && S.messages.some(x => x.id === id) ? `<button class="mi" data-a="edit">${I.edit()}Edit</button>` : ''}
+    ${mine && !isJoin && S.messages.some(x => x.id === id) ? `<button class="mi" data-a="edit">${I.edit()}Edit</button>` : ''}
     ${m.text ? `<button class="mi" data-a="copy">${I.copy()}Copy</button>` : ''}
-    <button class="mi" data-a="thread">${threadIcon}View thread</button>
-    ${mod ? `<button class="mi" data-a="pin">${I.pin()}${m.pinned ? 'Unpin' : 'Pin'}</button>` : ''}
-    <button class="mi" data-a="link">${linkIcon}Copy link</button>
-    ${!mine ? `<button class="mi" data-a="profile">${I.user()}View ${esc(p.name)}'s profile</button><button class="mi" data-a="report">${I.flag()}Report</button>` : ''}
-    ${mine || mod ? `<button class="mi danger" data-a="delete">${I.trash()}Delete</button>` : ''}
-    ${canModTarget ? `<div class="mhead">Host tools</div>
+    ${!isJoin || m.replies ? `<button class="mi" data-a="thread">${threadIcon}View thread</button>` : ''}
+    ${mod && !isJoin ? `<button class="mi" data-a="pin">${I.pin()}${m.pinned ? 'Unpin' : 'Pin'}</button>` : ''}
+    ${!isJoin ? `<button class="mi" data-a="link">${linkIcon}Copy link</button>` : ''}
+    ${!mine ? `<button class="mi" data-a="profile">${I.user()}View ${esc(p.name)}'s profile</button>${isJoin ? '' : `<button class="mi" data-a="report">${I.flag()}Report</button>`}` : ''}
+    ${(mine && !isJoin) || mod ? `<button class="mi danger" data-a="delete">${I.trash()}Delete</button>` : ''}
+    ${canModTarget && !isJoin ? `<div class="mhead">Host tools</div>
       <button class="mi" data-a="mute" style="border-top:0">${I.mute()}${p.muted ? 'Unmute ' : 'Mute '}${esc(p.name)}${p.muted ? '' : ' for 24 hours'}</button>
       <button class="mi danger" data-a="remove">${I.remove()}Remove from the Circle</button>` : ''}
     </div>`;
@@ -1452,7 +1685,7 @@ document.addEventListener('mouseover', e => {
   const b = e.target.closest && e.target.closest('button[aria-label],a[aria-label]');
   if (b && !b.hasAttribute('title')) b.setAttribute('title', b.getAttribute('aria-label'));
 });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { S.unread = 0; renderMentionBadge(); } });
+document.addEventListener('visibilitychange', () => { if (!away()) { S.unread = 0; renderMentionBadge(); } });
 
 S.view = S.token ? 'loading' : 'door';
 render();

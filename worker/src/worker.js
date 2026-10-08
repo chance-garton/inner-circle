@@ -149,6 +149,8 @@ async function route(req, env, url, path, okOrigin) {
 
 // ---------------------------------------------------------------- room
 
+const UNDOABLE = ['delete', 'pin', 'unpin', 'mute', 'unmute', 'remove', 'restore', 'role', 'title_add', 'title_remove'];
+
 export class Room {
   constructor(state, env) {
     this.state = state;
@@ -176,6 +178,51 @@ export class Room {
       this.sql.exec('DELETE FROM reactions WHERE kind = ?', oldKey);
     }
     this.sql.exec(`CREATE TABLE IF NOT EXISTS reports (id INTEGER PRIMARY KEY AUTOINCREMENT, msg_id INTEGER, uid TEXT, reason TEXT, created INTEGER, resolved INTEGER DEFAULT 0)`);
+    // moderation history (host only), every entry undoable
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS modlog (id INTEGER PRIMARY KEY AUTOINCREMENT, created INTEGER, actor TEXT DEFAULT '', action TEXT,
+      target TEXT DEFAULT '', msg_id INTEGER DEFAULT 0, detail TEXT DEFAULT '{}', undone INTEGER DEFAULT 0, undone_at INTEGER DEFAULT 0, undone_by TEXT DEFAULT '')`);
+    this.sql.exec('CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT)');
+    if (!this.one("SELECT v FROM meta WHERE k = 'modlog_backfill'")) {
+      // what happened before the history existed: deleted messages, removed and muted members
+      const now = Date.now();
+      for (const r of this.all('SELECT id, uid, created, pinned FROM messages WHERE deleted = 1 ORDER BY id')) {
+        this.sql.exec("INSERT INTO modlog (created, actor, action, target, msg_id, detail) VALUES (?, '', 'delete', ?, ?, ?)", r.created, r.uid, r.id, JSON.stringify({ earlier: true }));
+      }
+      for (const m of this.all('SELECT uid FROM members WHERE banned = 1')) this.sql.exec("INSERT INTO modlog (created, actor, action, target, detail) VALUES (?, '', 'remove', ?, ?)", now, m.uid, JSON.stringify({ earlier: true }));
+      for (const m of this.all('SELECT uid, muted_until FROM members WHERE muted_until > ?', now)) this.sql.exec("INSERT INTO modlog (created, actor, action, target, detail) VALUES (?, '', 'mute', ?, ?)", now, m.uid, JSON.stringify({ earlier: true, prev: 0 }));
+      this.sql.exec("INSERT OR REPLACE INTO meta (k, v) VALUES ('modlog_backfill', '1')");
+    }
+  }
+
+  log(actor, action, target, msgId, detail) {
+    this.sql.exec('INSERT INTO modlog (created, actor, action, target, msg_id, detail) VALUES (?, ?, ?, ?, ?, ?)', Date.now(), actor || '', action, target || '', msgId || 0, JSON.stringify(detail || {}));
+  }
+
+  kick(uid) {
+    for (const s of this.state.getWebSockets()) {
+      const a = s.deserializeAttachment();
+      if (a && a.uid === uid) { this.send(s, { t: 'denied', why: 'removed' }); s.serializeAttachment(Object.assign({}, a, { ready: false })); try { s.close(4003, 'removed'); } catch (e) { /* closed */ } }
+    }
+    this.presence();
+  }
+
+  modlogFor() {
+    const rows = this.all('SELECT * FROM modlog ORDER BY id DESC LIMIT 150');
+    const ids = new Set();
+    const entries = rows.map(r => {
+      let detail = {}; try { detail = JSON.parse(r.detail || '{}'); } catch (e) { /* keep empty */ }
+      if (r.actor) ids.add(r.actor); if (r.target) ids.add(r.target);
+      let preview = null;
+      if (r.msg_id) {
+        const m = this.one('SELECT text, image, kind, deleted FROM messages WHERE id = ?', r.msg_id);
+        if (m) preview = { text: (m.text || '').slice(0, 300), image: !!m.image, kind: m.kind || '' };
+      }
+      return { id: r.id, created: r.created, actor: r.actor, action: r.action, target: r.target, msg_id: r.msg_id, detail, preview,
+        undone: !!r.undone, undone_at: r.undone_at, canUndo: !r.undone && UNDOABLE.includes(r.action) };
+    });
+    const people = {};
+    for (const id of ids) { const p = this.person(this.member(id)); if (p) people[id] = p; }
+    return { t: 'modlog', entries, people };
   }
 
   async fetch(req) {
@@ -233,8 +280,8 @@ export class Room {
     }
     let reply = null;
     if (row.reply_to) {
-      const p = this.one('SELECT id, uid, text, image, deleted FROM messages WHERE id = ?', row.reply_to);
-      if (p) reply = { id: p.id, uid: p.uid, text: p.deleted ? '' : (p.text || '').slice(0, 200), image: !p.deleted && !!p.image, deleted: !!p.deleted };
+      const p = this.one('SELECT id, uid, text, image, deleted, kind FROM messages WHERE id = ?', row.reply_to);
+      if (p) reply = { id: p.id, uid: p.uid, text: p.deleted ? '' : (p.text || '').slice(0, 200), image: !p.deleted && !!p.image, deleted: !!p.deleted, kind: p.kind || '' };
     }
     return {
       id: row.id, uid: row.uid, text: row.deleted ? '' : row.text, image: row.deleted ? '' : row.image,
@@ -382,6 +429,8 @@ export class Room {
         const row = this.one('SELECT * FROM messages WHERE id = ?', msg.id);
         if (!row) return;
         if (row.uid !== me.uid && !this.isMod(me)) return;
+        if (row.deleted) return;
+        this.log(me.uid, 'delete', row.uid, row.id, { self: row.uid === me.uid, pinned: !!row.pinned, reacts: this.all('SELECT uid, kind FROM reactions WHERE msg_id = ?', row.id) });
         this.sql.exec('UPDATE messages SET deleted = 1, pinned = 0 WHERE id = ?', row.id);
         this.sql.exec('DELETE FROM reactions WHERE msg_id = ?', row.id);
         this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', row.id)) });
@@ -391,6 +440,7 @@ export class Room {
 
       case 'pin': {
         if (!this.isMod(me)) return;
+        { const pr = this.one('SELECT uid, pinned FROM messages WHERE id = ? AND deleted = 0', msg.id); if (pr && !!pr.pinned !== !!msg.on) this.log(me.uid, msg.on ? 'pin' : 'unpin', pr.uid, msg.id, {}); }
         this.sql.exec('UPDATE messages SET pinned = ? WHERE id = ? AND deleted = 0', msg.on ? 1 : 0, msg.id);
         const row = this.one('SELECT * FROM messages WHERE id = ?', msg.id);
         if (row) this.broadcast({ t: 'update', m: this.shape(row) });
@@ -402,7 +452,8 @@ export class Room {
         if (!this.isMod(me)) return;
         const target = this.member(msg.uid);
         if (!target || target.role === 'host') return;
-        const hours = Math.min(Math.max(Number(msg.hours) || 24, 0), 24 * 30);
+        const hours = msg.hours === 0 ? 0 : Math.min(Math.max(Number(msg.hours) || 24, 0), 24 * 30);
+        this.log(me.uid, hours ? 'mute' : 'unmute', target.uid, 0, { hours, prev: target.muted_until || 0 });
         this.sql.exec('UPDATE members SET muted_until = ? WHERE uid = ?', hours ? now + hours * 3600000 : 0, target.uid);
         this.broadcast({ t: 'person', p: this.person(this.member(target.uid)) });
         return this.send(ws, { t: 'notice', text: hours ? `${target.name || 'Member'} is muted for ${hours} hours.` : `${target.name || 'Member'} can post again.` });
@@ -412,14 +463,9 @@ export class Room {
         if (!this.isMod(me)) return;
         const target = this.member(msg.uid);
         if (!target || target.role === 'host' || (target.role === 'mod' && me.role !== 'host')) return;
+        this.log(me.uid, msg.undo ? 'restore' : 'remove', target.uid, 0, {});
         this.sql.exec('UPDATE members SET banned = ? WHERE uid = ?', msg.undo ? 0 : 1, target.uid);
-        if (!msg.undo) {
-          for (const s of this.state.getWebSockets()) {
-            const a = s.deserializeAttachment();
-            if (a && a.uid === target.uid) { this.send(s, { t: 'denied', why: 'removed' }); s.serializeAttachment(Object.assign({}, a, { ready: false })); try { s.close(4003, 'removed'); } catch (e) { /* closed */ } }
-          }
-          this.presence();
-        }
+        if (!msg.undo) this.kick(target.uid);
         return this.send(ws, { t: 'notice', text: msg.undo ? 'Member restored.' : `${target.name || 'Member'} was removed from the Inner Circle.` });
       }
 
@@ -433,15 +479,18 @@ export class Room {
         if (typeof msg.add === 'string') {
           const t = clean(msg.add, 32);
           if (!t) return;
-          if (t.toLowerCase() === 'initiator' && eligible) this.sql.exec('UPDATE members SET no_init = 0 WHERE uid = ?', target.uid);
+          if (t.toLowerCase() === 'initiator' && eligible) { this.sql.exec('UPDATE members SET no_init = 0 WHERE uid = ?', target.uid); this.log(me.uid, 'title_add', target.uid, 0, { title: 'Initiator' }); }
           else if (!titles.some(x => x.toLowerCase() === t.toLowerCase())) {
             if (titles.length >= 5) return this.send(ws, { t: 'error', text: 'Five titles at most.' });
             titles.push(t);
+            this.log(me.uid, 'title_add', target.uid, 0, { title: t });
           }
         }
         if (typeof msg.remove === 'string') {
           const t = msg.remove.toLowerCase();
-          if (t === 'initiator' && eligible) this.sql.exec('UPDATE members SET no_init = 1 WHERE uid = ?', target.uid);
+          const had = titles.find(x => x.toLowerCase() === t);
+          if (t === 'initiator' && eligible) { this.sql.exec('UPDATE members SET no_init = 1 WHERE uid = ?', target.uid); this.log(me.uid, 'title_remove', target.uid, 0, { title: 'Initiator' }); }
+          else if (had) this.log(me.uid, 'title_remove', target.uid, 0, { title: had });
           titles = titles.filter(x => x.toLowerCase() !== t);
         }
         this.sql.exec('UPDATE members SET titles = ? WHERE uid = ?', JSON.stringify(titles), target.uid);
@@ -454,6 +503,7 @@ export class Room {
         if (me.role !== 'host') return;
         const target = this.member(msg.uid);
         if (!target || target.role === 'host' || !['mod', 'member'].includes(msg.role)) return;
+        if (target.role !== msg.role) this.log(me.uid, 'role', target.uid, 0, { from: target.role, to: msg.role });
         this.sql.exec('UPDATE members SET role = ? WHERE uid = ?', msg.role, target.uid);
         this.broadcast({ t: 'person', p: this.person(this.member(target.uid)) });
         return this.send(ws, { t: 'notice', text: msg.role === 'mod' ? `${target.name} is now a moderator.` : `${target.name} is no longer a moderator.` });
@@ -567,6 +617,65 @@ export class Room {
         const rows = this.all('SELECT * FROM members WHERE profile_done = 1 AND banned = 0 ORDER BY name COLLATE NOCASE LIMIT 500');
         const out = {}; for (const r of rows) out[r.uid] = this.person(r);
         return this.send(ws, { t: 'members', people: out, online: this.online(), quiet: !!msg.quiet });
+      }
+
+      case 'modlog': {
+        if (me.role !== 'host') return;
+        return this.send(ws, this.modlogFor());
+      }
+
+      case 'undo': {
+        if (me.role !== 'host') return;
+        const e = this.one('SELECT * FROM modlog WHERE id = ?', Number(msg.id));
+        if (!e || e.undone || !UNDOABLE.includes(e.action)) return this.send(ws, this.modlogFor());
+        let d = {}; try { d = JSON.parse(e.detail || '{}'); } catch (err) { /* keep empty */ }
+        const target = e.target ? this.member(e.target) : null;
+        let note = 'Undone.';
+        if (e.action === 'delete') {
+          const row = this.one('SELECT * FROM messages WHERE id = ?', e.msg_id);
+          if (row && row.deleted) {
+            this.sql.exec('UPDATE messages SET deleted = 0, pinned = ? WHERE id = ?', d.pinned ? 1 : 0, row.id);
+            for (const r of (Array.isArray(d.reacts) ? d.reacts : [])) this.sql.exec('INSERT OR IGNORE INTO reactions (msg_id, uid, kind) VALUES (?, ?, ?)', row.id, r.uid, r.kind);
+            const m = this.shape(this.one('SELECT * FROM messages WHERE id = ?', row.id));
+            this.broadcast({ t: 'restore', m, people: this.peopleFor([m]) });
+            if (row.reply_to) { const parent = this.one('SELECT * FROM messages WHERE id = ?', row.reply_to); if (parent) this.broadcast({ t: 'update', m: this.shape(parent) }); }
+            for (const r of this.all('SELECT * FROM messages WHERE reply_to = ? AND deleted = 0', row.id)) this.broadcast({ t: 'update', m: this.shape(r) });
+            const pins = this.pins(); this.broadcast({ t: 'pins', pins, people: this.peopleFor(pins) });
+            note = 'Message restored.';
+          }
+        } else if (e.action === 'pin' || e.action === 'unpin') {
+          this.sql.exec('UPDATE messages SET pinned = ? WHERE id = ? AND deleted = 0', e.action === 'pin' ? 0 : 1, e.msg_id);
+          const row = this.one('SELECT * FROM messages WHERE id = ?', e.msg_id);
+          if (row) this.broadcast({ t: 'update', m: this.shape(row) });
+          const pins = this.pins(); this.broadcast({ t: 'pins', pins, people: this.peopleFor(pins) });
+        } else if ((e.action === 'mute' || e.action === 'unmute') && target && target.role !== 'host') {
+          const back = e.action === 'mute' ? (d.prev > Date.now() ? d.prev : 0) : (d.prev > Date.now() ? d.prev : 0);
+          this.sql.exec('UPDATE members SET muted_until = ? WHERE uid = ?', back, target.uid);
+          this.broadcast({ t: 'person', p: this.person(this.member(target.uid)) });
+          note = back ? `${target.name || 'Member'} is muted again.` : `${target.name || 'Member'} can post again.`;
+        } else if (e.action === 'remove' && target) {
+          this.sql.exec('UPDATE members SET banned = 0 WHERE uid = ?', target.uid);
+          note = `${target.name || 'Member'} can come back into the Circle.`;
+        } else if (e.action === 'restore' && target && target.role !== 'host') {
+          this.sql.exec('UPDATE members SET banned = 1 WHERE uid = ?', target.uid);
+          this.kick(target.uid);
+          note = `${target.name || 'Member'} is removed again.`;
+        } else if (e.action === 'role' && target && target.role !== 'host' && ['mod', 'member'].includes(d.from)) {
+          this.sql.exec('UPDATE members SET role = ? WHERE uid = ?', d.from, target.uid);
+          this.broadcast({ t: 'person', p: this.person(this.member(target.uid)) });
+        } else if ((e.action === 'title_add' || e.action === 'title_remove') && target && d.title) {
+          const add = e.action === 'title_remove';
+          if (String(d.title).toLowerCase() === 'initiator') this.sql.exec('UPDATE members SET no_init = ? WHERE uid = ?', add ? 0 : 1, target.uid);
+          else {
+            let titles = safeArr(target.titles).filter(x => x.toLowerCase() !== String(d.title).toLowerCase());
+            if (add && titles.length < 5) titles.push(d.title);
+            this.sql.exec('UPDATE members SET titles = ? WHERE uid = ?', JSON.stringify(titles), target.uid);
+          }
+          this.broadcast({ t: 'person', p: this.person(this.member(target.uid)) });
+        } else return this.send(ws, { t: 'notice', text: 'That one cannot be undone now.' });
+        this.sql.exec('UPDATE modlog SET undone = 1, undone_at = ?, undone_by = ? WHERE id = ?', Date.now(), me.uid, e.id);
+        this.send(ws, { t: 'notice', text: note });
+        return this.send(ws, this.modlogFor());
       }
 
       case 'ping': return this.send(ws, { t: 'pong' });

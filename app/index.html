@@ -196,7 +196,11 @@ html.member .chap.now{background:rgba(216,170,60,0.1)}
 .tabs{position:fixed;left:0;right:0;bottom:calc(-1 * var(--gap));z-index:10;--tb:max(12px,calc(var(--sb) - 22px));height:calc(var(--tabh) + var(--tb));padding-bottom:var(--tb);display:flex;background:#0A0F1C;border-top:1px solid var(--line)}
 .tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:2px;gap:3px;font-size:11px;font-weight:700;color:var(--muted);position:relative}
 .tabs button.on{color:var(--accent)}
-.tabs .dot{position:absolute;top:7px;left:calc(50% + 8px);min-width:8px;height:8px;border-radius:4px;background:var(--gold)}
+.tabs .dot{position:absolute;top:4px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--gold);color:var(--on-gold);font-size:11px;font-weight:800;line-height:18px;text-align:center}
+.banner{position:fixed;left:10px;right:10px;top:calc(var(--st) + 8px);z-index:60;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;background:var(--card2);border:1px solid rgba(216,170,60,0.5);box-shadow:0 14px 34px rgba(0,0,0,0.55);text-align:left;color:var(--ink);animation:bdrop .25s ease-out}
+.banner b{display:block;font-size:13.5px;color:var(--gold)}
+.banner span{display:block;font-size:14px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+@keyframes bdrop{from{transform:translateY(-20px);opacity:0}to{transform:none;opacity:1}}
 html.kb .tabs,html.kb .mini{display:none}
 .mini{position:fixed;left:8px;right:8px;bottom:calc(-1 * var(--gap) + var(--tabh) + max(12px,calc(var(--sb) - 22px)) + 6px);z-index:10;height:58px;border-radius:14px;background:var(--card2);box-shadow:0 10px 30px rgba(0,0,0,0.5);display:none;align-items:center;gap:10px;padding:0 6px 0 7px;overflow:hidden;border:1px solid var(--line)}
 html.playing .mini{display:flex}
@@ -278,7 +282,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08k';
+const VERSION = '2026-10-08l';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
 const SITE = 'https://www.innerversepodcast.com';
@@ -375,6 +379,8 @@ function login() { location.href = loginUrl(); }
 function logout() {
   store(TOKEN_KEY, null); store('iva_status', null);
   S.token = null; S.member = false; S.signedIn = false; S.name = '';
+  try { navigator.clearAppBadge && navigator.clearAppBadge(); } catch (e) {}
+  S.chatUnread = 0;
   applyMember(); toast('You are logged out.');
 }
 
@@ -473,6 +479,7 @@ function setTab(tab) {
   for (const id of ['home', 'search', 'chatv', 'me']) $('#' + id).hidden = (id !== (tab === 'chat' ? 'chatv' : tab));
   $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   if (tab === 'chat') mountChat();
+  tellChat();
 }
 let lastTabHash = { home: '#/', search: '#/search', chat: '#/chat', me: '#/me' };
 let NAV = [location.hash || '#/'];
@@ -490,7 +497,7 @@ function route() {
   else if (h.indexOf('#/me') === 0) setTab('me');
   else setTab('home');
 }
-window.addEventListener('hashchange', () => {
+window.addEventListener('hashchange', () => { setTimeout(tellChat, 50);
   const h = location.hash || '#/';
   if (NAV.length > 1 && NAV[NAV.length - 2] === h) NAV.pop(); else NAV.push(h);
   route();
@@ -499,7 +506,7 @@ window.addEventListener('hashchange', () => {
 // ------------------------------------------------------------ tabs
 function renderTabs() {
   const t = [['home', 'Home', I.home(24)], ['search', 'Episodes', I.search(24)]];
-  if (S.member) t.push(['chat', 'Inner Circle', I.chat(24)]);
+  if (S.member) t.push(['chat', 'Inner Circle', I.chat(24) + (S.chatUnread ? `<span class="dot">${S.chatUnread > 99 ? '99+' : S.chatUnread}</span>` : '')]);
   t.push(['me', S.member ? 'Account' : 'Plus+', S.member ? I.user(24) : I.plus(24)]);
   $('#tabs').innerHTML = t.map(x => `<button data-tab="${x[0]}" class="${S.tab === x[0] ? 'on' : ''}">${x[2]}<span>${x[1]}</span></button>`).join('');
 }
@@ -566,6 +573,17 @@ document.addEventListener('click', e => {
 });
 
 // ------------------------------------------------------------ home
+// Vibe Rant is on hiatus and not sequential: show a fresh random handful each time the app opens
+let VIBE = null;
+function vibeShuffle(lib) {
+  const key = (S.member ? 'm' : 'v');
+  if (!VIBE || VIBE.key !== key) {
+    const pool = lib.filter(x => x.shows.includes('Vibe Rant') && !x.shows.includes('Astro-Herbalism'));
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    VIBE = { key, list: pool.slice(0, 10) };
+  }
+  return VIBE.list;
+}
 function renderHome() {
   const v = $('#home');
   if (!S.lib) { v.innerHTML = `<header class="hdr"><div class="row">${headerBrand()}</div></header><div class="loading"><div class="spin"></div></div>`; return; }
@@ -573,7 +591,7 @@ function renderHome() {
   const latest = lib[0];
   const cont = Object.entries(PROG).filter(([k, p]) => p.t > 60 && S.lib.bySlug[k]).sort((a, b) => b[1].at - a[1].at).map(([k]) => pick(S.lib.bySlug[k])).filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 10);
   const firsts = FIRST_EPISODES.map(s => pick(S.lib.bySlug['e:' + s] || S.lib.bySlug['p:' + s])).filter(Boolean);
-  const byShow = sh => lib.filter(x => x.shows.includes(sh)).slice(0, 10);
+  const byShow = sh => sh === 'Vibe Rant' ? vibeShuffle(lib) : lib.filter(x => x.shows.includes(sh)).slice(0, 10);
   const showRow = sh => { const xs = byShow(sh); if (!xs.length) return ''; return `<div class="sec"><div class="sechead"><h2 class="h2">${esc(sh)}</h2><a href="#/search?show=${encodeURIComponent(sh)}">See all</a></div><div class="hscroll">${xs.map(tile).join('')}</div></div>`; };
   v.innerHTML = `<header class="hdr"><div class="row">${headerBrand()}<span class="sp"></span>${S.member ? '' : '<button class="btn line" data-act="login" style="min-height:36px;padding:0 14px;font-size:14px">Log in</button>'}</div></header>
   <div class="wrap">
@@ -701,6 +719,26 @@ function renderMe() {
 }
 
 // ------------------------------------------------------------ chat (the Inner Circle page, same address)
+function tellChat() {
+  const f = $('#chatv iframe'); if (!f) return;
+  try { f.contentWindow.postMessage({ ivcApp: 1, away: S.tab !== 'chat' || !$('#ep').hidden || document.hidden }, location.origin); } catch (e) {}
+}
+window.addEventListener('message', e => {
+  if (e.origin !== location.origin || !e.data || !e.data.ivc) return;
+  const d = e.data;
+  if ('unread' in d) {
+    S.chatUnread = d.unread || 0; renderTabs();
+    try { if (navigator.setAppBadge) { S.chatUnread ? navigator.setAppBadge(S.chatUnread) : navigator.clearAppBadge(); } } catch (err) {}
+  }
+  if (d.msg && S.tab !== 'chat' && !document.hidden) {
+    const old = $('.banner'); if (old) old.remove();
+    const b = document.createElement('button'); b.className = 'banner';
+    b.innerHTML = `${I.chat(22)}<div style="min-width:0;flex:1"><b>${esc(d.name)}${d.tagged ? ' mentioned you' : ''}</b><span>${esc(d.text)}</span></div>`;
+    b.onclick = () => { b.remove(); go('#/chat'); };
+    document.body.appendChild(b); setTimeout(() => b.remove(), 5000);
+  }
+});
+document.addEventListener('visibilitychange', tellChat);
 function mountChat() {
   if (!S.member || S.chatLoaded) return;
   S.chatLoaded = true;
@@ -709,6 +747,7 @@ function mountChat() {
   f.setAttribute('allow', 'clipboard-write; autoplay');
   $('#chatv').appendChild(f);
   f.addEventListener('load', () => {
+    setTimeout(tellChat, 300);
     let d; try { d = f.contentDocument; } catch (e) { return; }
     if (!d) return;
     const st = d.createElement('style');
@@ -935,26 +974,28 @@ function ytApi() {
 function setMode(mode, user) {
   const E = EPV; if (!E) return;
   if (user) store('iva_mode', mode);
-  const prevMode = E.mode; E.mode = mode;
+  E.mode = mode;
   $$('.toggle button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
   const media = $('#media'), lb = $('#listenBox');
   if (mode === 'watch') {
     lb.innerHTML = '';
     media.hidden = false;
-    let at = 0;
-    if (cur && cur.key === E.key) {
-      at = Math.max(0, (aud.src && !isSilent() ? aud.currentTime : ((PROG[E.key] || {}).t || 0)) - (cur.offset || 0));
-      if (!aud.paused) aud.pause();
-    } else if (PROG[E.key]) at = Math.max(0, PROG[E.key].t - (E.plus ? 0 : E.offset));
-    // the real player loads straight away (no autoplay), so the first tap is on the player itself and plays with sound
-    if (!VP) startVideo(at);
+    let at = 0, fromAudio = false;
+    if (cur && cur.key === E.key && aud.src && !isSilent()) { at = Math.max(0, aud.currentTime - (cur.offset || 0)); fromAudio = !aud.paused; if (!aud.paused) aud.pause(); }
+    else if (PROG[E.key]) at = Math.max(0, PROG[E.key].t - (E.plus ? 0 : E.offset));
+    if (!VP) startVideo(at, !!user);               // first time: the player loads (and starts if you tapped Watch)
+    else if (user) seekVideo(at);                  // switching back: the same player jumps to the moment and plays
   } else {
     let at = null;
-    if (VP && user) { at = videoTime(); }
-    destroyVideo();
-    media.innerHTML = ''; media.hidden = true;
+    if (VP && VP.type !== 'pending') {
+      at = videoTime();
+      try { VP.type === 'yt' ? VP.player.pauseVideo() : VP.type === 'vimeo' ? VP.player.pause() : 0; } catch (e) {}
+      VP.playing = false;
+    }
+    if (videoOwns) { videoOwns = false; syncMini(); }
+    media.hidden = true;                           // the video waits, hidden, so Watch can pick it up again
     renderListenBox();
-    if (user && at != null && at > 1) { unlockAudio(); playEpisode(E, at + (E.plus ? 0 : E.offset)); }
+    if (user) { unlockAudio(); playEpisode(E, at != null && at > 1 ? at + (E.plus ? 0 : E.offset) : null); }
   }
 }
 function videoTime() { try { if (VP.type === 'yt') return VP.player.getCurrentTime(); if (VP.type === 'vimeo') return VP.t || 0; } catch (e) {} return null; }
@@ -1013,7 +1054,7 @@ async function startVideo(at, autoplay) {
     VP = { type: 'yt' };
     VP.player = new YT.Player('ytp', { videoId: yt, playerVars: { playsinline: 1, rel: 0, modestbranding: 1, start: Math.floor(at || 0), autoplay: autoplay ? 1 : 0 },
       events: {
-        onReady: ev => { if (!VP) return; VP.ready = true; try { ev.target.unMute(); ev.target.setVolume(100); } catch (e) {} if (autoplay) ev.target.playVideo(); },
+        onReady: ev => { if (!VP) return; VP.ready = true; try { ev.target.unMute(); ev.target.setVolume(100); } catch (e) {} if (VP.queued != null) { try { ev.target.seekTo(VP.queued, true); } catch (e) {} VP.queued = null; ev.target.playVideo(); } else if (autoplay) ev.target.playVideo(); },
         onStateChange: ev => { if (!VP) return; if (ev.data === 1) { try { if (ev.target.isMuted()) ev.target.unMute(); } catch (e) {} videoStarted(E); } else if (ev.data === 2 || ev.data === 0) VP.playing = false; }
       } });
   } else if (vm) {
@@ -1037,6 +1078,7 @@ async function startVideo(at, autoplay) {
 function seekVideo(at) {
   if (!VP || VP.type === 'pending') { if (!VP) startVideo(at, true); return; }
   try {
+    if (VP.type === 'yt' && !VP.ready) { VP.queued = at; return; }
     if (VP.type === 'yt') { VP.player.seekTo(at, true); VP.player.playVideo(); }
     else if (VP.type === 'vimeo') { VP.player.setCurrentTime(at).then(() => VP.player.play()).catch(() => {}); }
     else toast('This player cannot jump to chapters. Try Listen.');
@@ -1318,6 +1360,7 @@ if (cur) { showMini(); updateMediaSession(); }
 route();
 loadLibrary().then(() => {
   renderHome(); renderSearch(); route();
+  setTimeout(() => { if (S.member) { mountChat(); } }, 1500);
 }).catch(() => {
   $('#home').innerHTML = `<header class="hdr"><div class="row">${headerBrand()}</div></header><div class="wrap"><div class="empty">The episodes could not load. Check your connection and pull this screen down or reopen the app.<br><br><button class="btn line" onclick="location.reload()">Try again</button></div></div>`;
 });
