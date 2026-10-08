@@ -1,6 +1,6 @@
 /* InnerVerse app: keeps the app opening fast and offline, and always picks up new versions.
    The page itself is fetched fresh first on every launch, so a pushed update shows on the next open. */
-const VERSION = 'iva-2026-10-08h';
+const VERSION = 'iva-2026-10-08i';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
