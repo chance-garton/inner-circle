@@ -325,6 +325,12 @@ function store(k, v) { try { if (v == null) localStorage.removeItem(k); else loc
 function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 
 // token from the members' sign-in redirect, kept in this site's storage
+// move to the secure address as soon as it works (GitHub issues the certificate after setup)
+if (location.protocol === 'http:' && /innerversepodcast\.com$/.test(location.hostname)) {
+  fetch('https://' + location.host + '/', { mode: 'no-cors', cache: 'no-store' })
+    .then(() => location.replace('https://' + location.host + location.pathname + location.search + location.hash))
+    .catch(() => {});
+}
 (function captureToken(){
   const m = location.hash.match(/iv_session=([^&]+)/);
   if (m) { store('ivc_token', decodeURIComponent(m[1])); history.replaceState(null, '', location.pathname + location.search); }

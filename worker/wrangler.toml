@@ -13,7 +13,7 @@ HOST_EMAILS = "chance@innerversepodcast.com,chancegarton@gmail.com"
 # Local testing only: lets "dev." tokens sign in. Must stay "0" when deployed.
 DEV_AUTH = "0"
 # Sites allowed to talk to this Worker (the page lives on GitHub Pages).
-ALLOWED_ORIGINS = "https://circle.innerversepodcast.com"
+ALLOWED_ORIGINS = "https://circle.innerversepodcast.com,http://circle.innerversepodcast.com"
 
 [[durable_objects.bindings]]
 name = "ROOM"
