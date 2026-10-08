@@ -1,0 +1,1205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0A0F1C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="InnerVerse">
+<meta name="description" content="InnerVerse on your phone: every episode, the full Plus+ episodes for members, and the Inner Circle.">
+<title>InnerVerse</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-64.png">
+<link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1320x2868.png">
+<link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1290x2796.png">
+<link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1206x2622.png">
+<link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1179x2556.png">
+<link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1170x2532.png">
+<link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1284x2778.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1125x2436.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1242x2688.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="icons/splash/828x1792.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="icons/splash/750x1334.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://raw.githubusercontent.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --ground:#0A0F1C; --surface:#111827; --card:#151E33; --card2:#1B2640; --line:rgba(233,238,246,0.12);
+  --ink:#E9EEF6; --muted:#9AA6BA; --lapis:#3B74CC; --lapis-lit:#8FB5F0;
+  --gold:#D8AA3C; --gold-lit:#E8C46A; --on-gold:#0A0F1C;
+  --accent:var(--lapis-lit);
+  --brand:'Fjalla One','Arial Narrow',Impact,sans-serif;
+  --display:'Fraunces',Georgia,'Times New Roman',serif;
+  --sans:'Manrope','Segoe UI',Helvetica,Arial,sans-serif;
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+  --tabh:56px; --minih:0px;
+}
+html.member{--accent:var(--gold)}
+html.playing{--minih:66px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+body{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+img{display:block}
+input{font:inherit;color:inherit}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+[hidden]{display:none!important}
+
+/* views */
+.view{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;background:var(--ground);padding-bottom:calc(var(--tabh) + var(--minih) + var(--sb) + 24px)}
+#ep{z-index:5;animation:slidein .22s ease-out}
+@keyframes slidein{from{transform:translateX(28px);opacity:.4}to{transform:none;opacity:1}}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px}
+
+/* headers */
+.hdr{position:sticky;top:0;z-index:4;padding:calc(var(--st) + 8px) 16px 10px;background:rgba(10,15,28,0.9);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid transparent;transition:border-color .2s}
+.hdr.scrolled{border-bottom-color:var(--line)}
+.hdr .row{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:10px;min-height:40px}
+.brandmark{display:flex;align-items:center;gap:9px}
+.brandmark img{width:34px;height:34px}
+.brandmark .word{font-family:var(--brand);font-size:23px;letter-spacing:.04em;text-transform:uppercase}
+.brandmark .plus{color:var(--gold);font-family:var(--brand);font-size:23px;margin-left:-4px}
+.hdr .sp{flex:1}
+.hdr h1{font-family:var(--display);font-weight:600;font-size:28px;margin:0;letter-spacing:-.01em}
+.iconbtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--ink)}
+.iconbtn:active{background:rgba(233,238,246,0.08)}
+.eptitle-mini{flex:1;min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity .2s}
+.hdr.scrolled .eptitle-mini{opacity:1}
+
+/* type */
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.h2{font-family:var(--display);font-weight:600;font-size:24px;line-height:1.2;margin:0}
+.sec{margin:28px 0 0}
+.sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 12px}
+.sechead a,.sechead button{font-size:14px;font-weight:700;color:var(--accent)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 20px;border-radius:999px;font-weight:800;font-size:15px;background:var(--lapis);color:#fff;box-sizing:border-box}
+.btn.gold{background:var(--gold);color:var(--on-gold)}
+.btn.line{background:transparent;border:2px solid var(--accent);color:var(--ink)}
+.btn.block{display:flex;width:100%}
+.btn:active{transform:scale(.98)}
+.btn[disabled]{opacity:.55}
+
+/* hero */
+.hero{position:relative;border-radius:18px;overflow:hidden;background:var(--card);margin-top:6px}
+.hero .art{aspect-ratio:16/9;width:100%;object-fit:cover;background:var(--card2)}
+.hero .body{padding:14px 16px 16px}
+.hero .t{font-family:var(--display);font-size:22px;font-weight:600;line-height:1.22;margin:6px 0 4px}
+.hero .acts{display:flex;gap:10px;margin-top:12px}
+.hero .acts .btn{flex:1}
+
+/* rows */
+.hscroll{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 16px;margin:0 -16px;padding:0 16px 4px;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+.tile{flex:none;width:min(62vw,240px);scroll-snap-align:start}
+.tile .art{aspect-ratio:16/9;width:100%;object-fit:cover;border-radius:12px;background:var(--card2)}
+.tile .t{font-weight:700;font-size:14.5px;line-height:1.3;margin:8px 0 2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile .m{font-size:12.5px;color:var(--muted)}
+.tile .bar{height:3px;border-radius:2px;background:rgba(233,238,246,0.14);margin-top:6px;overflow:hidden}
+.tile .bar i{display:block;height:100%;background:var(--accent)}
+.list{display:flex;flex-direction:column}
+.rowep{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.rowep .art{width:128px;flex:none;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:var(--card2)}
+.rowep .info{min-width:0;flex:1}
+.rowep .k{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.rowep .t{font-weight:700;font-size:15px;line-height:1.3;margin:3px 0 2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.rowep .l{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rowep .why{font-size:12.5px;color:var(--lapis-lit);margin-top:2px}
+.pchip{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:999px;border:1px solid rgba(216,170,60,0.55);color:var(--gold);font-size:10.5px;letter-spacing:.06em}
+
+/* search */
+.searchbox{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:0 6px 0 14px;height:46px;margin-top:8px}
+.searchbox input{flex:1;min-width:0;background:none;border:0;outline:0;height:100%;font-size:16px}
+.searchbox input::placeholder{color:var(--muted)}
+.searchbox input::-webkit-search-cancel-button,.searchbox input::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:12px -16px 0;padding:0 16px 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--line);font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-gold)}
+html:not(.member) .chip.on{color:#0A0F1C}
+.reshead{font-family:var(--display);font-size:20px;font-weight:600;margin:18px 0 4px}
+.more{display:flex;justify-content:center;padding:18px 0}
+
+/* episode page */
+.media{background:#000;border-radius:0;overflow:hidden;margin:0 -16px}
+.media .frame{position:relative;aspect-ratio:16/9;width:100%;background:#000}
+.media .frame iframe,.media .frame .ytp{position:absolute;inset:0;width:100%;height:100%;border:0}
+.media .poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.9}
+.media .bigplay{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,rgba(10,15,28,0) 40%,rgba(10,15,28,0.65))}
+.media .bigplay span{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-gold);box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+html:not(.member) .media .bigplay span{color:#fff;background:var(--lapis)}
+.toggle{display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--card);width:max-content;margin:14px 0 0}
+.toggle button{height:36px;padding:0 18px;border-radius:999px;font-weight:800;font-size:14px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.toggle button.on{background:var(--card2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.listen{display:flex;align-items:center;gap:14px;padding:14px;margin-top:12px;border-radius:16px;background:var(--card)}
+.listen .pp{width:56px;height:56px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--accent);color:var(--on-gold)}
+html:not(.member) .listen .pp{background:var(--lapis);color:#fff}
+.listen .lt{min-width:0;flex:1}
+.listen .lt b{display:block;font-size:15px}
+.listen .lt span{font-size:13px;color:var(--muted)}
+.crumb{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px;line-height:1.6}
+.crumb b{color:var(--accent);font-weight:800}
+.title{font-family:var(--display);font-weight:600;font-size:27px;line-height:1.18;margin:0 0 10px;letter-spacing:-.005em}
+.desc p{margin:0 0 12px;color:#D5DCE8}
+.card{background:var(--card);border-radius:16px;padding:16px}
+.card.goldline{border:1px solid rgba(216,170,60,0.4);background:linear-gradient(180deg,rgba(216,170,60,0.08),rgba(216,170,60,0.02)),var(--card)}
+.card h3{font-family:var(--display);font-size:20px;font-weight:600;margin:4px 0 6px;line-height:1.25}
+.card p{margin:0 0 12px;color:#D5DCE8;font-size:15px}
+.card .acts{display:flex;gap:10px;flex-wrap:wrap}
+.card .acts .btn{flex:1 1 100%}
+.acc{border-top:1px solid var(--line);margin-top:22px}
+.acc>button{display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px 0;font-family:var(--display);font-size:21px;font-weight:600;text-align:left}
+.acc>button svg{transition:transform .2s;color:var(--muted)}
+.acc.open>button svg{transform:rotate(180deg)}
+.acc .in{display:none;padding-bottom:6px}
+.acc.open .in{display:block}
+.chap{display:flex;gap:12px;width:100%;text-align:left;padding:10px 8px;border-radius:10px;align-items:baseline}
+.chap:active{background:rgba(233,238,246,0.06)}
+.chap .tm{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:800;font-size:14px;min-width:58px}
+.chap .ct{font-size:15px;line-height:1.35}
+.chap.now{background:rgba(143,181,240,0.1)}
+html.member .chap.now{background:rgba(216,170,60,0.1)}
+.chap.locked{opacity:.6;cursor:default}
+.chap.locked .tm{color:var(--muted)}
+.mtag{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-left:6px;white-space:nowrap}
+.theme{padding:4px 0 14px}
+.theme h4{margin:0 0 4px;font-size:16px;font-weight:800;line-height:1.3}
+.theme p{margin:0;color:#D5DCE8;font-size:15px}
+.quote{padding:14px 0;border-bottom:1px solid var(--line)}
+.quote:last-child{border-bottom:0}
+.quote blockquote{margin:0 0 10px;font-family:var(--display);font-style:italic;font-size:18px;line-height:1.4}
+.quote .who{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;color:var(--muted)}
+.quote .who img{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--card2)}
+.guest{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line)}
+.guest:last-child{border-bottom:0}
+.guest img{width:64px;height:64px;border-radius:50%;object-fit:cover;flex:none;background:var(--card2)}
+.guest .n{font-weight:800;font-size:16px}
+.guest .r{font-size:13.5px;color:var(--accent);margin-bottom:6px}
+.guest .b{font-size:14px;color:#D5DCE8;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.guest .b.full{display:block}
+.links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.links a{font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;border:2px solid var(--accent)}
+
+/* tab bar + mini player */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;height:calc(var(--tabh) + var(--sb));padding-bottom:var(--sb);display:flex;background:rgba(10,15,28,0.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--muted);position:relative}
+.tabs button.on{color:var(--accent)}
+.tabs .dot{position:absolute;top:7px;left:calc(50% + 8px);min-width:8px;height:8px;border-radius:4px;background:var(--gold)}
+html.kb .tabs,html.kb .mini{display:none}
+.mini{position:fixed;left:8px;right:8px;bottom:calc(var(--tabh) + var(--sb) + 6px);z-index:10;height:58px;border-radius:14px;background:var(--card2);box-shadow:0 10px 30px rgba(0,0,0,0.5);display:none;align-items:center;gap:10px;padding:0 6px 0 7px;overflow:hidden;border:1px solid var(--line)}
+html.playing .mini{display:flex}
+.mini img{width:44px;height:44px;border-radius:9px;object-fit:cover;flex:none;background:var(--card)}
+.mini .mt{flex:1;min-width:0;text-align:left}
+.mini .mt b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .mt span{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .prog{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(233,238,246,0.1)}
+.mini .prog i{display:block;height:100%;background:var(--accent);width:0}
+
+/* now playing sheet */
+.np{position:fixed;inset:0;z-index:30;background:linear-gradient(180deg,#14203A 0%,var(--ground) 60%);display:flex;flex-direction:column;padding:calc(var(--st) + 6px) 20px calc(var(--sb) + 16px);transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);overflow-y:auto}
+.np.open{transform:none}
+.np .grab{display:flex;justify-content:center;padding:4px 0 10px}
+.np .art{width:100%;max-width:520px;aspect-ratio:16/9;object-fit:cover;border-radius:16px;margin:8px auto 0;box-shadow:0 18px 50px rgba(0,0,0,0.55)}
+.np .nt{font-family:var(--display);font-size:22px;font-weight:600;line-height:1.25;margin:20px 0 4px}
+.np .nc{color:var(--accent);font-weight:700;font-size:14.5px;min-height:22px}
+.np input[type=range]{width:100%;margin:18px 0 2px;accent-color:var(--accent);height:28px}
+.np .times{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.np .ctl{display:flex;align-items:center;justify-content:center;gap:22px;margin:14px 0 8px}
+.np .ctl .big{width:76px;height:76px;border-radius:50%;background:var(--accent);color:var(--on-gold);display:grid;place-items:center}
+html:not(.member) .np .ctl .big{background:var(--lapis);color:#fff}
+.np .ctl .sk{width:52px;height:52px;display:grid;place-items:center;position:relative}
+.np .ctl .sk small{position:absolute;font-size:10px;font-weight:800;top:19px}
+.np .opts{display:flex;justify-content:center;gap:10px;margin:6px 0 14px}
+.np .opts button{height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--line);font-weight:800;font-size:13.5px}
+.np .chlist{max-width:620px;margin:0 auto;width:100%}
+
+/* chat */
+#chatv{overflow:hidden;padding:0}
+#chatv iframe{position:absolute;left:0;right:0;top:var(--st);width:100%;height:calc(100% - var(--st) - var(--tabh) - var(--sb) - var(--minih));border:0;background:var(--ground)}
+html.kb #chatv iframe{height:calc(100% - var(--st))}
+.loading{display:grid;place-items:center;padding:60px 0;color:var(--muted)}
+.spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(233,238,246,0.15);border-top-color:var(--accent);animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* account */
+.acct{display:flex;align-items:center;gap:14px}
+.acct .av{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--gold);color:var(--on-gold);font-family:var(--brand);font-size:26px;flex:none}
+.perks{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.perk{background:var(--card);border-radius:14px;padding:12px}
+.perk b{display:block;font-size:14px;line-height:1.3;margin-bottom:3px}
+.perk span{font-size:12.5px;color:var(--muted);line-height:1.4;display:block}
+.linkrow{display:flex;align-items:center;justify-content:space-between;padding:15px 2px;border-bottom:1px solid var(--line);font-weight:700}
+.linkrow svg{color:var(--muted)}
+.field{width:100%;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:0 14px;outline:0;margin:8px 0}
+.note{font-size:13px;color:var(--muted);margin:6px 0 0}
+
+/* install sheet + toast */
+.sheetwrap{position:fixed;inset:0;z-index:40;background:rgba(5,8,15,0.6);display:flex;align-items:flex-end}
+.sheet{width:100%;background:var(--card);border-radius:22px 22px 0 0;padding:20px 20px calc(var(--sb) + 20px);max-width:620px;margin:0 auto}
+.sheet h3{font-family:var(--display);font-size:22px;margin:0 0 8px;font-weight:600}
+.sheet ol{margin:8px 0 16px;padding-left:22px}
+.sheet li{margin:6px 0}
+.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + var(--minih) + var(--sb) + 18px);transform:translateX(-50%);z-index:50;background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,0.5);max-width:calc(100% - 32px)}
+.empty{padding:40px 0;text-align:center;color:var(--muted)}
+@media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .art{width:176px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<section class="view" id="home" aria-label="Home"></section>
+<section class="view" id="search" aria-label="Episodes" hidden></section>
+<section class="view" id="chatv" aria-label="Inner Circle" hidden></section>
+<section class="view" id="me" aria-label="Account" hidden></section>
+<section class="view" id="ep" aria-label="Episode" hidden></section>
+
+<button class="mini" id="mini" aria-label="Open the player">
+  <img id="miniArt" alt="">
+  <span class="mt"><b id="miniT"></b><span id="miniC"></span></span>
+  <span class="iconbtn" id="miniPP" role="button" aria-label="Play"></span>
+  <span class="prog"><i id="miniBar"></i></span>
+</button>
+<nav class="tabs" id="tabs" aria-label="App"></nav>
+<div class="np" id="np" aria-hidden="true"></div>
+<audio id="aud" preload="none" playsinline></audio>
+
+<script>
+(function(){
+'use strict';
+const VERSION = '2026-10-08a';
+const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
+const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
+const SITE = 'https://www.innerversepodcast.com';
+const TOKEN_KEY = 'ivc_token'; // shared with the Inner Circle page on this address
+const LOGO = 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-Electric-Logo-2026.png?format=300w';
+const PLUS_LOGO = 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/c3607ade-e087-4b27-af0f-e0913f4dc3d0/plus+asset.png?format=300w';
+const HOST = 'Chance Garton';
+const HOST_PORTRAIT = 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/aa717e55-9487-4255-a7df-3f8ef10940c4/Chance+Garton+Patreon+Portrait.png?format=100w';
+const FIRST_EPISODES = ['astrotheology-101', 'chris-crutchfield', 'marizelle-arce-terrain-doctor', 'inner-whirled-25', 'keys-to-the-tarot'];
+const SHOWS = ['InnerVerse', 'Inner Whirled', 'Vibe Rant', 'Astro-Herbalism', 'Marvelous Demystifiers'];
+const THEMES = ['Consciousness & Reality', 'Historical Investigations', 'Myth, Symbolism, & Language', 'Holistic Health'];
+const standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// ------------------------------------------------------------ helpers
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch (e) {} }
+function load(k, json) { try { const v = localStorage.getItem(k); return json ? (v ? JSON.parse(v) : null) : v; } catch (e) { return null; } }
+function img(url, w) {
+  if (!url) return '';
+  if (/squarespace-cdn\.com/.test(url)) return url.split('?')[0] + '?format=' + (w || 500) + 'w';
+  return url;
+}
+function parseJSON(s) { if (!s) return []; if (Array.isArray(s)) return s; try { const v = JSON.parse(s); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+function clock(sec) {
+  sec = Math.max(0, Math.floor(Number(sec) || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0');
+}
+function fmtDate(d) {
+  if (!d) return '';
+  const t = new Date(d + 'T12:00:00');
+  return isNaN(t) ? d : t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+const showName = s => (/^innerverse$/i.test(s) ? 'InnerVerse' : s);
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3200);
+}
+const P = (d, s, w) => `<svg viewBox="0 0 24 24" width="${s||22}" height="${s||22}" fill="none" stroke="currentColor" stroke-width="${w||2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const I = {
+  home: s => P('<path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5.5 9v10.5h13V9"/><path d="M10 19.5v-5h4v5"/>', s),
+  search: s => P('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', s),
+  chat: s => P('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5z"/><path d="M8.5 8.5h7M8.5 11.5h4.5"/>', s),
+  user: s => P('<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>', s),
+  plus: s => P('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>', s),
+  back: s => P('<path d="M15 5l-7 7 7 7"/>', s, 2.3),
+  share: s => P('<path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>', s),
+  down: s => P('<path d="m6 9 6 6 6-6"/>', s),
+  right: s => P('<path d="m9 6 6 6-6 6"/>', s),
+  close: s => P('<path d="M6 6l12 12M18 6 6 18"/>', s),
+  lock: s => P('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>', s),
+  video: s => P('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>', s),
+  head: s => P('<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>', s),
+  doc: s => P('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>', s),
+  play: s => `<svg viewBox="0 0 24 24" width="${s||22}" height="${s||22}" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>`,
+  pause: s => `<svg viewBox="0 0 24 24" width="${s||22}" height="${s||22}" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></svg>`,
+  rew: s => P('<path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4v4.5h4.5"/>', s),
+  fwd: s => P('<path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M21 4v4.5h-4.5"/>', s),
+  prev: s => P('<path d="M18 6 9 12l9 6zM6 6v12"/>', s),
+  next: s => P('<path d="m6 6 9 6-9 6zM18 6v12"/>', s),
+};
+
+// ------------------------------------------------------------ state
+const S = {
+  token: null, member: false, signedIn: false, name: '', email: '', source: '',
+  lib: null, tab: 'home', route: '', q: '', show: '', theme: '',
+  files: {}, ep: null, chatLoaded: false,
+};
+
+// sign-in token from the members' login redirect (#iv_session=...)
+(function captureToken() {
+  const m = location.hash.match(/iv_session=([^&]+)/);
+  if (m) {
+    store(TOKEN_KEY, decodeURIComponent(m[1]));
+    const after = load('iva_after') || '#/';
+    store('iva_after', null);
+    history.replaceState(null, '', location.pathname + location.search + (after.indexOf('#/') === 0 ? after : '#/'));
+  }
+  S.token = load(TOKEN_KEY);
+  const last = load('iva_status', true);
+  if (S.token && last && last.entitled) { S.member = true; S.signedIn = true; S.name = last.name || ''; S.email = last.email || ''; S.source = last.source || ''; }
+  document.documentElement.classList.toggle('member', S.member);
+})();
+
+function loginUrl() {
+  store('iva_after', location.hash && location.hash.indexOf('#/') === 0 ? location.hash : '#/');
+  return AUTH + '/auth/choose?return_to=' + encodeURIComponent(location.origin + location.pathname.replace(/[^/]*$/, ''));
+}
+function login() { location.href = loginUrl(); }
+function logout() {
+  store(TOKEN_KEY, null); store('iva_status', null);
+  S.token = null; S.member = false; S.signedIn = false; S.name = '';
+  applyMember(); toast('You are logged out.');
+}
+
+async function checkStatus() {
+  if (!S.token) { if (S.member) { S.member = false; applyMember(); } return; }
+  try {
+    const r = await fetch(AUTH + '/auth/status', { headers: { Authorization: 'Bearer ' + S.token }, cache: 'no-store' });
+    const j = await r.json();
+    if (!j.signedIn) { store(TOKEN_KEY, null); store('iva_status', null); S.token = null; }
+    const was = S.member;
+    S.signedIn = !!j.signedIn; S.member = !!(j.signedIn && j.entitled);
+    S.name = j.name || ''; S.email = j.email || ''; S.source = j.source || '';
+    if (j.signedIn) store('iva_status', { entitled: !!j.entitled, name: j.name, email: j.email, source: j.source });
+    if (was !== S.member) applyMember(); else renderMe();
+  } catch (e) { /* offline: keep the last known state */ }
+}
+
+function applyMember() {
+  document.documentElement.classList.toggle('member', S.member);
+  renderTabs();
+  if (S.lib) { renderHome(); renderSearch(true); }
+  renderMe();
+  if (!S.member && S.tab === 'chat') go('#/');
+  const iframe = $('#chatv iframe');
+  if (iframe && !S.member) { iframe.remove(); S.chatLoaded = false; }
+  epShown = '';
+  route();
+}
+
+// ------------------------------------------------------------ data
+const cacheFetch = async (url) => {
+  const r = await fetch(url, { cache: 'no-cache' });
+  if (!r.ok) throw new Error(r.status + ' ' + url);
+  return r.json();
+};
+
+async function loadLibrary() {
+  const [ei, pi, corpus] = await Promise.all([
+    cacheFetch(DATA + 'episodes-index.json'),
+    cacheFetch(DATA + 'plus-index.json'),
+    cacheFetch(DATA + 'episodes/_corpus.json').catch(() => null),
+  ]);
+  const lines = {};
+  if (corpus && corpus.records) for (const r of corpus.records) { const f = r.fields || {}; if (f.Slug) lines[f.Slug] = f['Topic Line'] || ''; }
+  const free = (ei.episodes || []).map(e => ({
+    key: 'e:' + e.slug, kind: 'free', slug: e.slug, file: e.slug, title: e.title, thumb: e.thumb, date: e.date || '',
+    shows: (e.shows || []).map(showName), guests: e.guests || [], tags: e.tags || [], topics: e.topics || [],
+    topicLine: e.topicLine || lines[e.slug] || '', duration: e.duration || '',
+  }));
+  const plus = (pi.episodes || []).filter(e => /\/plus\//.test(e.url || '')).map(e => ({
+    key: 'p:' + e.slug, kind: 'plus', slug: e.slug, file: e.freeSlug || e.slug, freeSlug: e.freeSlug || '',
+    title: String(e.title || '').replace(/\s*\(PLUS\)\s*$/i, ''), thumb: e.thumb, date: e.date || '',
+    shows: (e.shows || []).map(showName), guests: e.guests || [], tags: e.tags || [], topics: e.topics || [],
+    topicLine: e.topicLine || lines[e.freeSlug] || '', duration: e.plusDuration || '',
+  }));
+  const plusByFree = {}, bySlug = {};
+  for (const p of plus) { if (p.freeSlug) plusByFree[p.freeSlug] = p; bySlug['p:' + p.slug] = p; }
+  for (const f of free) { bySlug['e:' + f.slug] = f; if (plusByFree[f.slug]) f.plus = plusByFree[f.slug]; }
+  for (const p of plus) if (p.freeSlug && bySlug['e:' + p.freeSlug]) p.free = bySlug['e:' + p.freeSlug];
+  for (const it of free.concat(plus)) {
+    it._t = norm(it.title); it._l = norm(it.topicLine); it._g = norm(it.guests.join(' '));
+    it._k = norm(it.tags.join(' ')); it._s = norm(it.shows.join(' ')); it._p = norm(it.topics.join(' '));
+  }
+  const byDate = (a, b) => (b.date || '').localeCompare(a.date || '') || a.title.localeCompare(b.title);
+  free.sort(byDate); plus.sort(byDate);
+  S.lib = { free, plus, plusByFree, bySlug, byDate };
+}
+// what this visitor browses: members see the full episodes, and the free copy of any episode that has one disappears
+function library() {
+  if (!S.lib) return [];
+  if (!S.member) return S.lib.free;
+  if (!S.lib._member) S.lib._member = S.lib.plus.concat(S.lib.free.filter(f => !f.plus)).sort(S.lib.byDate);
+  return S.lib._member;
+}
+// the best version of an episode for this visitor
+function pick(it) { if (!it) return it; if (S.member && it.kind === 'free' && it.plus) return it.plus; if (!S.member && it.kind === 'plus' && it.free) return it.free; return it; }
+function epHref(it) { return it.kind === 'plus' ? '#/p/' + it.slug : '#/e/' + it.slug; }
+async function episodeFile(name) {
+  if (S.files[name]) return S.files[name];
+  const j = await cacheFetch(DATA + 'episodes/' + encodeURIComponent(name) + '.json');
+  S.files[name] = j; return j;
+}
+
+// ------------------------------------------------------------ progress
+let PROG = load('iva_prog', true) || {};
+function saveProg(key, t, d) {
+  if (!key || !d) return;
+  if (t > d - 45) delete PROG[key]; else PROG[key] = { t: Math.round(t), d: Math.round(d), at: Date.now() };
+  store('iva_prog', PROG);
+}
+
+// ------------------------------------------------------------ routing
+function go(h) { if (location.hash !== h) location.hash = h; else route(); }
+function setTab(tab) {
+  S.tab = tab;
+  for (const id of ['home', 'search', 'chatv', 'me']) $('#' + id).hidden = (id !== (tab === 'chat' ? 'chatv' : tab));
+  $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  if (tab === 'chat') mountChat();
+}
+let lastTabHash = { home: '#/', search: '#/search', chat: '#/chat', me: '#/me' };
+let NAV = [location.hash || '#/'];
+function route() {
+  const h = location.hash || '#/';
+  const m = h.match(/^#\/(e|p)\/([^/?#]+)/);
+  if (m) {
+    $('#ep').hidden = false;
+    openEpisode(m[1], decodeURIComponent(m[2]));
+    return;
+  }
+  closeEpisode();
+  if (h.indexOf('#/search') === 0) { setTab('search'); const q = new URLSearchParams(h.split('?')[1] || ''); if (q.has('show') || q.has('q') || q.has('theme')) { S.show = q.get('show') || ''; S.q = q.get('q') || ''; S.theme = q.get('theme') || ''; renderSearch(); } }
+  else if (h.indexOf('#/chat') === 0) { if (S.member) setTab('chat'); else { history.replaceState(null, '', '#/me'); setTab('me'); } }
+  else if (h.indexOf('#/me') === 0) setTab('me');
+  else setTab('home');
+}
+window.addEventListener('hashchange', () => {
+  const h = location.hash || '#/';
+  if (NAV.length > 1 && NAV[NAV.length - 2] === h) NAV.pop(); else NAV.push(h);
+  route();
+});
+
+// ------------------------------------------------------------ tabs
+function renderTabs() {
+  const t = [['home', 'Home', I.home(24)], ['search', 'Episodes', I.search(24)]];
+  if (S.member) t.push(['chat', 'Inner Circle', I.chat(24)]);
+  t.push(['me', S.member ? 'Account' : 'Plus+', S.member ? I.user(24) : I.plus(24)]);
+  $('#tabs').innerHTML = t.map(x => `<button data-tab="${x[0]}" class="${S.tab === x[0] ? 'on' : ''}">${x[2]}<span>${x[1]}</span></button>`).join('');
+}
+$('#tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const tab = b.dataset.tab;
+  if (tab === S.tab && $('#ep').hidden) { const v = $('#' + (tab === 'chat' ? 'chatv' : tab)); v.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  go({ home: '#/', search: '#/search', chat: '#/chat', me: '#/me' }[tab]);
+});
+
+// ------------------------------------------------------------ pieces
+function meta(it) {
+  const bits = [];
+  if (it.shows[0]) bits.push(esc(it.shows[0]));
+  if (it.duration) bits.push(esc(it.duration));
+  return bits.join(' · ');
+}
+function progBar(it) { const p = PROG[it.key]; return p && p.d ? `<div class="bar"><i style="width:${Math.min(100, Math.round(p.t / p.d * 100))}%"></i></div>` : ''; }
+function tile(it) {
+  return `<a class="tile" href="${epHref(it)}"><img class="art" loading="lazy" src="${esc(img(it.thumb, 500))}" alt=""><div class="t">${esc(it.title)}</div><div class="m">${meta(it)}</div>${progBar(it)}</a>`;
+}
+function rowEp(it, why) {
+  const plusMark = (!S.member && it.plus) ? '<span class="pchip">Plus+ full episode</span>' : '';
+  return `<a class="rowep" href="${epHref(it)}"><img class="art" loading="lazy" src="${esc(img(it.thumb, 300))}" alt="">
+    <div class="info"><div class="k">${meta(it)} ${plusMark}</div><div class="t">${esc(it.title)}</div>${it.topicLine ? `<div class="l">${esc(it.topicLine)}</div>` : ''}${why ? `<div class="why">${esc(why)}</div>` : ''}</div></a>`;
+}
+function headerBrand() {
+  return `<a class="brandmark" href="#/"><img src="${S.member ? PLUS_LOGO : LOGO}" alt=""><span class="word">InnerVerse</span>${S.member ? '<span class="plus">PLUS+</span>' : ''}</a>`;
+}
+function watchScroll(view) {
+  view.addEventListener('scroll', () => { const h = $('.hdr', view); if (h) h.classList.toggle('scrolled', view.scrollTop > 4); }, { passive: true });
+}
+['home', 'search', 'me', 'ep'].forEach(id => watchScroll($('#' + id)));
+function plusPitch(compact) {
+  return `<div class="card goldline">
+    <div class="eyebrow" style="color:var(--gold)">Inside Plus+</div>
+    <h3>${compact ? 'Hear the full episodes.' : 'What members get.'}</h3>
+    <p>The free show begins the journey. Plus+ is your initiation.</p>
+    ${compact ? '' : `<div class="perks">
+      <div class="perk"><b>The full extended episodes</b><span>Every conversation in full, long after the free version ends.</span></div>
+      <div class="perk"><b>The whole archive open</b><span>Every members' episode across InnerVerse and Inner Whirled.</span></div>
+      <div class="perk"><b>The Inner Circle</b><span>The members' chat, right here in the app.</span></div>
+      <div class="perk"><b>Chapters on every full episode</b><span>Jump straight to the part you came for.</span></div>
+      <div class="perk"><b>A private podcast feed</b><span>Listen in your favorite podcast app.</span></div>
+      <div class="perk"><b>Uncut and ad free</b><span>Nothing between you and the conversation.</span></div>
+    </div>`}
+    <div class="acts"><a class="btn gold" href="${SITE}/plus" target="_blank" rel="noopener">Start your 7-day free trial</a><button class="btn line" data-act="login" style="--accent:var(--gold)">Already a member? Log in</button></div>
+    <p class="note">Then $9 a month. Cancel any time. Every full episode, unlocked.</p>
+  </div>`;
+}
+function tunedCard() {
+  return `<div class="card"><div class="eyebrow">Get Tuned</div><h3>Biofield Tuning with Chance</h3><p>Remote sound healing sessions over Zoom, from wherever you are.</p><div class="acts"><a class="btn line" href="${SITE}/biofield-tuning" target="_blank" rel="noopener">Explore sessions</a></div></div>`;
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  const act = a.dataset.act;
+  if (act === 'login') { e.preventDefault(); login(); }
+  if (act === 'logout') { e.preventDefault(); logout(); }
+  if (act === 'install') { e.preventDefault(); showInstall(true); }
+});
+
+// ------------------------------------------------------------ home
+function renderHome() {
+  const v = $('#home');
+  if (!S.lib) { v.innerHTML = `<header class="hdr"><div class="row">${headerBrand()}</div></header><div class="loading"><div class="spin"></div></div>`; return; }
+  const lib = library();
+  const latest = lib[0];
+  const cont = Object.entries(PROG).filter(([k, p]) => p.t > 60 && S.lib.bySlug[k]).sort((a, b) => b[1].at - a[1].at).map(([k]) => pick(S.lib.bySlug[k])).filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 10);
+  const firsts = FIRST_EPISODES.map(s => pick(S.lib.bySlug['e:' + s] || S.lib.bySlug['p:' + s])).filter(Boolean);
+  const byShow = sh => lib.filter(x => x.shows.includes(sh)).slice(0, 10);
+  const showRow = sh => { const xs = byShow(sh); if (!xs.length) return ''; return `<div class="sec"><div class="sechead"><h2 class="h2">${esc(sh)}</h2><a href="#/search?show=${encodeURIComponent(sh)}">See all</a></div><div class="hscroll">${xs.map(tile).join('')}</div></div>`; };
+  v.innerHTML = `<header class="hdr"><div class="row">${headerBrand()}<span class="sp"></span>${S.member ? '' : '<button class="btn line" data-act="login" style="min-height:36px;padding:0 14px;font-size:14px">Log in</button>'}</div></header>
+  <div class="wrap">
+    ${latest ? `<div class="eyebrow" style="margin-top:8px">${S.member ? 'Newest full episode' : 'Newest episode'}</div>
+    <div class="hero"><a href="${epHref(latest)}"><img class="art" src="${esc(img(latest.thumb, 750))}" alt=""></a>
+      <div class="body"><div class="muted small">${meta(latest)} · ${esc(fmtDate(latest.date))}</div><a href="${epHref(latest)}" class="t" style="display:block">${esc(latest.title)}</a>${latest.topicLine ? `<div class="muted small">${esc(latest.topicLine)}</div>` : ''}
+      <div class="acts"><button class="btn${S.member ? ' gold' : ''}" data-play="${esc(latest.key)}">${I.play(18)} Listen</button><a class="btn line" href="${epHref(latest)}">Open episode</a></div></div></div>` : ''}
+    ${cont.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Continue listening</h2></div><div class="hscroll">${cont.map(tile).join('')}</div></div>` : ''}
+    ${S.member ? '' : `<div class="sec">${plusPitch(true)}</div>`}
+    ${firsts.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Good first episodes</h2></div><div class="hscroll">${firsts.map(tile).join('')}</div></div>` : ''}
+    ${['Inner Whirled', 'InnerVerse', 'Vibe Rant', 'Astro-Herbalism'].map(showRow).join('')}
+    <div class="sec">${tunedCard()}</div>
+  </div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-play]'); if (!b) return;
+  e.preventDefault();
+  const it = S.lib && S.lib.bySlug[b.dataset.play]; if (!it) return;
+  unlockAudio();
+  playItem(it);
+});
+
+// ------------------------------------------------------------ search
+const FIELDS = [['_t', 6, 'title'], ['_g', 5, 'guest'], ['_l', 4, 'topic'], ['_k', 3, 'subject'], ['_s', 2, 'show'], ['_p', 1.5, 'theme']];
+function scoreItem(it, terms, phrase) {
+  let total = 0, hit = 0, why = '';
+  for (const t of terms) {
+    let best = 0, bw = '';
+    for (const [f, w, label] of FIELDS) {
+      const v = ' ' + it[f];
+      if (v.indexOf(' ' + t) >= 0 && w > best) { best = w; bw = label; }
+    }
+    if (best) { hit++; total += best; if (!why || best >= 4) why = bw; }
+  }
+  if (phrase && terms.length > 1 && (' ' + it._t).indexOf(' ' + phrase) >= 0) total += 8;
+  return { total, hit, why };
+}
+let searchShown = 30, searchList = [], searchClose = false;
+function runSearch() {
+  let list = library();
+  if (S.show) list = list.filter(x => x.shows.includes(S.show));
+  if (S.theme) list = list.filter(x => x.topics.includes(S.theme));
+  const phrase = norm(S.q);
+  const terms = phrase.split(' ').filter(t => t.length > 1 || /\d/.test(t));
+  searchClose = false;
+  if (!terms.length) { searchList = list.map(x => ({ it: x })); return; }
+  let scored = list.map(it => Object.assign({ it }, scoreItem(it, terms, phrase)));
+  let all = scored.filter(x => x.hit === terms.length);
+  if (!all.length) { all = scored.filter(x => x.hit > 0); searchClose = all.length > 0; }
+  all.sort((a, b) => b.total - a.total || (b.it.date || '').localeCompare(a.it.date || ''));
+  const whyLabel = { title: '', guest: 'Guest match', topic: 'Topic match', subject: 'Subject match', show: '', theme: '' };
+  searchList = all.map(x => ({ it: x.it, why: whyLabel[x.why] || '' }));
+}
+function renderSearch(keepInput) {
+  const v = $('#search');
+  if (!S.lib) { v.innerHTML = `<header class="hdr"><div class="row"><h1>Episodes</h1></div></header><div class="loading"><div class="spin"></div></div>`; return; }
+  runSearch(); searchShown = 30;
+  const active = S.q.trim() || S.show || S.theme;
+  if (!keepInput || !$('#q')) {
+    v.innerHTML = `<header class="hdr"><div class="row"><h1>${S.member ? 'Plus+ episodes' : 'Episodes'}</h1></div>
+      <div class="row" style="display:block"><label class="searchbox">${I.search(20)}<input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="Search guests, topics, titles" value="${esc(S.q)}"><button class="iconbtn" id="qx" aria-label="Clear" ${S.q ? '' : 'hidden'}>${I.close(18)}</button></label>
+      <div class="chips" id="showchips">${['', ...SHOWS].map(s => `<button class="chip${S.show === s ? ' on' : ''}" data-show="${esc(s)}">${s ? esc(s) : 'All shows'}</button>`).join('')}</div>
+      <div class="chips" id="themechips">${THEMES.map(s => `<button class="chip${S.theme === s ? ' on' : ''}" data-theme="${esc(s)}">${esc(s)}</button>`).join('')}</div></div></header>
+      <div class="wrap"><div id="reshead"></div><div class="list" id="results"></div><div class="more" id="moreWrap"></div></div>`;
+    const q = $('#q');
+    let tmr;
+    q.addEventListener('input', () => { clearTimeout(tmr); $('#qx').hidden = !q.value; tmr = setTimeout(() => { S.q = q.value; renderResults(); }, 140); });
+    q.addEventListener('keydown', e => { if (e.key === 'Enter') q.blur(); });
+    $('#qx').addEventListener('click', e => { e.preventDefault(); q.value = ''; S.q = ''; $('#qx').hidden = true; renderResults(); });
+    $('#showchips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.show = b.dataset.show; $$('#showchips .chip').forEach(c => c.classList.toggle('on', c === b)); renderResults(); });
+    $('#themechips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.theme = (S.theme === b.dataset.theme) ? '' : b.dataset.theme; $$('#themechips .chip').forEach(c => c.classList.toggle('on', c.dataset.theme === S.theme)); renderResults(); });
+  } else {
+    $$('#showchips .chip').forEach(c => c.classList.toggle('on', c.dataset.show === S.show));
+    $$('#themechips .chip').forEach(c => c.classList.toggle('on', c.dataset.theme === S.theme));
+    if ($('#q').value !== S.q) $('#q').value = S.q;
+    $('.hdr h1', v).textContent = S.member ? 'Plus+ episodes' : 'Episodes';
+  }
+  renderResults(true);
+}
+function renderResults(already) {
+  if (!already) { runSearch(); searchShown = 30; }
+  const active = S.q.trim() || S.show || S.theme;
+  const n = searchList.length;
+  let head = '';
+  if (S.q.trim()) head = searchClose ? `No exact matches. Close matches for "${esc(S.q.trim())}"` : `${n} episode${n === 1 ? '' : 's'} about "${esc(S.q.trim())}"`;
+  else if (active) head = `${n} episode${n === 1 ? '' : 's'}`;
+  $('#reshead').innerHTML = head ? `<div class="reshead">${head}</div>` : '';
+  $('#results').innerHTML = n ? searchList.slice(0, searchShown).map(x => rowEp(x.it, x.why)).join('') : `<div class="empty">Nothing matches yet. Try a guest's name, a subject or a show.</div>`;
+  $('#moreWrap').innerHTML = n > searchShown ? `<button class="btn line" id="moreBtn">Show more</button>` : '';
+  const mb = $('#moreBtn'); if (mb) mb.addEventListener('click', () => { searchShown += 30; renderResults(true); });
+}
+
+// ------------------------------------------------------------ account
+function renderMe() {
+  const v = $('#me');
+  const ini = (S.name || S.email || '?').trim().charAt(0).toUpperCase();
+  let body = '';
+  if (S.member) {
+    body = `<div class="card" style="margin-top:8px"><div class="acct"><span class="av">${esc(ini)}</span><div style="min-width:0"><div style="font-weight:800;font-size:18px">${esc(S.name || 'Plus+ member')}</div><div class="muted small" style="overflow-wrap:anywhere">${esc(S.email)}</div><div class="small" style="color:var(--gold);font-weight:700;margin-top:2px">Plus+ member${S.source === 'patreon' ? ' through Patreon' : ''}</div></div></div></div>
+    <div class="sec">
+      <a class="linkrow" href="#/chat">The Inner Circle ${I.right(18)}</a>
+      <a class="linkrow" href="${SITE}/plus" target="_blank" rel="noopener">Your private podcast feed ${I.right(18)}</a>
+      <a class="linkrow" href="${SITE}/biofield-tuning" target="_blank" rel="noopener">Book a Biofield Tuning session ${I.right(18)}</a>
+      <a class="linkrow" href="${SITE}" target="_blank" rel="noopener">innerversepodcast.com ${I.right(18)}</a>
+    </div>
+    ${!standalone ? `<div class="sec card"><h3>Using the home screen app?</h3><p>If the app on your home screen asks you to log in again, copy your sign-in here and paste it there under "Trouble logging in?"</p><button class="btn line" id="copyTok">Copy my sign-in</button></div>` : ''}
+    <div class="sec"><button class="btn line block" data-act="logout">Log out</button></div>`;
+  } else {
+    body = `${S.signedIn ? `<div class="card" style="margin-top:8px"><p style="margin:0">You are logged in as ${esc(S.email || S.name)}, but there is no active Plus+ membership on this account. Renew on the website and log in again.</p><div class="acts" style="margin-top:12px"><button class="btn line" data-act="logout">Log out</button></div></div>` : ''}
+    <div class="sec" style="margin-top:8px">${plusPitch(false)}</div>
+    ${standalone && !S.signedIn ? `<div class="sec card"><h3>Trouble logging in?</h3><p>If you logged in but the app still shows this screen, open circle.innerversepodcast.com/app in Safari, log in there, tap Copy my sign-in on the Account tab, then paste it here.</p><input class="field" id="pasteTok" placeholder="Paste your sign-in" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn line block" id="useTok">Use this sign-in</button></div>` : ''}
+    <div class="sec">
+      <a class="linkrow" href="${SITE}/biofield-tuning" target="_blank" rel="noopener">Book a Biofield Tuning session ${I.right(18)}</a>
+      <a class="linkrow" href="${SITE}" target="_blank" rel="noopener">innerversepodcast.com ${I.right(18)}</a>
+    </div>`;
+  }
+  v.innerHTML = `<header class="hdr"><div class="row"><h1>${S.member ? 'Account' : 'Plus+'}</h1></div></header>
+  <div class="wrap">${body}
+    ${!standalone ? `<div class="sec"><button class="btn line block" data-act="install">Add InnerVerse to your Home Screen</button></div>` : ''}
+    <p class="note" style="text-align:center;margin-top:28px">InnerVerse app ${VERSION}</p>
+  </div>`;
+  const ct = $('#copyTok');
+  if (ct) ct.addEventListener('click', async () => { try { await navigator.clipboard.writeText(S.token); toast('Copied. Paste it in the app on your home screen.'); } catch (e) { toast('Copy did not work on this browser.'); } });
+  const ut = $('#useTok');
+  if (ut) ut.addEventListener('click', () => { const t = ($('#pasteTok').value || '').trim(); if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(t)) { toast('That does not look like a sign-in. Copy it again.'); return; } store(TOKEN_KEY, t); S.token = t; checkStatus().then(() => toast(S.member ? 'Welcome in.' : 'That sign-in did not work.')); });
+}
+
+// ------------------------------------------------------------ chat (the Inner Circle page, same address)
+function mountChat() {
+  if (!S.member || S.chatLoaded) return;
+  S.chatLoaded = true;
+  const f = document.createElement('iframe');
+  f.title = 'Inner Circle'; f.src = '/?app=1';
+  f.setAttribute('allow', 'clipboard-write; autoplay');
+  $('#chatv').appendChild(f);
+  f.addEventListener('load', () => {
+    let d; try { d = f.contentDocument; } catch (e) { return; }
+    if (!d) return;
+    const st = d.createElement('style');
+    // inside the app: no site nav, no back arrow to the website
+    st.textContent = '.nav{display:none!important}.ptop>a.ibtn[aria-label="Back to InnerVerse"]{display:none!important}.ptop{padding-left:12px!important}.compose{padding-bottom:10px!important}';
+    d.head.appendChild(st);
+    // episode links in the chat open here in the app
+    d.addEventListener('click', e => {
+      const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+      const m = a.href.match(/innerversepodcast\.com\/(episodes|plus)\/([^/?#]+)/);
+      if (m) { e.preventDefault(); e.stopPropagation(); go('#/' + (m[1] === 'plus' ? 'p' : 'e') + '/' + m[2]); }
+    }, true);
+    d.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('textarea,input,[contenteditable]')) document.documentElement.classList.add('kb'); });
+    d.addEventListener('focusout', () => setTimeout(() => { const a = d.activeElement; if (!a || !a.matches || !a.matches('textarea,input,[contenteditable]')) document.documentElement.classList.remove('kb'); }, 50));
+  });
+}
+
+// ------------------------------------------------------------ episode page
+let EPV = null; // current episode view state
+let epReq = 0, epShown = '';
+function closeEpisode() {
+  const v = $('#ep');
+  if (v.hidden) return;
+  epReq++; destroyVideo();
+  v.hidden = true; v.innerHTML = ''; EPV = null; epShown = '';
+}
+function ytId(u) {
+  const m = String(u || '').match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/|\/shorts\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+function vimeoId(u) { const m = String(u || '').match(/vimeo\.com\/(?:video\/)?(\d+)(?:\/([0-9a-f]+))?/); return m ? { id: m[1], h: m[2] || '' } : null; }
+function odyseeEmbed(u) { const m = String(u || '').match(/odysee\.com\/(.+)$/); if (!m) return null; const parts = m[1].split('/'); return 'https://odysee.com/$/embed/' + parts[parts.length - 1]; }
+function audioKey(u) { const m = String(u || '').match(/\/audio\/([A-Za-z0-9._-]+)\/?$/); return m ? m[1] : null; }
+
+function buildEp(kind, it, rec) {
+  const f = rec.fields || {};
+  const plus = kind === 'p';
+  const guestsById = rec._guestsById || {};
+  const free = parseJSON(f['Chapters JSON']);
+  let chapters, offset = 0, audio = null, video = null, themes, quotes, locked = [];
+  if (plus) {
+    const pf = parseJSON(f['Plus Free Chapters JSON']), pm = parseJSON(f['Plus Chapters JSON']);
+    chapters = pf.map(c => ({ seek: c.seek, title: c.title })).concat(pm.map(c => ({ seek: c.seek, title: c.title, m: true })));
+    if (!pf.length && !pm.length) chapters = [];
+    const key = audioKey(f['Plus Audio URL']);
+    audio = key ? { plusKey: key } : null;
+    video = f['Plus Video URL'] || '';
+    themes = parseJSON(f['Core Themes JSON']).concat(parseJSON(f['Plus Core Themes JSON']).map(t => Object.assign({ m: true }, t)));
+    quotes = parseJSON(f['Quotes JSON']).concat(parseJSON(f['Plus Quotes JSON']).map(q => Object.assign({ m: true }, q)));
+  } else {
+    chapters = free.map(c => ({ seek: c.seek, title: c.title }));
+    offset = Math.round(Number(f['Audio Offset Seconds']) || 0);
+    audio = f['Acast Audio URL'] ? { url: f['Acast Audio URL'] } : null;
+    video = f['Video URL'] || '';
+    themes = parseJSON(f['Core Themes JSON']);
+    quotes = parseJSON(f['Quotes JSON']);
+    if (!S.member) locked = parseJSON(f['Plus Chapters JSON']);
+  }
+  chapters = chapters.filter(c => c && typeof c.seek === 'number' && c.title).sort((a, b) => a.seek - b.seek);
+  const guests = (f.Guests || []).map(id => guestsById[id]).filter(Boolean);
+  return {
+    kind, plus, it, f, key: (plus ? 'p:' : 'e:') + it.slug, slug: it.slug,
+    title: (plus ? f.Title : f.Title) || it.title, thumb: (plus ? it.thumb : (f['Thumbnail URL'] || it.thumb)) || it.thumb,
+    show: (f['Show Categories'] || it.shows || []).map(showName)[0] || '', num: f['Episode Number'], date: f['Publish Date'] || it.date,
+    duration: plus ? (f['Plus Duration'] || it.duration) : (f.Duration || it.duration),
+    plusDuration: f['Plus Duration'] || '',
+    intro: [f['Intro Paragraph 1'], f['Intro Paragraph 2']].filter(Boolean),
+    chapters, offset, audio, video, themes, quotes, locked, guests,
+    notes: plus && f['Has Show Notes'] === true,
+    plusSlug: (f['Direct Plus URL'] || '').match(/\/plus\/([^/?#]+)/) ? f['Direct Plus URL'].match(/\/plus\/([^/?#]+)/)[1] : (it.plus ? it.plus.slug : ''),
+    freeSlug: plus ? (it.freeSlug || '') : it.slug,
+  };
+}
+
+async function openEpisode(kind, slug) {
+  const v = $('#ep');
+  if (!S.lib) { epShown = ''; v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button></div></header><div class="loading"><div class="spin"></div></div>`; bindBack(); return; }
+  let it = S.lib.bySlug[kind + ':' + slug];
+  // members never see the free copy of an episode that has a full version
+  if (S.member && kind === 'e' && it && it.plus) { const h = '#/p/' + it.plus.slug; history.replaceState(null, '', h); NAV[NAV.length - 1] = h; return openEpisode('p', it.plus.slug); }
+  const want = kind + ':' + slug + ':' + (S.member ? 1 : 0);
+  if (epShown === want) return;
+  epShown = want;
+  const my = ++epReq;
+  destroyVideo(); EPV = null;
+  v.scrollTop = 0;
+  if (!it) {
+    it = { key: kind + ':' + slug, kind: kind === 'p' ? 'plus' : 'free', slug, file: slug, title: '', thumb: '', shows: [], guests: [], tags: [], topics: [] };
+  }
+  if (kind === 'p' && !S.member) { renderLock(it); return; }
+  v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button><span class="eptitle-mini">${esc(it.title)}</span></div></header><div class="loading"><div class="spin"></div></div>`;
+  bindBack();
+  let rec;
+  try { rec = await episodeFile(it.file); }
+  catch (e) {
+    try { if (it.file !== slug) rec = await episodeFile(slug); } catch (e2) {}
+    if (my !== epReq) return;
+    if (!rec) { $('.loading', v).outerHTML = `<div class="wrap"><div class="empty">This episode's page is not in the app yet.<br><br><a class="btn line" href="${SITE}/${kind === 'p' ? 'plus' : 'episodes'}/${esc(slug)}" target="_blank" rel="noopener">Open it on the website</a></div></div>`; return; }
+  }
+  if (my !== epReq) return;
+  EPV = buildEp(kind, it, rec);
+  renderEpisode();
+}
+function bindBack() {
+  const b = $('#epBack'); if (!b) return;
+  b.addEventListener('click', () => {
+    if (NAV.length > 1) { history.back(); return; }
+    const t = lastTabHash[S.tab] || '#/'; history.replaceState(null, '', t); NAV = [t]; route();
+  });
+}
+function renderLock(it) {
+  const v = $('#ep');
+  v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button></div></header>
+  <div class="wrap">${it.thumb ? `<img src="${esc(img(it.thumb, 750))}" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:16px">` : ''}
+  <div class="crumb"><b>PLUS+</b>${it.shows[0] ? ' / ' + esc(it.shows[0]) : ''}${it.duration ? ' · ' + esc(it.duration) : ''}</div>
+  <h1 class="title">${esc(it.title || 'A members’ full episode')}</h1>
+  <div class="card goldline"><div class="eyebrow" style="color:var(--gold)">${I.lock(14)} Members only</div><h3>This full episode is for Plus+ members.</h3><p>Join Plus+ to watch and listen to this one in full, along with every other members' episode.</p>
+  <div class="acts"><a class="btn gold" href="${SITE}/plus" target="_blank" rel="noopener">Start your 7-day free trial</a><button class="btn line" data-act="login" style="--accent:var(--gold)">Log in</button></div>
+  ${it.free ? `<p class="note" style="margin-top:12px"><a href="#/e/${esc(it.free.slug)}" style="color:var(--lapis-lit);font-weight:700">Watch the free episode instead</a></p>` : ''}</div></div>`;
+  bindBack();
+}
+
+function epMode() { return load('iva_mode') || 'watch'; }
+function renderEpisode() {
+  const E = EPV, v = $('#ep');
+  const hasVideo = !!(ytId(E.video) || vimeoId(E.video) || odyseeEmbed(E.video));
+  const hasAudio = !!E.audio;
+  let mode = (cur && cur.key === E.key) ? 'listen' : epMode();
+  if (mode === 'watch' && !hasVideo) mode = 'listen';
+  if (mode === 'listen' && !hasAudio) mode = 'watch';
+  E.mode = mode;
+  const crumb = [`<b>${E.plus ? 'PLUS+' : 'PODCAST'}</b>`];
+  if (E.show) crumb.push(esc(E.show.toUpperCase()));
+  const tail = [E.num ? 'EPISODE ' + esc(E.num) : '', esc(fmtDate(E.date)), esc(E.duration)].filter(Boolean).join(' · ');
+  const more = (!E.plus && E.plusDuration && E.duration) ? Math.max(0, durMin(E.plusDuration) - durMin(E.duration)) : 0;
+  const freePlus = !E.plus && E.plusSlug;
+  const related = relatedTo(E.it).slice(0, 6);
+  v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button><span class="eptitle-mini">${esc(E.title)}</span><button class="iconbtn" id="epShare" aria-label="Share">${I.share(21)}</button></div></header>
+  <div class="wrap">
+    <div class="media" id="media"></div>
+    ${hasVideo && hasAudio ? `<div class="toggle" role="tablist"><button data-mode="watch" class="${mode === 'watch' ? 'on' : ''}">${I.video(18)} Watch</button><button data-mode="listen" class="${mode === 'listen' ? 'on' : ''}">${I.head(18)} Listen</button></div>` : ''}
+    <div id="listenBox"></div>
+    <div class="crumb">${crumb.join(' / ')}${tail ? ' · ' + tail : ''}</div>
+    <h1 class="title">${esc(E.title)}</h1>
+    <div class="desc">${E.intro.map(p => `<p>${esc(p)}</p>`).join('')}</div>
+    ${E.notes ? `<div class="card" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Members' show notes</div><p style="margin-top:6px">The full research notes for this episode, as a document.</p><button class="btn gold" id="notesBtn">${I.doc(18)} Download the show notes</button><p class="note" id="notesMsg"></p></div>` : ''}
+    ${freePlus && !S.member ? `<div class="card goldline" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Plus+ full episode</div><h3>${more ? `There are ${more} more minutes of this conversation.` : 'There is more to this conversation.'}</h3><p>Members hear the whole thing${E.plusDuration ? ', ' + esc(E.plusDuration) + ' in all' : ''}, uncut and ad free.</p><div class="acts"><a class="btn gold" href="${SITE}/plus" target="_blank" rel="noopener">Start your 7-day free trial</a><button class="btn line" data-act="login" style="--accent:var(--gold)">Log in</button></div></div>` : ''}
+    ${E.chapters.length || E.locked.length ? `<div class="acc open" id="chapAcc"><button>Chapters ${I.down(22)}</button><div class="in" id="chapters">${chaptersHtml()}</div></div>` : ''}
+    ${E.themes.length ? `<div class="acc"><button>Core themes ${I.down(22)}</button><div class="in">${E.themes.map(t => `<div class="theme"><h4>${esc(t.title)}${t.m ? '<span class="mtag">Members</span>' : ''}</h4><p>${esc(t.body)}</p></div>`).join('')}</div></div>` : ''}
+    ${E.quotes.length ? `<div class="acc"><button>Memorable ${I.down(22)}</button><div class="in">${E.quotes.map(q => `<div class="quote"><blockquote>${esc(q.text)}</blockquote><div class="who"><img loading="lazy" src="${esc(q.author === HOST ? HOST_PORTRAIT : img(q.portrait, 100))}" alt="">${esc(q.author)}${q.m ? '<span class="mtag">Members</span>' : ''}</div></div>`).join('')}</div></div>` : ''}
+    ${E.guests.length ? `<div class="acc open"><button>${E.guests.length > 1 ? 'Guests' : 'Guest'} ${I.down(22)}</button><div class="in">${E.guests.map(guestHtml).join('')}</div></div>` : ''}
+    <div class="sec">${tunedCard()}</div>
+    ${related.length ? `<div class="sec"><div class="sechead"><h2 class="h2">You might also like</h2></div><div class="hscroll">${related.map(tile).join('')}</div></div>` : ''}
+  </div>`;
+  bindBack();
+  $('#epShare').addEventListener('click', () => {
+    const url = SITE + '/' + (E.plus ? 'plus' : 'episodes') + '/' + E.slug;
+    if (navigator.share) navigator.share({ title: E.title, url }).catch(() => {});
+    else navigator.clipboard.writeText(url).then(() => toast('Link copied.'), () => {});
+  });
+  $$('.acc>button', v).forEach(b => b.addEventListener('click', () => b.parentElement.classList.toggle('open')));
+  $$('.toggle button', v).forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode, true)));
+  $$('.guest .b', v).forEach(b => b.addEventListener('click', () => b.classList.toggle('full')));
+  const nb = $('#notesBtn'); if (nb) nb.addEventListener('click', getNotes);
+  $('#chapters') && $('#chapters').addEventListener('click', e => { const c = e.target.closest('.chap[data-seek]'); if (c) seekChapter(Number(c.dataset.seek)); });
+  setMode(mode, false);
+}
+function durMin(s) { const h = /(\d+)\s*h/.exec(s || ''), m = /(\d+)\s*m/.exec(s || ''); return (h ? +h[1] * 60 : 0) + (m ? +m[1] : 0); }
+function chaptersHtml() {
+  const E = EPV; if (!E) return '';
+  const now = (cur && cur.key === E.key) ? currentChapterIndex() : -1;
+  return E.chapters.map((c, i) => `<button class="chap${i === now ? ' now' : ''}" data-seek="${c.seek}"><span class="tm">${esc(clock(c.seek))}</span><span class="ct">${esc(c.title)}${c.m ? '<span class="mtag">Members</span>' : ''}</span></button>`).join('')
+    + (E.locked.length ? `<div class="eyebrow" style="color:var(--gold);margin:16px 8px 4px">${I.lock(13)} In the Plus+ full episode</div>` + E.locked.map(c => `<div class="chap locked"><span class="tm">${esc(clock(c.seek))}</span><span class="ct">${esc(c.title)}</span></div>`).join('') : '');
+}
+function guestHtml(g) {
+  const links = [['Website', g['Website URL']], ['YouTube', g['YouTube URL']], ['Substack', g['Substack URL']], ['Books', g['Books URL']], ['Links', g['Socials URL']]].filter(x => x[1]);
+  const portrait = g.Name === HOST ? HOST_PORTRAIT : img(g['Portrait URL'], 300);
+  return `<div class="guest">${portrait ? `<img loading="lazy" src="${esc(portrait)}" alt="">` : ''}<div style="min-width:0"><div class="n">${esc(g.Name)}</div>${g.Role ? `<div class="r">${esc(g.Role)}</div>` : ''}${g.Bio ? `<div class="b">${esc(g.Bio)}</div>` : ''}
+  ${links.length ? `<div class="links">${links.map(l => `<a href="${esc(l[1])}" target="_blank" rel="noopener">${l[0]}</a>`).join('')}</div>` : ''}</div></div>`;
+}
+function relatedTo(it) {
+  const lib = library(); const g = new Set((it.guests || []).filter(x => x !== HOST)); const t = new Set(it.tags || []);
+  return lib.filter(x => x !== it && x.slug !== it.slug && x.file !== it.file).map(x => {
+    let s = 0; for (const n of x.guests) if (g.has(n)) s += 4; for (const k of x.tags) if (t.has(k)) s += 1; for (const sh of x.shows) if ((it.shows || []).includes(sh)) s += 0.5;
+    return [s, x];
+  }).filter(x => x[0] >= 2).sort((a, b) => b[0] - a[0] || (b[1].date || '').localeCompare(a[1].date || '')).map(x => x[1]);
+}
+async function getNotes() {
+  const E = EPV; const msg = $('#notesMsg'); const btn = $('#notesBtn');
+  btn.disabled = true; msg.textContent = 'Preparing your download';
+  try {
+    const r = await fetch(AUTH + '/notes-link/' + encodeURIComponent(E.slug), { headers: { Authorization: 'Bearer ' + S.token } });
+    const j = await r.json();
+    if (r.ok && j.url) { msg.textContent = ''; location.href = j.url; }
+    else if (r.status === 403) msg.textContent = 'Your sign-in has expired. Log in again and the download will work.';
+    else msg.textContent = 'The notes are not available right now. Please try again in a minute.';
+  } catch (e) { msg.textContent = 'The download could not start. Please try again in a minute.'; }
+  btn.disabled = false;
+}
+
+// video
+let VP = null; // { type, player, ready }
+function destroyVideo() {
+  if (VP) { try { VP.type === 'yt' ? VP.player.destroy() : VP.type === 'vimeo' ? VP.player.destroy() : 0; } catch (e) {} }
+  VP = null;
+}
+function loadScript(src) {
+  return new Promise((res, rej) => { if (document.querySelector('script[src="' + src + '"]')) { res(); return; } const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+}
+let ytReady = null;
+function ytApi() {
+  if (window.YT && window.YT.Player) return Promise.resolve();
+  if (!ytReady) ytReady = new Promise(res => { window.onYouTubeIframeAPIReady = res; loadScript('https://www.youtube.com/iframe_api'); });
+  return ytReady;
+}
+function setMode(mode, user) {
+  const E = EPV; if (!E) return;
+  if (user) store('iva_mode', mode);
+  const prevMode = E.mode; E.mode = mode;
+  $$('.toggle button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+  const media = $('#media'), lb = $('#listenBox');
+  if (mode === 'watch') {
+    lb.innerHTML = '';
+    if (!VP) {
+      media.hidden = false;
+      media.innerHTML = `<div class="frame"><img class="poster" src="${esc(img(E.thumb, 1000))}" alt=""><button class="bigplay" id="vidStart" aria-label="Play video"><span>${I.play(34)}</span></button></div>`;
+      $('#vidStart').addEventListener('click', () => startVideo(0, true));
+    }
+    if (user && prevMode === 'listen' && cur && cur.key === E.key) {
+      const at = Math.max(0, aud.currentTime - (cur.offset || 0));
+      aud.pause(); startVideo(at, true);
+    }
+  } else {
+    let at = null;
+    if (VP && user) { at = videoTime(); }
+    destroyVideo();
+    media.innerHTML = ''; media.hidden = true;
+    renderListenBox();
+    if (user && at != null && at > 1) { unlockAudio(); playEpisode(E, at + (E.plus ? 0 : E.offset)); }
+  }
+}
+function videoTime() { try { if (VP.type === 'yt') return VP.player.getCurrentTime(); if (VP.type === 'vimeo') return VP.t || 0; } catch (e) {} return null; }
+async function startVideo(at, autoplay) {
+  const E = EPV; const media = $('#media'); if (!E || !media) return;
+  if (!aud.paused) aud.pause();
+  const yt = ytId(E.video), vm = vimeoId(E.video), od = odyseeEmbed(E.video);
+  if (VP) { seekVideo(at); return; }
+  if (yt) {
+    media.innerHTML = '<div class="frame"><div class="ytp" id="ytp"></div></div>';
+    await ytApi();
+    if (!EPV || EPV !== E) return;
+    VP = { type: 'yt' };
+    VP.player = new YT.Player('ytp', { videoId: yt, playerVars: { playsinline: 1, rel: 0, modestbranding: 1, start: Math.floor(at || 0), autoplay: autoplay ? 1 : 0 },
+      events: { onReady: ev => { VP && (VP.ready = true); if (autoplay) ev.target.playVideo(); }, onStateChange: ev => { if (ev.data === 1 && !aud.paused) aud.pause(); } } });
+  } else if (vm) {
+    media.innerHTML = `<div class="frame"><iframe id="vmp" src="https://player.vimeo.com/video/${vm.id}?${vm.h ? 'h=' + vm.h + '&' : ''}playsinline=1&title=0&byline=0&portrait=0${autoplay ? '&autoplay=1' : ''}#t=${Math.floor(at || 0)}s" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+    try {
+      await loadScript('https://player.vimeo.com/api/player.js');
+      if (!EPV || EPV !== E) return;
+      VP = { type: 'vimeo', player: new Vimeo.Player($('#vmp')), t: at || 0 };
+      VP.player.on('timeupdate', d => { if (VP) VP.t = d.seconds; });
+      VP.player.on('play', () => { if (!aud.paused) aud.pause(); });
+      if (at) VP.player.setCurrentTime(at).catch(() => {});
+    } catch (e) { VP = { type: 'iframe' }; }
+  } else if (od) {
+    media.innerHTML = `<div class="frame"><iframe src="${esc(od)}" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
+    VP = { type: 'iframe' };
+  }
+}
+function seekVideo(at) {
+  if (!VP) { startVideo(at, true); return; }
+  try {
+    if (VP.type === 'yt') { VP.player.seekTo(at, true); VP.player.playVideo(); }
+    else if (VP.type === 'vimeo') { VP.player.setCurrentTime(at).then(() => VP.player.play()).catch(() => {}); }
+    else toast('This player cannot jump to chapters. Try Listen.');
+  } catch (e) {}
+}
+function seekChapter(seek) {
+  const E = EPV; if (!E) return;
+  if (E.mode === 'watch') { if (VP) seekVideo(seek); else startVideo(seek, true); $('#media').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  unlockAudio();
+  playEpisode(E, seek + (E.plus ? 0 : E.offset));
+}
+function renderListenBox() {
+  const E = EPV, lb = $('#listenBox'); if (!E || !lb) return;
+  const mine = cur && cur.key === E.key;
+  const p = PROG[E.key];
+  const sub = mine ? (currentChapterTitle() || clock(aud.currentTime) + ' of ' + clock(aud.duration || cur.dur || 0)) : (p ? 'Resume at ' + clock(p.t) : (E.duration ? E.duration : 'Audio'));
+  lb.innerHTML = `<div class="listen"><button class="pp" id="lbPP" aria-label="${mine && !aud.paused ? 'Pause' : 'Play'}">${mine && !aud.paused ? I.pause(28) : I.play(28)}</button><div class="lt"><b>${mine && !aud.paused ? 'Playing' : mine ? 'Paused' : 'Listen to this episode'}</b><span id="lbSub">${esc(sub)}</span></div><button class="iconbtn" id="lbOpen" aria-label="Open the player" ${mine ? '' : 'hidden'}>${I.down(22)}</button></div>`;
+  $('#lbPP').addEventListener('click', () => { if (mine) togglePlay(); else { unlockAudio(); playEpisode(E, null); } });
+  $('#lbOpen').addEventListener('click', openNP);
+  $('#lbOpen').style.transform = 'rotate(180deg)';
+}
+
+// ------------------------------------------------------------ audio player
+const aud = $('#aud');
+const SILENT = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+let unlocked = false;
+const isSilent = () => (aud.currentSrc || aud.src || '').indexOf('data:') === 0;
+// iPhone only lets sound start from a tap; play a moment of silence on the tap so the real audio may start after it loads
+function unlockAudio() {
+  if (unlocked) return; unlocked = true;
+  if (aud.src && !isSilent()) return;
+  try { aud.src = SILENT; const p = aud.play(); if (p) p.catch(() => {}); } catch (e) {}
+}
+let cur = load('iva_cur', true); // { key, title, show, thumb, chapters:[{seek,title}] on the audio clock, src?, plusKey?, dur, slug, kind }
+let pendingSeek = null, lastSave = 0, speed = Number(load('iva_speed')) || 1;
+function chaptersOnAudio(E) { return E.chapters.map(c => ({ seek: c.seek + (E.plus ? 0 : E.offset), title: c.title })); }
+async function playItem(it) {
+  // play from a list: load the episode's data first
+  try {
+    const kind = it.kind === 'plus' ? 'p' : 'e';
+    if (kind === 'p' && !S.member) { go(epHref(it)); return; }
+    const rec = await episodeFile(it.file);
+    const E = buildEp(kind, it, rec);
+    if (!E.audio) { go(epHref(it)); return; }
+    playEpisode(E, null);
+  } catch (e) { go(epHref(it)); }
+}
+async function playEpisode(E, at) {
+  if (VP) { try { VP.type === 'yt' ? VP.player.pauseVideo() : VP.type === 'vimeo' ? VP.player.pause() : 0; } catch (e) {} }
+  const same = cur && cur.key === E.key && aud.src && !isSilent();
+  if (!same) {
+    cur = { key: E.key, kind: E.kind, slug: E.slug, title: E.title, show: E.show, thumb: E.thumb, chapters: chaptersOnAudio(E), offset: E.plus ? 0 : E.offset, src: E.audio.url || '', plusKey: E.audio.plusKey || '', dur: 0 };
+    store('iva_cur', cur);
+    if (at == null) { const p = PROG[E.key]; at = p ? p.t : 0; }
+    const ok = await setSource();
+    if (!ok) return;
+  }
+  if (at != null) { if (aud.readyState >= 1) aud.currentTime = at; else pendingSeek = at; }
+  aud.playbackRate = speed;
+  try { await aud.play(); } catch (e) { /* needs a tap on some browsers */ }
+  showMini(); updateMediaSession();
+  if (EPV && EPV.key === E.key) { if (EPV.mode !== 'listen') setMode('listen', false); else renderListenBox(); }
+}
+async function setSource() {
+  if (cur.plusKey) {
+    if (!S.token) { toast('Log in to listen to the full episode.'); return false; }
+    try {
+      const r = await fetch(AUTH + '/audio-link/' + encodeURIComponent(cur.plusKey), { headers: { Authorization: 'Bearer ' + S.token } });
+      if (r.status === 403) { toast('Your sign-in has expired. Log in again to keep listening.'); checkStatus(); return false; }
+      const j = await r.json(); if (!j.url) throw new Error('no url');
+      aud.src = j.url;
+    } catch (e) { toast('The audio could not load. Check your connection.'); return false; }
+  } else aud.src = cur.src;
+  aud.load();
+  return true;
+}
+aud.addEventListener('loadedmetadata', () => { if (isSilent()) return; if (pendingSeek != null) { try { aud.currentTime = pendingSeek; } catch (e) {} pendingSeek = null; } if (cur) { cur.dur = aud.duration; store('iva_cur', cur); } aud.playbackRate = speed; });
+aud.addEventListener('timeupdate', () => {
+  if (!cur || isSilent()) return;
+  const now = Date.now();
+  if (now - lastSave > 5000) { lastSave = now; saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); }
+  updateMini();
+  if (npOpen) updateNP();
+  if (EPV && EPV.key === cur.key) { const s = $('#lbSub'); if (s) s.textContent = currentChapterTitle() || clock(aud.currentTime); markChapter(); }
+});
+aud.addEventListener('play', () => { if (isSilent()) return; updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'playing'; });
+aud.addEventListener('pause', () => { if (isSilent()) return; if (cur) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'paused'; });
+aud.addEventListener('ended', () => { if (isSilent()) return; if (cur) { delete PROG[cur.key]; store('iva_prog', PROG); } updateMini(); refreshLB(); });
+let retried = false;
+aud.addEventListener('error', async () => {
+  if (isSilent()) return;
+  // a members' link lasts six hours; get a fresh one and carry on
+  if (cur && cur.plusKey && !retried) { retried = true; const t = aud.currentTime || (PROG[cur.key] || {}).t || 0; if (await setSource()) { pendingSeek = t; aud.play().catch(() => {}); } setTimeout(() => { retried = false; }, 10000); }
+});
+function refreshLB() { if (EPV && cur && EPV.key === cur.key && EPV.mode === 'listen') renderListenBox(); if (npOpen) renderNP(); }
+function togglePlay() {
+  if (!cur) return;
+  unlockAudio();
+  if (!aud.src || isSilent()) { const p = PROG[cur.key]; setSource().then(ok => { if (ok) { pendingSeek = p ? p.t : 0; aud.play().catch(() => {}); } }); return; }
+  if (aud.paused) aud.play().catch(() => {}); else aud.pause();
+}
+function currentChapterIndex() {
+  if (!cur || !cur.chapters) return -1;
+  const t = aud.currentTime; let i = -1;
+  for (let k = 0; k < cur.chapters.length; k++) if (cur.chapters[k].seek <= t + 0.5) i = k;
+  return i;
+}
+function currentChapterTitle() { const i = currentChapterIndex(); return i >= 0 ? cur.chapters[i].title : ''; }
+let lastMarked = -2;
+function markChapter() {
+  const i = currentChapterIndex(); if (i === lastMarked) return; lastMarked = i;
+  $$('#chapters .chap[data-seek]').forEach((c, k) => c.classList.toggle('now', k === i));
+}
+function showMini() { document.documentElement.classList.toggle('playing', !!cur); updateMini(); }
+function updateMini() {
+  if (!cur) return;
+  $('#miniArt').src = img(cur.thumb, 100);
+  $('#miniT').textContent = cur.title;
+  $('#miniC').textContent = currentChapterTitle() || cur.show || 'InnerVerse';
+  $('#miniPP').innerHTML = aud.paused ? I.play(26) : I.pause(26);
+  $('#miniPP').setAttribute('aria-label', aud.paused ? 'Play' : 'Pause');
+  const d = aud.duration || cur.dur; $('#miniBar').style.width = d ? Math.min(100, aud.currentTime / d * 100) + '%' : '0';
+}
+$('#mini').addEventListener('click', e => { if (e.target.closest('#miniPP')) { e.stopPropagation(); togglePlay(); return; } openNP(); });
+
+// media session (lock screen and headphones)
+function updateMediaSession() {
+  if (!('mediaSession' in navigator) || !cur) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({ title: cur.title, artist: 'InnerVerse' + (cur.kind === 'p' ? ' Plus+' : ''), album: cur.show || 'InnerVerse',
+      artwork: [{ src: img(cur.thumb, 500), sizes: '500x281', type: 'image/jpeg' }, { src: location.origin + location.pathname.replace(/[^/]*$/, '') + 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }] });
+    const ms = navigator.mediaSession;
+    ms.setActionHandler('play', () => aud.play());
+    ms.setActionHandler('pause', () => aud.pause());
+    ms.setActionHandler('seekbackward', d => { aud.currentTime = Math.max(0, aud.currentTime - ((d && d.seekOffset) || 15)); });
+    ms.setActionHandler('seekforward', d => { aud.currentTime = Math.min(aud.duration || 1e9, aud.currentTime + ((d && d.seekOffset) || 30)); });
+    try { ms.setActionHandler('seekto', d => { if (d.seekTime != null) aud.currentTime = d.seekTime; }); } catch (e) {}
+    try { ms.setActionHandler('previoustrack', () => jumpChapter(-1)); ms.setActionHandler('nexttrack', () => jumpChapter(1)); } catch (e) {}
+  } catch (e) {}
+}
+function jumpChapter(dir) {
+  if (!cur || !cur.chapters || !cur.chapters.length) { aud.currentTime += dir * 30; return; }
+  const i = currentChapterIndex();
+  if (dir < 0) { const c = cur.chapters[i]; if (c && aud.currentTime - c.seek > 4) aud.currentTime = c.seek; else if (i > 0) aud.currentTime = cur.chapters[i - 1].seek; else aud.currentTime = 0; }
+  else if (i + 1 < cur.chapters.length) aud.currentTime = cur.chapters[i + 1].seek;
+}
+
+// now playing sheet
+let npOpen = false;
+function openNP() { if (!cur) return; npOpen = true; renderNP(); const n = $('#np'); n.classList.add('open'); n.setAttribute('aria-hidden', 'false'); }
+function closeNP() { npOpen = false; const n = $('#np'); n.classList.remove('open'); n.setAttribute('aria-hidden', 'true'); }
+function renderNP() {
+  const n = $('#np'); if (!cur) return;
+  const d = aud.duration || cur.dur || 0;
+  n.innerHTML = `<div class="grab"><button class="iconbtn" id="npClose" aria-label="Close the player">${I.down(28)}</button></div>
+    <img class="art" src="${esc(img(cur.thumb, 750))}" alt="">
+    <div style="max-width:620px;margin:0 auto;width:100%">
+      <div class="nt">${esc(cur.title)}</div><div class="nc" id="npC">${esc(currentChapterTitle())}</div>
+      <input type="range" id="npR" min="0" max="${Math.max(1, Math.floor(d))}" step="1" value="${Math.floor(aud.currentTime)}" aria-label="Position">
+      <div class="times"><span id="npT">${clock(aud.currentTime)}</span><span id="npD">-${clock(Math.max(0, d - aud.currentTime))}</span></div>
+      <div class="ctl">
+        <button class="sk" id="npPrev" aria-label="Previous chapter">${I.prev(24)}</button>
+        <button class="sk" id="npBack" aria-label="Back 15 seconds">${I.rew(34)}<small>15</small></button>
+        <button class="big" id="npPP" aria-label="${aud.paused ? 'Play' : 'Pause'}">${aud.paused ? I.play(36) : I.pause(36)}</button>
+        <button class="sk" id="npFwd" aria-label="Forward 30 seconds">${I.fwd(34)}<small>30</small></button>
+        <button class="sk" id="npNext" aria-label="Next chapter">${I.next(24)}</button>
+      </div>
+      <div class="opts"><button id="npSpeed">${speed}x speed</button><button id="npEp">Episode page</button></div>
+    </div>
+    ${cur.chapters && cur.chapters.length ? `<div class="chlist"><div class="eyebrow" style="margin:6px 8px 6px">Chapters</div><div id="npChaps">${cur.chapters.map((c, i) => `<button class="chap" data-i="${i}"><span class="tm">${clock(c.seek)}</span><span class="ct">${esc(c.title)}</span></button>`).join('')}</div></div>` : ''}`;
+  $('#npClose').addEventListener('click', closeNP);
+  $('#npPP').addEventListener('click', togglePlay);
+  $('#npBack').addEventListener('click', () => { aud.currentTime = Math.max(0, aud.currentTime - 15); });
+  $('#npFwd').addEventListener('click', () => { aud.currentTime = Math.min(aud.duration || 1e9, aud.currentTime + 30); });
+  $('#npPrev').addEventListener('click', () => jumpChapter(-1));
+  $('#npNext').addEventListener('click', () => jumpChapter(1));
+  $('#npSpeed').addEventListener('click', e => { const s = [1, 1.25, 1.5, 1.75, 2, 0.8]; speed = s[(s.indexOf(speed) + 1) % s.length]; aud.playbackRate = speed; store('iva_speed', String(speed)); e.target.textContent = speed + 'x speed'; });
+  $('#npEp').addEventListener('click', () => { closeNP(); go('#/' + (cur.kind === 'p' ? 'p' : 'e') + '/' + cur.slug); });
+  const r = $('#npR'); let drag = false;
+  r.addEventListener('input', () => { drag = true; $('#npT').textContent = clock(r.value); });
+  r.addEventListener('change', () => { aud.currentTime = Number(r.value); drag = false; });
+  r._drag = () => drag;
+  const nc = $('#npChaps'); if (nc) nc.addEventListener('click', e => { const b = e.target.closest('.chap'); if (!b) return; aud.currentTime = cur.chapters[+b.dataset.i].seek; if (aud.paused) togglePlay(); });
+  updateNP();
+}
+function updateNP() {
+  const r = $('#npR'); if (!r || !cur) return;
+  const d = aud.duration || cur.dur || 0;
+  if (r.max != Math.floor(d) && d) r.max = Math.floor(d);
+  if (!(r._drag && r._drag())) { r.value = Math.floor(aud.currentTime); $('#npT').textContent = clock(aud.currentTime); }
+  $('#npD').textContent = '-' + clock(Math.max(0, d - aud.currentTime));
+  $('#npC').textContent = currentChapterTitle();
+  const i = currentChapterIndex();
+  $$('#npChaps .chap').forEach((c, k) => c.classList.toggle('now', k === i));
+}
+// swipe down to close the player
+(function () { const n = $('#np'); let y0 = null; n.addEventListener('touchstart', e => { if (n.scrollTop <= 0) y0 = e.touches[0].clientY; }, { passive: true }); n.addEventListener('touchend', e => { if (y0 != null && e.changedTouches[0].clientY - y0 > 90) closeNP(); y0 = null; }, { passive: true }); })();
+
+// ------------------------------------------------------------ install help (iPhone Safari)
+function showInstall(force) {
+  if (standalone) return;
+  if (!force && (!isIOS || load('iva_noinstall'))) return;
+  const w = document.createElement('div'); w.className = 'sheetwrap';
+  w.innerHTML = `<div class="sheet" role="dialog" aria-label="Add to Home Screen"><h3>Put InnerVerse on your Home Screen</h3><p class="muted" style="margin:0">It opens like an app, keeps playing while you browse, and updates itself.</p>
+  <ol><li>Tap the Share button ${I.share(18)} in Safari's toolbar.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>, then open InnerVerse from your Home Screen.</li></ol>
+  <button class="btn block${S.member ? ' gold' : ''}" id="instOk">Got it</button></div>`;
+  document.body.appendChild(w);
+  const close = () => { w.remove(); store('iva_noinstall', '1'); };
+  $('#instOk', w).addEventListener('click', close);
+  w.addEventListener('click', e => { if (e.target === w) close(); });
+}
+
+// ------------------------------------------------------------ boot
+renderTabs(); renderHome(); renderSearch(); renderMe();
+if (cur) { showMini(); updateMediaSession(); }
+route();
+loadLibrary().then(() => {
+  renderHome(); renderSearch(); route();
+}).catch(() => {
+  $('#home').innerHTML = `<header class="hdr"><div class="row">${headerBrand()}</div></header><div class="wrap"><div class="empty">The episodes could not load. Check your connection and pull this screen down or reopen the app.<br><br><button class="btn line" onclick="location.reload()">Try again</button></div></div>`;
+});
+checkStatus();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkStatus(); else if (cur && aud.currentTime) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); });
+setTimeout(() => showInstall(false), 2500);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
