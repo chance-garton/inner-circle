@@ -279,9 +279,12 @@ export class Room {
         const tagged = mentions.includes(s.uid);
         if (level === 'none' || (level === 'mentions' && !tagged)) continue;
         if (!bumped.has(s.uid)) { this.sql.exec('UPDATE members SET push_unread = push_unread + 1 WHERE uid = ?', s.uid); bumped.set(s.uid, (s.push_unread || 0) + 1); }
+        // Telegram style: the room as the title, "Name: message" as the text (the phone trims it to fit)
         const name = author.name || 'A member';
-        const body = m.kind === 'join' ? `${name} joined the chat` : (m.text ? m.text.slice(0, 180) : 'Sent an image');
-        const payload = JSON.stringify({ title: tagged ? `${name} mentioned you` : m.kind === 'join' ? 'Inner Circle' : `${name} in the Inner Circle`, body, tag: 'ivc-' + m.id, url: '/app/#/chat', badge: bumped.get(s.uid) });
+        const text = (m.text || '').replace(/\s+/g, ' ').trim();
+        const body = m.kind === 'join' ? `${name} joined the chat` : `${name}: ${m.image ? '\u{1F4F7} Photo' + (text ? ' ' : '') : ''}${text}`.slice(0, 600);
+        const img = typeof author.avatar === 'string' && author.avatar.startsWith('img:') ? author.avatar.slice(4) : '';
+        const payload = JSON.stringify({ title: 'Inner Circle', body, tag: 'ivc-' + m.id, url: '/app/#/chat', badge: bumped.get(s.uid), avatar: img });
         try {
           const r = await sendPush(s, payload, vapid);
           if (r.status === 404 || r.status === 410) this.sql.exec('DELETE FROM push_subs WHERE endpoint = ?', s.endpoint);
@@ -340,7 +343,7 @@ export class Room {
       const vapid = await this.vapid();
       const results = [];
       for (const s of subs) {
-        try { const r = await sendPush(s, JSON.stringify({ title: 'InnerVerse', body: 'Notifications are working.', tag: 'ivc-test', url: '/app/#/chat' }), vapid); results.push(r.status); if (r.status === 404 || r.status === 410) this.sql.exec('DELETE FROM push_subs WHERE endpoint = ?', s.endpoint); }
+        try { const r = await sendPush(s, JSON.stringify({ title: 'Inner Circle', body: `${me.name || 'InnerVerse'}: Notifications are working.`, tag: 'ivc-test', url: '/app/#/chat', avatar: typeof me.avatar === 'string' && me.avatar.startsWith('img:') ? me.avatar.slice(4) : '' }), vapid); results.push(r.status); if (r.status === 404 || r.status === 410) this.sql.exec('DELETE FROM push_subs WHERE endpoint = ?', s.endpoint); }
         catch (e) { results.push(String(e).slice(0, 80)); }
       }
       return json({ sent: subs.length, results });

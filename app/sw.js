@@ -1,6 +1,6 @@
 /* InnerVerse app: keeps the app opening fast and offline, and always picks up new versions.
    The page itself is fetched fresh first on every launch, so a pushed update shows on the next open. */
-const VERSION = 'iva-2026-10-08m';
+const VERSION = 'iva-2026-10-08n';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -49,13 +49,28 @@ self.addEventListener('fetch', e => {
 });
 
 // chat notifications, even with the app closed
+const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
+async function avatarIcon(key) {
+  if (!key || !/^circle\/[0-9a-f-]{36}\.(png|jpg|gif|webp)$/.test(key)) return '';
+  try {
+    const t = await (await caches.open('ivauth')).match('/app/__token');
+    if (!t) return '';
+    const r = await fetch(CIRCLE_API + '/media/' + key, { headers: { Authorization: 'Bearer ' + (await t.text()) } });
+    if (!r.ok) return '';
+    const type = r.headers.get('Content-Type') || 'image/jpeg';
+    const u = new Uint8Array(await r.arrayBuffer()); let bin = '';
+    for (let i = 0; i < u.length; i += 0x8000) bin += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+    return 'data:' + type + ';base64,' + btoa(bin);
+  } catch (e) { return ''; }
+}
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
-  const show = self.registration.showNotification(d.title || 'InnerVerse', {
-    body: d.body || '', tag: d.tag || 'ivc', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png',
+  // the poster's photo as the picture where the phone allows it (Android; iPhone always shows the app icon)
+  const show = avatarIcon(d.avatar).then(icon => self.registration.showNotification(d.title || 'InnerVerse', {
+    body: d.body || '', tag: d.tag || 'ivc', icon: icon || 'icons/icon-192.png', badge: 'icons/icon-192.png',
     data: { url: d.url || '/app/#/chat' },
-  });
+  }));
   const badge = typeof d.badge === 'number' && self.navigator && self.navigator.setAppBadge ? self.navigator.setAppBadge(d.badge).catch(() => {}) : Promise.resolve();
   e.waitUntil(Promise.all([show, badge]));
 });

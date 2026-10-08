@@ -282,7 +282,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08m';
+const VERSION = '2026-10-08n';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -726,6 +726,8 @@ const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in win
 const urlKey = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; const b = atob(s); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
 async function pushSub() { try { const reg = await navigator.serviceWorker.getRegistration(); return reg ? await reg.pushManager.getSubscription() : null; } catch (e) { return null; } }
 async function sendSub(sub) {
+  // the notification helper uses the sign-in to fetch the poster's photo (kept only on this phone)
+  try { (await caches.open('ivauth')).put('/app/__token', new Response(S.token)); } catch (e) {}
   const r = await fetch(CIRCLE_API + '/api/push/subscribe', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ sub: sub.toJSON(), level: load('iva_level') || undefined }) });
   if (!r.ok) throw new Error('subscribe ' + r.status);
 }
@@ -748,6 +750,7 @@ function enablePush() {
 async function disablePush() {
   const sub = await pushSub();
   if (sub) { try { await fetch(CIRCLE_API + '/api/push/unsubscribe', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }); } catch (e) {} try { await sub.unsubscribe(); } catch (e) {} }
+  try { (await caches.open('ivauth')).delete('/app/__token'); } catch (e) {}
   store('iva_push', null); toast('Notifications are off on this phone.'); renderPushBox();
 }
 async function testPush() {
