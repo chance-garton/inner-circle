@@ -52,7 +52,7 @@ input{font:inherit;color:inherit}
 [hidden]{display:none!important}
 
 /* views */
-.view{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;background:var(--ground);padding-bottom:calc(var(--tabh) + var(--minih) + max(6px,calc(var(--sb) - 18px)) + 16px)}
+.view{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;background:var(--ground);padding-bottom:calc(var(--tabh) + var(--minih) + max(4px,calc(var(--sb) - 24px)) + 16px)}
 #ep{z-index:5;animation:slidein .22s ease-out}
 @keyframes slidein{from{transform:translateX(28px);opacity:.4}to{transform:none;opacity:1}}
 .wrap{max-width:720px;margin:0 auto;padding:0 16px}
@@ -190,12 +190,13 @@ html.member .chap.now{background:rgba(216,170,60,0.1)}
 .links a{font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;border:2px solid var(--accent)}
 
 /* tab bar + mini player */
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;--tb:max(6px,calc(var(--sb) - 18px));height:calc(var(--tabh) + var(--tb));padding-bottom:var(--tb);display:flex;background:rgba(10,15,28,0.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
-.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--muted);position:relative}
+.tabs::after{content:'';position:absolute;left:0;right:0;top:100%;height:120px;background:#0A0F1C}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;--tb:max(4px,calc(var(--sb) - 24px));height:calc(var(--tabh) + var(--tb));padding-bottom:var(--tb);display:flex;background:#0A0F1C;border-top:1px solid var(--line)}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:2px;gap:3px;font-size:11px;font-weight:700;color:var(--muted);position:relative}
 .tabs button.on{color:var(--accent)}
 .tabs .dot{position:absolute;top:7px;left:calc(50% + 8px);min-width:8px;height:8px;border-radius:4px;background:var(--gold)}
 html.kb .tabs,html.kb .mini{display:none}
-.mini{position:fixed;left:8px;right:8px;bottom:calc(var(--tabh) + max(6px,calc(var(--sb) - 18px)) + 6px);z-index:10;height:58px;border-radius:14px;background:var(--card2);box-shadow:0 10px 30px rgba(0,0,0,0.5);display:none;align-items:center;gap:10px;padding:0 6px 0 7px;overflow:hidden;border:1px solid var(--line)}
+.mini{position:fixed;left:8px;right:8px;bottom:calc(var(--tabh) + max(4px,calc(var(--sb) - 24px)) + 6px);z-index:10;height:58px;border-radius:14px;background:var(--card2);box-shadow:0 10px 30px rgba(0,0,0,0.5);display:none;align-items:center;gap:10px;padding:0 6px 0 7px;overflow:hidden;border:1px solid var(--line)}
 html.playing .mini{display:flex}
 .mini img{width:44px;height:44px;border-radius:9px;object-fit:cover;flex:none;background:var(--card)}
 .mini .mt{flex:1;min-width:0;text-align:left}
@@ -224,7 +225,7 @@ html:not(.member) .np .ctl .big{background:var(--lapis);color:#fff}
 
 /* chat */
 #chatv{overflow:hidden;padding:0}
-#chatv iframe{position:absolute;left:0;right:0;top:var(--st);width:100%;height:calc(100% - var(--st) - var(--tabh) - max(6px,calc(var(--sb) - 18px)) - var(--minih));border:0;background:var(--ground)}
+#chatv iframe{position:absolute;left:0;right:0;top:var(--st);width:100%;height:calc(100% - var(--st) - var(--tabh) - max(4px,calc(var(--sb) - 24px)) - var(--minih));border:0;background:var(--ground)}
 html.kb #chatv iframe{height:calc(100% - var(--st))}
 .loading{display:grid;place-items:center;padding:60px 0;color:var(--muted)}
 .spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(233,238,246,0.15);border-top-color:var(--accent);animation:sp 0.8s linear infinite}
@@ -248,7 +249,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 .sheet h3{font-family:var(--display);font-size:22px;margin:0 0 8px;font-weight:600}
 .sheet ol{margin:8px 0 16px;padding-left:22px}
 .sheet li{margin:6px 0}
-.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + var(--minih) + max(6px,calc(var(--sb) - 18px)) + 18px);transform:translateX(-50%);z-index:50;background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,0.5);max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + var(--minih) + max(4px,calc(var(--sb) - 24px)) + 18px);transform:translateX(-50%);z-index:50;background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,0.5);max-width:calc(100% - 32px)}
 .empty{padding:40px 0;text-align:center;color:var(--muted)}
 @media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .art{width:176px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -274,7 +275,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08b';
+const VERSION = '2026-10-08c';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
 const SITE = 'https://www.innerversepodcast.com';
@@ -724,8 +725,11 @@ let epReq = 0, epShown = '';
 function closeEpisode() {
   const v = $('#ep');
   if (v.hidden) return;
+  const h = leaveVideo();
   epReq++; destroyVideo();
   v.hidden = true; v.innerHTML = ''; EPV = null; epShown = '';
+  resumeAfterVideo(h);
+  syncMini();
 }
 function ytId(u) {
   const m = String(u || '').match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/|\/shorts\/)([A-Za-z0-9_-]{11})/);
@@ -785,7 +789,9 @@ async function openEpisode(kind, slug) {
   if (epShown === want) return;
   epShown = want;
   const my = ++epReq;
+  const handoff = leaveVideo();
   destroyVideo(); EPV = null;
+  resumeAfterVideo(handoff);
   v.scrollTop = 0;
   if (!it) {
     it = { key: kind + ':' + slug, kind: kind === 'p' ? 'plus' : 'free', slug, file: slug, title: '', thumb: '', shows: [], guests: [], tags: [], topics: [] };
@@ -864,6 +870,7 @@ function renderEpisode() {
   $$('.toggle button', v).forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode, true)));
   $$('.guest .b', v).forEach(b => b.addEventListener('click', () => b.classList.toggle('full')));
   const nb = $('#notesBtn'); if (nb) nb.addEventListener('click', getNotes);
+  syncMini();
   $('#chapters') && $('#chapters').addEventListener('click', e => { const c = e.target.closest('.chap[data-seek]'); if (c) seekChapter(Number(c.dataset.seek)); });
   setMode(mode, false);
 }
@@ -901,10 +908,12 @@ async function getNotes() {
 }
 
 // video
-let VP = null; // { type, player, ready }
+let VP = null; // { type, player, ready, playing, t, key }
+let videoOwns = false; // the video on this page is the active player, so the pop-up player steps aside
 function destroyVideo() {
   if (VP) { try { VP.type === 'yt' ? VP.player.destroy() : VP.type === 'vimeo' ? VP.player.destroy() : 0; } catch (e) {} }
   VP = null;
+  if (videoOwns) { videoOwns = false; syncMini(); }
 }
 function loadScript(src) {
   return new Promise((res, rej) => { if (document.querySelector('script[src="' + src + '"]')) { res(); return; } const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
@@ -923,15 +932,14 @@ function setMode(mode, user) {
   const media = $('#media'), lb = $('#listenBox');
   if (mode === 'watch') {
     lb.innerHTML = '';
-    if (!VP) {
-      media.hidden = false;
-      media.innerHTML = `<div class="frame"><img class="poster" src="${esc(img(E.thumb, 1000))}" alt=""><button class="bigplay" id="vidStart" aria-label="Play video"><span>${I.play(34)}</span></button></div>`;
-      $('#vidStart').addEventListener('click', () => startVideo(0, true));
-    }
-    if (user && prevMode === 'listen' && cur && cur.key === E.key) {
-      const at = Math.max(0, aud.currentTime - (cur.offset || 0));
-      aud.pause(); startVideo(at, true);
-    }
+    media.hidden = false;
+    let at = 0;
+    if (cur && cur.key === E.key) {
+      at = Math.max(0, (aud.src && !isSilent() ? aud.currentTime : ((PROG[E.key] || {}).t || 0)) - (cur.offset || 0));
+      if (!aud.paused) aud.pause();
+    } else if (PROG[E.key]) at = Math.max(0, PROG[E.key].t - (E.plus ? 0 : E.offset));
+    // the real player loads straight away (no autoplay), so the first tap is on the player itself and plays with sound
+    if (!VP) startVideo(at);
   } else {
     let at = null;
     if (VP && user) { at = videoTime(); }
@@ -942,26 +950,75 @@ function setMode(mode, user) {
   }
 }
 function videoTime() { try { if (VP.type === 'yt') return VP.player.getCurrentTime(); if (VP.type === 'vimeo') return VP.t || 0; } catch (e) {} return null; }
+function videoPlaying() { try { if (VP.type === 'yt') return VP.player.getPlayerState() === 1; if (VP.type === 'vimeo') return !!VP.playing; } catch (e) {} return false; }
+// the video started: it becomes the episode in the pop-up player, which hides while you watch
+function videoStarted(E) {
+  if (!VP) return;
+  VP.playing = true;
+  if (!aud.paused) aud.pause();
+  if (E.audio && (!cur || cur.key !== E.key)) {
+    cur = { key: E.key, kind: E.kind, slug: E.slug, title: E.title, show: E.show, thumb: E.thumb, chapters: chaptersOnAudio(E), offset: E.plus ? 0 : E.offset, src: E.audio.url || '', plusKey: E.audio.plusKey || '', dur: 0 };
+    store('iva_cur', cur);
+    try { aud.removeAttribute('src'); aud.load(); } catch (e) {}
+    updateMediaSession();
+  }
+  videoOwns = true; syncMini();
+}
+function videoTick() {
+  if (!VP || !EPV || !videoOwns) return;
+  const t = videoTime(); if (t == null) return;
+  const d = durMin(EPV.duration) * 60;
+  if (t > 5 && d) { PROG[EPV.key] = { t: Math.round(t + (EPV.plus ? 0 : EPV.offset)), d, at: Date.now() }; store('iva_prog', PROG); }
+}
+setInterval(videoTick, 5000);
+// leaving an episode page while its video plays: carry on in the pop-up player, with audio, from the same moment
+function leaveVideo() {
+  if (!VP || !EPV || !videoOwns) return null;
+  const E = EPV, t = videoTime(), playing = videoPlaying();
+  if (t == null || t < 2) return null;
+  return { E, at: t + (E.plus ? 0 : E.offset), playing };
+}
+function resumeAfterVideo(h) {
+  if (!h) return;
+  const E = h.E;
+  if (!E.audio) { syncMini(); return; }
+  if (h.playing) { playEpisode(E, h.at); return; }
+  PROG[E.key] = { t: Math.round(h.at), d: durMin(E.duration) * 60 || 1, at: Date.now() }; store('iva_prog', PROG);
+  syncMini();
+}
+// a tap that leaves the page while the video plays: wake the audio player inside that tap, so the phone lets it play
+document.addEventListener('click', e => {
+  if (!videoOwns || !VP || !videoPlaying()) return;
+  const a = e.target.closest('a[href^="#"], #epBack, .tabs button');
+  if (!a) return;
+  try { if (!aud.src || isSilent()) aud.src = SILENT; const pr = aud.play(); if (pr) pr.catch(() => {}); } catch (err) {}
+}, true);
 async function startVideo(at, autoplay) {
   const E = EPV; const media = $('#media'); if (!E || !media) return;
-  if (!aud.paused) aud.pause();
   const yt = ytId(E.video), vm = vimeoId(E.video), od = odyseeEmbed(E.video);
   if (VP) { seekVideo(at); return; }
   if (yt) {
+    VP = { type: 'pending' };
     media.innerHTML = '<div class="frame"><div class="ytp" id="ytp"></div></div>';
     await ytApi();
-    if (!EPV || EPV !== E) return;
+    if (!EPV || EPV !== E || !VP || VP.type !== 'pending') return;
     VP = { type: 'yt' };
     VP.player = new YT.Player('ytp', { videoId: yt, playerVars: { playsinline: 1, rel: 0, modestbranding: 1, start: Math.floor(at || 0), autoplay: autoplay ? 1 : 0 },
-      events: { onReady: ev => { VP && (VP.ready = true); if (autoplay) ev.target.playVideo(); }, onStateChange: ev => { if (ev.data === 1 && !aud.paused) aud.pause(); } } });
+      events: {
+        onReady: ev => { if (!VP) return; VP.ready = true; try { ev.target.unMute(); ev.target.setVolume(100); } catch (e) {} if (autoplay) ev.target.playVideo(); },
+        onStateChange: ev => { if (!VP) return; if (ev.data === 1) { try { if (ev.target.isMuted()) ev.target.unMute(); } catch (e) {} videoStarted(E); } else if (ev.data === 2 || ev.data === 0) VP.playing = false; }
+      } });
   } else if (vm) {
-    media.innerHTML = `<div class="frame"><iframe id="vmp" src="https://player.vimeo.com/video/${vm.id}?${vm.h ? 'h=' + vm.h + '&' : ''}playsinline=1&title=0&byline=0&portrait=0${autoplay ? '&autoplay=1' : ''}#t=${Math.floor(at || 0)}s" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+    VP = { type: 'pending' };
+    media.innerHTML = `<div class="frame"><iframe id="vmp" src="https://player.vimeo.com/video/${vm.id}?${vm.h ? 'h=' + vm.h + '&' : ''}playsinline=1&muted=0&title=0&byline=0&portrait=0${autoplay ? '&autoplay=1' : ''}#t=${Math.floor(at || 0)}s" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
     try {
       await loadScript('https://player.vimeo.com/api/player.js');
-      if (!EPV || EPV !== E) return;
+      if (!EPV || EPV !== E || !VP || VP.type !== 'pending') return;
       VP = { type: 'vimeo', player: new Vimeo.Player($('#vmp')), t: at || 0 };
       VP.player.on('timeupdate', d => { if (VP) VP.t = d.seconds; });
-      VP.player.on('play', () => { if (!aud.paused) aud.pause(); });
+      VP.player.on('play', () => { if (!VP) return; VP.player.setMuted(false).catch(() => {}); VP.player.setVolume(1).catch(() => {}); videoStarted(E); });
+      VP.player.on('pause', () => { if (VP) VP.playing = false; });
+      VP.player.on('ended', () => { if (VP) VP.playing = false; });
       if (at) VP.player.setCurrentTime(at).catch(() => {});
     } catch (e) { VP = { type: 'iframe' }; }
   } else if (od) {
@@ -970,7 +1027,7 @@ async function startVideo(at, autoplay) {
   }
 }
 function seekVideo(at) {
-  if (!VP) { startVideo(at, true); return; }
+  if (!VP || VP.type === 'pending') { if (!VP) startVideo(at, true); return; }
   try {
     if (VP.type === 'yt') { VP.player.seekTo(at, true); VP.player.playVideo(); }
     else if (VP.type === 'vimeo') { VP.player.setCurrentTime(at).then(() => VP.player.play()).catch(() => {}); }
@@ -979,7 +1036,7 @@ function seekVideo(at) {
 }
 function seekChapter(seek) {
   const E = EPV; if (!E) return;
-  if (E.mode === 'watch') { if (VP) seekVideo(seek); else startVideo(seek, true); $('#media').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  if (E.mode === 'watch') { seekVideo(seek); $('#media').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
   unlockAudio();
   playEpisode(E, seek + (E.plus ? 0 : E.offset));
 }
@@ -1020,7 +1077,8 @@ async function playItem(it) {
   } catch (e) { go(epHref(it)); }
 }
 async function playEpisode(E, at) {
-  if (VP) { try { VP.type === 'yt' ? VP.player.pauseVideo() : VP.type === 'vimeo' ? VP.player.pause() : 0; } catch (e) {} }
+  if (VP) { try { VP.type === 'yt' ? VP.player.pauseVideo() : VP.type === 'vimeo' ? VP.player.pause() : 0; } catch (e) {} VP.playing = false; }
+  if (videoOwns) { videoOwns = false; }
   const same = cur && cur.key === E.key && aud.src && !isSilent();
   if (!same) {
     cur = { key: E.key, kind: E.kind, slug: E.slug, title: E.title, show: E.show, thumb: E.thumb, chapters: chaptersOnAudio(E), offset: E.plus ? 0 : E.offset, src: E.audio.url || '', plusKey: E.audio.plusKey || '', dur: 0 };
@@ -1085,7 +1143,13 @@ function markChapter() {
   const i = currentChapterIndex(); if (i === lastMarked) return; lastMarked = i;
   $$('#chapters .chap[data-seek]').forEach((c, k) => c.classList.toggle('now', k === i));
 }
-function showMini() { document.documentElement.classList.toggle('playing', !!cur); updateMini(); }
+// the pop-up player steps aside while its own episode page is open (that page has the controls) or a video is playing
+function syncMini() {
+  const own = !!(cur && EPV && EPV.key === cur.key && !$('#ep').hidden);
+  document.documentElement.classList.toggle('playing', !!cur && !videoOwns && !own);
+  if (cur) updateMini();
+}
+function showMini() { syncMini(); }
 function updateMini() {
   if (!cur) return;
   $('#miniArt').src = img(cur.thumb, 100);
