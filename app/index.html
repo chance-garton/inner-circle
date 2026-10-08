@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0A0F1C">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,7 +42,8 @@
 html.member{--accent:var(--gold)}
 html.playing{--minih:66px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+html,body{touch-action:pan-x pan-y;margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+*{touch-action:pan-x pan-y}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 a{color:inherit;text-decoration:none}
 img{display:block}
@@ -277,7 +278,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08j';
+const VERSION = '2026-10-08k';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
 const SITE = 'https://www.innerversepodcast.com';
@@ -712,7 +713,8 @@ function mountChat() {
     if (!d) return;
     const st = d.createElement('style');
     // inside the app: no site nav, no back arrow to the website
-    st.textContent = '.nav{display:none!important}.ptop>a.ibtn[aria-label="Back to InnerVerse"]{display:none!important}.ptop{padding-left:12px!important}.compose{padding-bottom:10px!important}';
+    try { noZoom(d); const vm = d.querySelector('meta[name=viewport]'); if (vm) vm.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'); } catch (e) {}
+    st.textContent = '*{touch-action:pan-x pan-y}.nav{display:none!important}.ptop>a.ibtn[aria-label="Back to InnerVerse"]{display:none!important}.ptop{padding-left:12px!important}.compose{padding-bottom:10px!important}';
     d.head.appendChild(st);
     // episode links in the chat open here in the app
     d.addEventListener('click', e => {
@@ -1301,6 +1303,14 @@ function screenReport() {
 measureGap();
 window.addEventListener('resize', measureGap);
 window.addEventListener('orientationchange', () => setTimeout(measureGap, 300));
+
+// ------------------------------------------------------------ no zooming: the layout is made to fit
+function noZoom(doc) {
+  const stop = e => { e.preventDefault(); };
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => doc.addEventListener(t, stop, { passive: false }));
+  doc.addEventListener('touchmove', e => { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+}
+noZoom(document);
 
 // ------------------------------------------------------------ boot
 renderTabs(); renderHome(); renderSearch(); renderMe();
