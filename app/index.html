@@ -111,7 +111,9 @@ input{font:inherit;color:inherit}
 .tile .bar i{display:block;height:100%;background:var(--accent)}
 .list{display:flex;flex-direction:column}
 .rowep{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:flex-start}
-.rowep .art{width:128px;flex:none;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:var(--card2)}
+.rowep .artc{width:128px;flex:none}
+.rowep .art{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:var(--card2)}
+.rowep .d{margin-top:6px;font-size:12px;line-height:1.2;color:var(--muted);text-align:center;letter-spacing:.02em}
 .rowep .info{min-width:0;flex:1}
 .rowep .k{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .rowep .t{font-weight:700;font-size:15px;line-height:1.3;margin:3px 0 2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
@@ -260,7 +262,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 .sheet li{margin:6px 0}
 .toast{position:fixed;left:50%;bottom:calc(-1 * var(--gap) + var(--tabh) + var(--minih) + max(12px,calc(var(--sb) - 22px)) + 18px);transform:translateX(-50%);z-index:50;background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,0.5);max-width:calc(100% - 32px)}
 .empty{padding:40px 0;text-align:center;color:var(--muted)}
-@media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .art{width:176px}}
+@media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .artc{width:176px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -285,7 +287,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08r';
+const VERSION = '2026-10-08s';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -538,7 +540,7 @@ function rowEp(it, why) {
     const extra = Math.max(0, durMin(it.plus.duration) - durMin(it.duration));
     plusMark = `<div class="ext">${I.lock(14)}<span>${extra ? extra + ' min Plus+ extension for members' : 'Plus+ extension for members'}</span></div>`;
   }
-  return `<a class="rowep" href="${epHref(it)}"><img class="art" loading="lazy" src="${esc(img(it.thumb, 300))}" alt="">
+  return `<a class="rowep" href="${epHref(it)}"><div class="artc"><img class="art" loading="lazy" src="${esc(img(it.thumb, 300))}" alt="">${it.date ? `<div class="d">${esc(fmtDate(it.date))}</div>` : ''}</div>
     <div class="info"><div class="k">${meta(it)}</div><div class="t">${esc(it.title)}</div>${it.topicLine ? `<div class="l">${esc(it.topicLine)}</div>` : ''}${plusMark}${why ? `<div class="why">${esc(why)}</div>` : ''}</div></a>`;
 }
 function headerBrand() {

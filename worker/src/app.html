@@ -144,6 +144,9 @@ svg{display:block;flex:none}
 .stack{display:flex;flex-direction:column;align-items:flex-start;min-width:0;max-width:min(680px,82%)}
 .bub{position:relative;max-width:100%;background:var(--card);border:1px solid var(--line);border-radius:16px 16px 16px 6px;padding:8px 13px 9px;font-size:15px;line-height:1.55;overflow-wrap:anywhere}
 .row.me .bub{background:rgba(59,116,204,0.20);border-color:rgba(143,181,240,0.30)}
+.pend .bub{opacity:0.72}
+.pst{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:11.5px;color:var(--muted)}
+.pst.fail{background:none;border:0;padding:0;font:inherit;font-size:12px;font-weight:600;color:#F2998A;cursor:pointer;text-align:left}
 .row.flash .bub{border-color:var(--gold)}
 .bub .txt{white-space:pre-wrap}
 .bub a.lnk{color:var(--lapis-lit);font-weight:600}
@@ -304,7 +307,15 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .jump{position:absolute;right:18px;bottom:84px;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid rgba(233,238,246,0.2);display:none;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(0,0,0,0.4)}
 .jump.show{display:flex}
 .empty{margin:auto;text-align:center;color:var(--muted);font-size:14.5px;line-height:1.6;max-width:320px}
-.conn{position:absolute;left:50%;top:70px;transform:translateX(-50%);background:var(--card);border:1px solid rgba(233,238,246,0.2);border-radius:999px;padding:6px 14px;font-size:12.5px;color:var(--muted);z-index:3}
+.conn{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,15,28,0.55);z-index:3;pointer-events:none;animation:connin .25s ease-out}
+@keyframes connin{from{opacity:0}to{opacity:1}}
+.ivload{display:flex;flex-direction:column;align-items:center;gap:12px;color:var(--muted);font-size:14px;letter-spacing:.02em}
+.ivload img{width:52px;height:52px;animation:ivspin 1.6s linear infinite}
+@keyframes ivspin{to{transform:rotate(360deg)}}
+.conn .ivload{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 28px 16px;box-shadow:0 12px 32px rgba(0,0,0,0.35)}
+.ivring{width:40px;height:40px;border-radius:50%;border:3px solid rgba(233,238,246,0.15);border-top-color:var(--gold);animation:ivspin .8s linear infinite}
+@keyframes ivpulse{50%{opacity:.4}}
+@media (prefers-reduced-motion: reduce){.ivload img{animation:ivpulse 1.6s ease-in-out infinite}}
 
 /* phone */
 .ptop{display:none}
@@ -605,14 +616,14 @@ function queueSeen() {
   S.seenTimer = setTimeout(() => {
     S.seenTimer = null;
     const ids = [...S.seenQueue].slice(0, 200);
-    if (sendWs({ t: 'seen', ids })) ids.forEach(id => { S.seenSent.add(id); S.seenQueue.delete(id); });
+    if (sendQuiet({ t: 'seen', ids })) ids.forEach(id => { S.seenSent.add(id); S.seenQueue.delete(id); });
   }, 1200);
 }
 function watchSeen(box) { if (!seenObs || !box) return; seenObs.disconnect(); S.seenOnScreen.clear(); box.querySelectorAll('.row[data-id]').forEach(el => seenObs.observe(el)); }
 function tellApp(obj) { try { if (window.parent !== window) window.parent.postMessage(Object.assign({ ivc: 1 }, obj), location.origin); } catch (e) {} }
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || !e.data.ivcApp) return;
-  if ('away' in e.data) { S.appAway = !!e.data.away; sendWs({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); } }
+  if ('away' in e.data) { S.appAway = !!e.data.away; if (!S.appAway) onResume(); sendQuiet({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); } }
 });
 function onIncoming(m) {
   if (!S.me || !m || m.uid === S.me.uid) return;
@@ -989,20 +1000,113 @@ function hydrateUnfurls(root) {
 // ------------------------------------------------------------ socket
 function connect() {
   if (!S.token) { S.view = 'door'; render(); return; }
+  clearTimeout(S.reconnT); clearTimeout(S.aliveT); S.aliveT = null;
+  const prev = S.ws;
+  if (prev && prev.readyState <= 1) { try { prev.close(); } catch (e) {} }
+  S.connected = false;
+  if (S.view === 'chat') renderConn();
   const ws = new WebSocket(API.replace(/^http/, 'ws') + '/ws');
   S.ws = ws;
-  ws.onopen = () => { ws.send(JSON.stringify({ t: 'hello', token: S.token })); };
-  ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } onEvent(m); };
+  ws.onopen = () => { if (S.ws === ws) ws.send(JSON.stringify({ t: 'hello', token: S.token })); };
+  ws.onmessage = ev => { if (S.ws !== ws) return; S.heard = Date.now(); let m; try { m = JSON.parse(ev.data); } catch (e) { return; } onEvent(m); };
   ws.onclose = ev => {
+    if (S.ws !== ws) return; // an old socket we already replaced
     S.connected = false;
     if (S.denied) return;
     if (S.view === 'chat') renderConn();
     const wait = Math.min(1000 * Math.pow(2, S.retry++), 15000);
-    setTimeout(connect, wait);
+    S.reconnT = setTimeout(connect, wait);
   };
 }
-function sendWs(obj) { if (S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; } toast('Reconnecting. Try again in a moment.'); return false; }
-setInterval(() => { if (S.ws && S.ws.readyState === 1) S.ws.send('{"t":"ping"}'); }, 30000);
+function sendQuiet(obj) { if (S.connected && S.ws && S.ws.readyState === 1) { try { S.ws.send(JSON.stringify(obj)); return true; } catch (e) {} } return false; }
+function sendWs(obj) {
+  if (S.connected && S.ws && S.ws.readyState === 1) { S.ws.send(JSON.stringify(obj)); return true; }
+  if (S.view === 'chat') renderConn(); else toast('Loading\u2026 try again in a moment.');
+  onResume(); return false;
+}
+const loaderHtml = () => `<div class="ivload" role="status"><img src="${PLUS_LOGO}" alt="" onerror="this.outerHTML='<span class=&quot;ivring&quot;></span>'"><span>Loading\u2026</span></div>`;
+// A phone that sleeps or switches networks (Android especially) can keep a socket that looks open but
+// is dead: anything sent into it vanishes. So we ping, and if nothing comes back soon we start over.
+function checkAlive(ms) {
+  const ws = S.ws; if (!ws || ws.readyState !== 1 || !S.connected) return;
+  if (S.aliveT && S.aliveDue <= Date.now() + ms) return; // a check is already due sooner
+  const t0 = Date.now();
+  try { ws.send('{"t":"ping"}'); } catch (e) { connect(); return; }
+  clearTimeout(S.aliveT); S.aliveDue = t0 + ms;
+  S.aliveT = setTimeout(() => { S.aliveT = null; if (S.ws === ws && S.heard < t0) connect(); }, ms);
+}
+setInterval(() => {
+  if (!S.connected || !S.ws || S.ws.readyState !== 1) return;
+  if (document.visibilityState === 'visible') checkAlive(10000); else { try { S.ws.send('{"t":"ping"}'); } catch (e) {} }
+}, 25000);
+function onResume() {
+  if (!S.token || S.denied) return;
+  const gone = S.hiddenAt ? Date.now() - S.hiddenAt : 0; S.hiddenAt = 0;
+  if (gone > 45000) { S.retry = 0; connect(); return; }
+  if (!S.connected) { if (!S.ws || S.ws.readyState > 1) { S.retry = 0; connect(); } return; }
+  if (Date.now() - (S.heard || 0) > 12000) checkAlive(4000);
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') S.hiddenAt = S.hiddenAt || Date.now(); else onResume(); });
+window.addEventListener('pageshow', onResume);
+window.addEventListener('focus', onResume);
+window.addEventListener('online', () => { if (S.token && !S.denied) { S.retry = 0; connect(); } });
+
+// ---- sending: a message stays on screen as "Sending" until the server confirms it, and goes again
+// on reconnect, so a dead connection never swallows what someone typed
+S.pending = (() => { try { const a = JSON.parse(load('ivc_pending') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } })();
+S.ackedIds = new Set();
+function savePending() { store('ivc_pending', S.pending.length ? JSON.stringify(S.pending.map(p => ({ cid: p.cid, uid: p.uid, o: p.o, at: p.at, tried: !!p.tried }))) : null); }
+function queueSend(o) {
+  const cid = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const p = { cid, uid: S.me && S.me.uid, o: Object.assign({}, o, { t: 'send', cid }), at: Date.now(), tried: false };
+  S.pending.push(p); savePending(); renderPending(true);
+  armFail(p); trySend(p);
+}
+function armFail(p) { clearTimeout(p.failT); p.failed = false; p.failT = setTimeout(() => { if (S.pending.includes(p)) { p.failed = true; renderPending(false); } }, 20000); }
+function trySend(p) {
+  if (!S.connected || !S.ws || S.ws.readyState !== 1) { if (!S.ws || S.ws.readyState > 1) { S.retry = 0; connect(); } return; } // goes out on reconnect
+  p.tried = true; savePending();
+  try { S.ws.send(JSON.stringify(p.o)); } catch (e) { connect(); return; }
+  const ws = S.ws; clearTimeout(p.ackT);
+  p.ackT = setTimeout(() => { if (S.pending.includes(p) && S.ws === ws) connect(); }, 8000);
+}
+function ackPending(cid, id) {
+  const i = S.pending.findIndex(p => p.cid === cid); if (i < 0) return;
+  const p = S.pending[i]; clearTimeout(p.ackT); clearTimeout(p.failT);
+  S.pending.splice(i, 1); S.ackedIds.add(id); savePending(); renderPending(false);
+}
+function flushPending() {
+  if (!S.pending.length || !S.me) return;
+  const norm = x => String(x || '').replace(/\s+/g, ' ').trim();
+  const used = new Set(S.ackedIds);
+  S.pending = S.pending.filter(p => {
+    if (p.uid && p.uid !== S.me.uid) return false;
+    if (!p.tried) return true;
+    // it may have gone through before the connection died: if it is already in the chat, it is done
+    const hit = S.messages.find(m => m.uid === S.me.uid && !used.has(m.id) && m.created >= p.at - 30000 && norm(m.text) === norm(p.o.text) && (m.image || '') === (p.o.image || ''));
+    if (hit) { used.add(hit.id); S.ackedIds.add(hit.id); clearTimeout(p.ackT); clearTimeout(p.failT); return false; }
+    return true;
+  });
+  savePending(); renderPending(true);
+  S.pending.forEach(p => { if (!p.failT) armFail(p); trySend(p); });
+}
+const CLOCK_ICON = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+function pendHtml() {
+  return S.pending.map(p => {
+    const t = p.o.text || '';
+    return `<div class="row me first pend" data-cid="${esc(p.cid)}"><span class="gap"></span><div class="stack"><div class="bub">${t ? `<div class="txt">${esc(t)}</div>` : ''}${p.o.image ? '<div class="txt">\u{1F4F7} Photo</div>' : ''}${p.failed ? `<button class="pst fail" data-retry="${esc(p.cid)}">Not sent yet. Tap to try again</button>` : `<span class="pst">${CLOCK_ICON} Sending\u2026</span>`}</div></div></div>`;
+  }).join('');
+}
+function renderPending(toBottom) {
+  const el = $('#pend'); if (!el) { if (S.view === 'chat' && $('#msgs')) renderMessages(true); return; }
+  el.innerHTML = pendHtml();
+  const box = $('#msgs'); if (box && toBottom) { box.scrollTop = box.scrollHeight; S.stick = true; }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-retry]'); if (!b) return;
+  const p = S.pending.find(x => x.cid === b.dataset.retry); if (!p) return;
+  armFail(p); renderPending(false); trySend(p);
+});
 
 function mergePeople(p) { if (p) Object.assign(S.people, p); }
 function onEvent(m) {
@@ -1021,6 +1125,7 @@ function onEvent(m) {
       if (S.view === 'chat' && S.editing) S.view = 'profile';
       render();
       if (S.view === 'chat' && S.openLink) { sendWs({ t: 'thread', id: S.openLink }); S.openLink = null; }
+      if (S.view === 'chat') flushPending();
       return;
     case 'me':
       if (m.me && m.me.recent) { S.me = Object.assign(S.me || {}, { recent: m.me.recent }); setQuick(); }
@@ -1036,6 +1141,7 @@ function onEvent(m) {
     case 'presence': S.online = m.online; if (S.view === 'chat') { renderSide(); renderHeadCounts(); } return;
     case 'msg': {
       mergePeople(m.people);
+      if (m.cid) ackPending(m.cid, m.m.id);
       if (S.messages.some(x => x.id === m.m.id)) return;
       S.messages.push(m.m);
       delete S.typing[m.m.uid];
@@ -1107,7 +1213,7 @@ function onEvent(m) {
 // ------------------------------------------------------------ views
 function render() {
   document.body.className = '';
-  if (S.view === 'loading') { app.innerHTML = '<div class="empty" style="margin-top:40vh">Opening the Inner Circle…</div>'; return; }
+  if (S.view === 'loading') { app.innerHTML = `<div style="display:grid;place-items:center;min-height:100vh;min-height:100dvh">${loaderHtml()}</div>`; return; }
   if (S.view === 'door') return renderDoor();
   if (S.view === 'rules') return renderRules();
   if (S.view === 'profile') return renderProfile();
@@ -1327,12 +1433,15 @@ function renderChat() {
   $('#popout').onclick = e => { e.preventDefault(); window.open('/', 'ivcircle', 'width=440,height=760'); };
 }
 
+// while the chat (re)connects: the spinning logo and Loading, after a short wait so quick reconnects never flash
 function renderConn() {
   const panel = $('.panel'); if (!panel) return;
-  let c = $('#conn');
-  if (S.connected) { c && c.remove(); return; }
-  if (!c) { c = document.createElement('div'); c.id = 'conn'; c.className = 'conn'; panel.appendChild(c); }
-  c.textContent = 'Reconnecting…';
+  if (S.connected) { clearTimeout(S.connT); S.connT = null; const c = $('#conn'); c && c.remove(); return; }
+  if ($('#conn') || S.connT) return;
+  S.connT = setTimeout(() => {
+    S.connT = null; const pn = $('.panel'); if (S.connected || !pn || $('#conn')) return;
+    const c = document.createElement('div'); c.id = 'conn'; c.className = 'conn'; c.innerHTML = loaderHtml(); pn.appendChild(c);
+  }, 350);
 }
 
 function renderHeadCounts() {
@@ -1460,10 +1569,10 @@ function renderMessages(toBottom) {
   const box = $('#msgs'); if (!box) return;
   const keep = box.scrollHeight - box.scrollTop;
   if (!S.messages.length) {
-    box.innerHTML = `<div class="empty">${I.chat(28).replace('<svg', '<svg style="margin:0 auto 12px;color:var(--gold)"')}Welcome, ${esc(S.me ? S.me.name : '')}. This room is brand new. Say hello and start the first conversation.</div>`;
+    box.innerHTML = `<div class="empty">${I.chat(28).replace('<svg', '<svg style="margin:0 auto 12px;color:var(--gold)"')}Welcome, ${esc(S.me ? S.me.name : '')}. This room is brand new. Say hello and start the first conversation.</div><div id="pend">${pendHtml()}</div>`;
     return;
   }
-  const html = (S.oldestDone ? '<div class="day" style="margin-top:4px">The beginning of Inner Circle Chat</div>' : '') + S.messages.map((m, i, l) => msgHtml(m, i, l)).join('');
+  const html = (S.oldestDone ? '<div class="day" style="margin-top:4px">The beginning of Inner Circle Chat</div>' : '') + S.messages.map((m, i, l) => msgHtml(m, i, l)).join('') + `<div id="pend">${pendHtml()}</div>`;
   const live = box.querySelector('.lpframe');
   if (!live || !redrawAround(box, html, live)) box.innerHTML = html;
   watchSeen(box);
@@ -1673,7 +1782,7 @@ function wireComposer() {
   f.addEventListener('input', () => {
     grow(); if (!S.editMsg) store('ivc_draft', f.value || null);
     clearTimeout(S.lpTimer); S.lpTimer = setTimeout(() => linkPreview(f.value), 450);
-    if (Date.now() - lastTyping > 2500 && f.value.trim()) { lastTyping = Date.now(); sendWs({ t: 'typing' }); }
+    if (Date.now() - lastTyping > 2500 && f.value.trim()) { lastTyping = Date.now(); sendQuiet({ t: 'typing' }); }
   });
   f.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(hover: hover)').matches) { e.preventDefault(); send(); }
@@ -1695,7 +1804,7 @@ function wireComposer() {
       grow(); if (!S.editMsg) store('ivc_draft', f.value); sendWs({ t: 'used', e: u });
     }));
   };
-  $('#imgBtn').onclick = () => pickImage(key => { sendWs({ t: 'send', text: f.value.trim(), image: key, reply_to: S.reply || undefined }); f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); });
+  $('#imgBtn').onclick = () => pickImage(key => { queueSend({ text: f.value.trim(), image: key, reply_to: S.reply || undefined }); f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); });
   function send() {
     const text = f.value.trim();
     if (S.editMsg) {
@@ -1706,7 +1815,8 @@ function wireComposer() {
     }
     if (!text) return;
     const lk = clientLink(text);
-    if (sendWs({ t: 'send', text, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: lk && S.lpOff === lk ? true : undefined })) { f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); S.lpOff = ''; linkPreview(''); }
+    queueSend({ text, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: lk && S.lpOff === lk ? true : undefined });
+    f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); S.lpOff = ''; linkPreview('');
   }
 }
 
@@ -1978,7 +2088,7 @@ document.addEventListener('mouseover', e => {
   const b = e.target.closest && e.target.closest('button[aria-label],a[aria-label]');
   if (b && !b.hasAttribute('title')) b.setAttribute('title', b.getAttribute('aria-label'));
 });
-document.addEventListener('visibilitychange', () => { sendWs({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); } });
+document.addEventListener('visibilitychange', () => { sendQuiet({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); } });
 
 S.view = S.token ? 'loading' : 'door';
 render();
