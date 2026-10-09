@@ -257,6 +257,7 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .pmenu .picking,.pmenu:has(.picking){width:100%}
 .pmenu .picking emoji-picker{height:320px}
 .emowrap{position:relative}
+.emohead{display:flex;align-items:center;justify-content:space-between;padding:6px 6px 6px 16px;font-weight:700;font-size:14px;color:var(--muted)}
 .emores{position:absolute;left:0;right:0;bottom:0;overflow-y:auto;background:var(--card);display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));align-content:start;padding:4px 8px 10px;border-radius:0 0 12px 12px;-webkit-overflow-scrolling:touch}
 .emores[hidden]{display:none}
 .emores button{background:none;border:0;padding:0;height:44px;font-size:28px;line-height:44px;border-radius:10px;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;cursor:pointer}
@@ -1868,7 +1869,9 @@ function wireComposer() {
   wireMentionPicker(f);
   wireEmojiPicker(f);
   $('#emoBtn').onclick = () => {
-    const o = overlay('<div id="emoHost"></div>', true, 'Emoji');
+    if ($('#ovl #emoHost')) { closeOverlay(); return; } // second tap puts it away
+    const o = overlay(`<div class="emohead"><span>Emoji</span><button class="ibtn" id="emoClose" aria-label="Close the emoji list">${I.close()}</button></div><div id="emoHost"></div>`, true, 'Emoji');
+    o.querySelector('#emoClose').onclick = () => closeOverlay();
     o.querySelector('#emoHost').appendChild(emojiPicker(u => {
       const a = f.selectionStart ?? f.value.length, b = f.selectionEnd ?? f.value.length;
       f.value = f.value.slice(0, a) + u + f.value.slice(b); f.selectionStart = f.selectionEnd = a + u.length;
@@ -1910,7 +1913,7 @@ function pickImage(done) {
 
 // ------------------------------------------------------------ overlays
 function overlay(html, bottom, label, at) {
-  closeOverlay();
+  closeOverlay(true, true);
   const s = document.createElement('div');
   s.className = 'scrim' + (bottom ? ' bottom' : ''); s.id = 'ovl';
   if (at) s.style.background = 'transparent';
@@ -1924,11 +1927,19 @@ function overlay(html, bottom, label, at) {
     box.style.top = Math.max(8, Math.min(at[1], innerHeight - r.height - 8)) + 'px';
   }
   const first = s.querySelector('button,a,[tabindex]'); first && first.focus();
+  ovlHistory();
   return s;
 }
+// the phone's Back button (and a swipe back) closes whatever is open on top of the chat
+let ovlHist = false, skipPops = 0, inPop = false;
+function ovlHistory() { if (!ovlHist) { try { history.pushState({ ivcOvl: 1 }, ''); ovlHist = true; } catch (e) {} } }
+window.addEventListener('popstate', () => {
+  if (skipPops > 0) { skipPops--; return; }
+  if (ovlHist && $('#ovl')) { ovlHist = false; inPop = true; closeOverlay(); inPop = false; }
+});
 // phones: the message lifts out of the chat, reactions above it, a compact menu below (Telegram style)
 function phoneMenu(id, reactHtml, menuHtml) {
-  closeOverlay();
+  closeOverlay(true, true);
   const fld = $('#field'), typing = !!(fld && document.activeElement === fld);
   if (typing) fld.blur(); // the keyboard steps down so the menu fits; the draft stays in the box
   const src = document.querySelector(`#thread [data-press="${id}"]`) || document.querySelector(`#msgs [data-press="${id}"]`);
@@ -1972,6 +1983,7 @@ function phoneMenu(id, reactHtml, menuHtml) {
   s._refocus = typing;
   document.body.appendChild(s);
   placePhoneMenu(s);
+  ovlHistory();
   // as the keyboard goes down the screen grows and the message moves: follow it
   if (typing) {
     const vv = window.visualViewport;
@@ -1987,9 +1999,10 @@ function placePhoneMenu(s) {
   const want = Number(s.dataset.top) - barH;
   box.style.top = Math.max(12, Math.min(want, innerHeight - h - 12)) + 'px';
 }
-function closeOverlay(keepDown) {
+function closeOverlay(keepDown, swap) {
   const o = $('#ovl'); const back = o && o._refocus && !keepDown;
   if (o) o.remove(); stopAnims();
+  if (o && ovlHist && !inPop && !swap) { ovlHist = false; skipPops++; try { history.back(); } catch (e) { skipPops--; } }
   if (back) { const f = $('#field'); if (f) { f.focus(); f.selectionStart = f.selectionEnd = f.value.length; } } // back to the message they were typing
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
