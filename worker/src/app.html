@@ -1929,6 +1929,8 @@ function overlay(html, bottom, label, at) {
 // phones: the message lifts out of the chat, reactions above it, a compact menu below (Telegram style)
 function phoneMenu(id, reactHtml, menuHtml) {
   closeOverlay();
+  const fld = $('#field'), typing = !!(fld && document.activeElement === fld);
+  if (typing) fld.blur(); // the keyboard steps down so the menu fits; the draft stays in the box
   const src = document.querySelector(`#thread [data-press="${id}"]`) || document.querySelector(`#msgs [data-press="${id}"]`);
   const r = src ? src.getBoundingClientRect() : { left: 12, top: innerHeight / 3, width: innerWidth - 24 };
   const s = document.createElement('div');
@@ -1967,8 +1969,15 @@ function phoneMenu(id, reactHtml, menuHtml) {
   const onEnd = () => finish(true), onCancel = () => finish(false);
   document.addEventListener('touchmove', onMove, { passive: false });
   document.addEventListener('touchend', onEnd); document.addEventListener('touchcancel', onCancel);
+  s._refocus = typing;
   document.body.appendChild(s);
   placePhoneMenu(s);
+  // as the keyboard goes down the screen grows and the message moves: follow it
+  if (typing) {
+    const vv = window.visualViewport;
+    const again = () => { if (!s.isConnected) { vv && vv.removeEventListener('resize', again); return; } if (src && src.isConnected) s.dataset.top = src.getBoundingClientRect().top; placePhoneMenu(s); };
+    vv && vv.addEventListener('resize', again); setTimeout(again, 350); setTimeout(again, 700);
+  }
   return s;
 }
 function placePhoneMenu(s) {
@@ -1978,7 +1987,11 @@ function placePhoneMenu(s) {
   const want = Number(s.dataset.top) - barH;
   box.style.top = Math.max(12, Math.min(want, innerHeight - h - 12)) + 'px';
 }
-function closeOverlay() { const o = $('#ovl'); if (o) o.remove(); stopAnims(); }
+function closeOverlay(keepDown) {
+  const o = $('#ovl'); const back = o && o._refocus && !keepDown;
+  if (o) o.remove(); stopAnims();
+  if (back) { const f = $('#field'); if (f) { f.focus(); f.selectionStart = f.selectionEnd = f.value.length; } } // back to the message they were typing
+}
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
 
 function findMsg(id) { return S.messages.find(x => x.id === id) || (S.threadMsgs || []).find(x => x.id === id); }
@@ -2019,7 +2032,7 @@ function openActions(id, x, y) {
     if (at) { const box = o.firstElementChild; box.style.width = '360px'; const r = box.getBoundingClientRect(); box.style.left = Math.max(8, Math.min(r.left, innerWidth - 368)) + 'px'; box.style.top = Math.max(8, Math.min(r.top, innerHeight - 380)) + 'px'; }
   };
   o.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
-    const a = b.dataset.a; closeOverlay();
+    const a = b.dataset.a; closeOverlay(a !== 'reply');
     if (a === 'reply') startReply(id);
     if (a === 'edit') startEdit(id);
     if (a === 'copy') navigator.clipboard && navigator.clipboard.writeText(m.text).then(() => toast('Copied.'));
