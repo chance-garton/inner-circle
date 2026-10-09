@@ -228,6 +228,7 @@ export class Room {
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN mentions TEXT DEFAULT '[]'"); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN preview TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     try { this.sql.exec('ALTER TABLE members ADD COLUMN join_alerts INTEGER DEFAULT 1'); } catch (e) { /* already there */ }
+    try { this.sql.exec("ALTER TABLE members ADD COLUMN bolt TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     this.sql.exec('CREATE TABLE IF NOT EXISTS link_previews (url TEXT PRIMARY KEY, data TEXT, fetched INTEGER)');
     // who has had a message on screen (only the count is ever shown, never the names)
     this.sql.exec('CREATE TABLE IF NOT EXISTS views (msg_id INTEGER, uid TEXT, PRIMARY KEY (msg_id, uid)) WITHOUT ROWID');
@@ -416,7 +417,7 @@ export class Room {
     return {
       uid: m.uid, name: m.name, avatar: m.avatar, bio: m.bio, sun: m.sun, moon: m.moon, rising: m.rising,
       interests: safeArr(m.interests), favorites: safeArr(m.favorites), joined: m.joined, role: m.role,
-      initiator: !!(m.joined && m.joined < INITIATOR_CUTOFF) && !m.no_init, titles: safeArr(m.titles), muted: m.muted_until > Date.now(),
+      initiator: !!(m.joined && m.joined < INITIATOR_CUTOFF) && !m.no_init, titles: safeArr(m.titles), muted: m.muted_until > Date.now(), bolt: m.bolt || '',
     };
   }
 
@@ -869,6 +870,14 @@ export class Room {
       }
 
       case 'away': { ws.serializeAttachment(Object.assign({}, att, { away: !!msg.on })); if (!msg.on) this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', me.uid); return; }
+
+      case 'boltcolor': { // a founding member's own choice of colour for their bolt
+        const BOLTS = ['', 'gold', 'blue', 'violet', 'green', 'rose', 'flame', 'red', 'white'];
+        if (!BOLTS.includes(msg.c)) return;
+        this.sql.exec('UPDATE members SET bolt = ? WHERE uid = ?', msg.c, me.uid);
+        this.send(ws, { t: 'me', me: this.meFor(me.uid) });
+        return this.broadcast({ t: 'person', p: this.person(this.member(me.uid)) });
+      }
 
       case 'joinalerts': {
         if (me.role !== 'host') return;

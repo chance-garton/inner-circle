@@ -163,10 +163,12 @@ svg{display:block;flex:none}
 .badge.host{background:var(--gold);color:var(--on-gold)}
 .badge.mod{border:1px solid rgba(143,181,240,0.6);color:var(--lapis-lit)}
 .badge.init{border:1px solid rgba(216,170,60,0.6);color:var(--gold);display:inline-flex;align-items:center;gap:4px}
-.badge.init svg{filter:drop-shadow(0 0 3px rgba(255,205,90,0.7))}
-.fbolt{display:inline-flex;align-items:center;color:#FFD25A;align-self:center;cursor:default;animation:boltglow 2.6s ease-in-out infinite}
-@keyframes boltglow{0%,100%{filter:drop-shadow(0 0 1.5px rgba(255,200,70,0.55));opacity:.88}50%{filter:drop-shadow(0 0 5px rgba(255,210,90,0.95)) drop-shadow(0 0 9px rgba(255,180,40,0.45));opacity:1}}
-@media (prefers-reduced-motion: reduce){.fbolt{animation:none;filter:drop-shadow(0 0 3px rgba(255,205,90,0.7))}}
+.fbolt{display:inline-flex;align-items:center;color:var(--bc,#FFD25A);align-self:center;cursor:default;animation:boltglow 2.2s ease-in-out infinite;will-change:filter,transform}
+@keyframes boltglow{0%,100%{filter:drop-shadow(0 0 1px var(--bc,#FFD25A));transform:scale(1);opacity:.72}50%{filter:drop-shadow(0 0 4px var(--bc,#FFD25A)) drop-shadow(0 0 10px var(--bc,#FFD25A)) drop-shadow(0 0 18px var(--bc,#FFD25A));transform:scale(1.14);opacity:1}}
+@media (prefers-reduced-motion: reduce){.fbolt{animation:none;filter:drop-shadow(0 0 4px var(--bc,#FFD25A)) drop-shadow(0 0 9px var(--bc,#FFD25A))}}
+.boltpick{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.boltpick button{width:46px;height:46px;border-radius:12px;background:var(--card);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center}
+.boltpick button.on{border-color:var(--gold);box-shadow:0 0 0 2px rgba(216,170,60,0.35)}
 .badge.title{background:rgba(165,150,245,0.18);border:1px solid rgba(165,150,245,0.7);color:#C9BEFF}
 .deleted{font-style:italic;color:var(--muted)}
 .tchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border:1.5px solid rgba(143,181,240,0.6);border-radius:999px;color:var(--lapis-lit);font-weight:700;font-size:12.5px;vertical-align:middle;line-height:1;white-space:nowrap}
@@ -553,12 +555,14 @@ function avatar(uid, size, ring) {
 }
 // founding members (joined before 2027): a gold bolt with a slow living glow beside the name,
 // spelled out as a Founding member tag on the profile card
+const BOLT_COLORS = { gold: '#FFD25A', blue: '#6EC6FF', violet: '#B79CFF', green: '#5EE6A0', rose: '#FF8FBF', flame: '#FF9B42', red: '#FF5C5C', white: '#F2F6FF' };
+const boltColor = p => BOLT_COLORS[p && p.bolt] || BOLT_COLORS.gold;
 const BOLT = s => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path d="M13.6 2.2 4.8 13.4h6.1l-1.5 8.4 8.8-11.3h-6.1z" fill="currentColor"/></svg>`;
 function badges(p, full) {
   let b = '';
   if (p.role === 'host') b += '<span class="badge host">Host</span>';
   else if (p.role === 'mod') b += '<span class="badge mod">Moderator</span>';
-  if (p.initiator && p.role !== 'host') b += full ? `<span class="badge init">${BOLT(12)}Founding member</span>` : `<span class="fbolt" role="img" aria-label="Founding member" title="Founding member" data-founder>${BOLT(15)}</span>`;
+  if (p.initiator && p.role !== 'host') b += full ? `<span class="badge init" style="--bc:${boltColor(p)}"><span class="fbolt">${BOLT(13)}</span>Founding member</span>` : `<span class="fbolt" style="--bc:${boltColor(p)}" role="img" aria-label="Founding member" title="Founding member" data-founder>${BOLT(15)}</span>`;
   for (const t of (p.titles || [])) b += `<span class="badge title">${esc(t)}</span>`;
   return b;
 }
@@ -1369,6 +1373,8 @@ function renderProfile() {
     <div style="margin-top:18px"><label class="flabel" for="pfav">My favorite episodes <span class="muted" style="font-weight:500">(up to 3, optional)</span></label>
       <div id="pfavs"></div>
       <input id="pfav" class="finput" placeholder="Search episodes by title" autocomplete="off" style="height:46px;font-size:15px"><div id="psug"></div></div>
+    ${me.initiator && me.role !== 'host' && me.bolt !== undefined ? `<div style="margin-top:18px"><div class="flabel">Your founding member bolt</div><div class="fhelp" style="margin-top:0">Pick its colour. It changes for everyone straight away.</div>
+      <div class="boltpick" role="radiogroup" aria-label="Bolt colour">${Object.keys(BOLT_COLORS).map(k => `<button type="button" role="radio" data-bolt="${k}" aria-label="${k}" aria-checked="${(me.bolt || 'gold') === k}" class="${(me.bolt || 'gold') === k ? 'on' : ''}"><span class="fbolt" style="--bc:${BOLT_COLORS[k]}">${BOLT(22)}</span></button>`).join('')}</div></div>` : ''}
     <button class="btn1" id="psave" style="width:100%;margin-top:26px">${editing ? 'Save profile' : 'Enter the Inner Circle'}</button>
     ${editing ? `<button class="btn2 sm" id="plogout" style="margin:18px auto 0">${I.out(16)}Log out of the Inner Circle</button>` : ''}
   </main>`;
@@ -1381,6 +1387,10 @@ function renderProfile() {
     pav();
   });
   $('#pphoto').onclick = () => pickImage(key => { d.avatar = 'img:' + key; app.querySelectorAll('[data-sym]').forEach(x => x.classList.remove('on')); pav(); });
+  app.querySelectorAll('[data-bolt]').forEach(b => b.onclick = () => {
+    if (!sendWs({ t: 'boltcolor', c: b.dataset.bolt })) return;
+    app.querySelectorAll('[data-bolt]').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); });
+  });
   $('#pname').oninput = e => d.name = e.target.value;
   $('#pbio').oninput = e => d.bio = e.target.value;
   $('#psun').onchange = e => d.sun = e.target.value;
