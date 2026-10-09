@@ -162,7 +162,11 @@ svg{display:block;flex:none}
 .badge{font-size:9.5px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;padding:3px 7px 2px;border-radius:999px;line-height:1.2}
 .badge.host{background:var(--gold);color:var(--on-gold)}
 .badge.mod{border:1px solid rgba(143,181,240,0.6);color:var(--lapis-lit)}
-.badge.init{border:1px solid rgba(216,170,60,0.6);color:var(--gold)}
+.badge.init{border:1px solid rgba(216,170,60,0.6);color:var(--gold);display:inline-flex;align-items:center;gap:4px}
+.badge.init svg{filter:drop-shadow(0 0 3px rgba(255,205,90,0.7))}
+.fbolt{display:inline-flex;align-items:center;color:#FFD25A;align-self:center;cursor:default;animation:boltglow 2.6s ease-in-out infinite}
+@keyframes boltglow{0%,100%{filter:drop-shadow(0 0 1.5px rgba(255,200,70,0.55));opacity:.88}50%{filter:drop-shadow(0 0 5px rgba(255,210,90,0.95)) drop-shadow(0 0 9px rgba(255,180,40,0.45));opacity:1}}
+@media (prefers-reduced-motion: reduce){.fbolt{animation:none;filter:drop-shadow(0 0 3px rgba(255,205,90,0.7))}}
 .badge.title{background:rgba(165,150,245,0.18);border:1px solid rgba(165,150,245,0.7);color:#C9BEFF}
 .deleted{font-style:italic;color:var(--muted)}
 .tchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border:1.5px solid rgba(143,181,240,0.6);border-radius:999px;color:var(--lapis-lit);font-weight:700;font-size:12.5px;vertical-align:middle;line-height:1;white-space:nowrap}
@@ -547,11 +551,14 @@ function avatar(uid, size, ring) {
   const ini = (p.name || '?').trim().charAt(0).toUpperCase() || '?';
   return `<span class="av${ring?' ring':''}" style="${st}background:${hashColor(uid)}">${esc(ini)}</span>`;
 }
-function badges(p) {
+// founding members (joined before 2027): a gold bolt with a slow living glow beside the name,
+// spelled out as a Founding member tag on the profile card
+const BOLT = s => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path d="M13.6 2.2 4.8 13.4h6.1l-1.5 8.4 8.8-11.3h-6.1z" fill="currentColor"/></svg>`;
+function badges(p, full) {
   let b = '';
   if (p.role === 'host') b += '<span class="badge host">Host</span>';
   else if (p.role === 'mod') b += '<span class="badge mod">Moderator</span>';
-  if (p.initiator && p.role !== 'host') b += '<span class="badge init">Initiator</span>';
+  if (p.initiator && p.role !== 'host') b += full ? `<span class="badge init">${BOLT(12)}Founding member</span>` : `<span class="fbolt" role="img" aria-label="Founding member" title="Founding member" data-founder>${BOLT(15)}</span>`;
   for (const t of (p.titles || [])) b += `<span class="badge title">${esc(t)}</span>`;
   return b;
 }
@@ -576,6 +583,7 @@ function dayLabel(t) {
   if (same(d, y)) return 'Yesterday';
   return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' });
 }
+document.addEventListener('click', e => { const f = e.target.closest && e.target.closest('[data-founder]'); if (f) { e.stopPropagation(); toast('\u26A1 Founding member'); } }, true);
 function toast(text) {
   const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = text;
   document.body.appendChild(t); setTimeout(() => t.remove(), 3600);
@@ -2063,7 +2071,7 @@ function openProfile(uid) {
   const signs = [['Sun', p.sun, '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/>'], ['Moon', p.moon, SYMS.moon], ['Rising', p.rising, '<path d="M3 19h18"/><path d="M6 19a6 6 0 0 1 12 0"/><path d="M12 4v6M9.5 6.5 12 4l2.5 2.5"/>']].filter(s => s[1]);
   const joined = p.joined ? new Date(p.joined).toLocaleDateString([], { month: 'long', year: 'numeric' }) : '';
   const o = overlay(`<div style="padding:22px 22px 20px;display:flex;flex-direction:column;gap:18px">
-    <div style="display:flex;gap:16px;align-items:center">${avatar(uid, 76, true)}<div style="flex:1;min-width:0"><h2 class="h1" style="font-size:28px;letter-spacing:-0.6px;overflow-wrap:anywhere">${esc(p.name)}</h2><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">${badges(p)}</div>${joined ? `<div class="muted" style="font-size:13px;margin-top:7px">In the Circle since ${esc(joined)}</div>` : ''}</div><button class="ibtn" id="pclose" aria-label="Close" style="align-self:flex-start;color:var(--muted)">${I.close()}</button></div>
+    <div style="display:flex;gap:16px;align-items:center">${avatar(uid, 76, true)}<div style="flex:1;min-width:0"><h2 class="h1" style="font-size:28px;letter-spacing:-0.6px;overflow-wrap:anywhere">${esc(p.name)}</h2><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">${badges(p, true)}</div>${joined ? `<div class="muted" style="font-size:13px;margin-top:7px">In the Circle since ${esc(joined)}</div>` : ''}</div><button class="ibtn" id="pclose" aria-label="Close" style="align-self:flex-start;color:var(--muted)">${I.close()}</button></div>
     ${p.bio ? `<p style="font-size:15px;line-height:1.6">${esc(p.bio)}</p>` : ''}
     ${signs.length ? `<div style="border-top:1px solid var(--line);padding-top:16px"><div class="label" style="margin-bottom:10px">Sun, Moon &amp; Rising</div><div style="display:flex;flex-wrap:wrap;gap:6px">${signs.map(s => `<span class="chip" style="gap:6px;padding:0 10px;font-size:12.5px">${P(s[2], {s:15}).replace('currentColor', '#D8AA3C').replace('fill="currentColor"', 'fill="#D8AA3C"')}${s[0]} <span class="zg" style="color:var(--gold)">${ZODIAC[s[1]] ? ZODIAC[s[1]] + '\uFE0E' : ''}</span> ${esc(s[1])}</span>`).join('')}</div></div>` : ''}
     ${p.interests && p.interests.length ? (p.interests = p.interests.slice(0, 5), '') + `<div><div class="label" style="margin-bottom:10px">Into</div><div style="display:flex;flex-wrap:wrap;gap:6px">${p.interests.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div></div>` : ''}
@@ -2074,7 +2082,7 @@ function openProfile(uid) {
        ${p.role !== 'mod' || me.role === 'host' ? `<button class="btn2 sm" data-pa="mute">${p.muted ? 'Unmute' : 'Mute 24 hours'}</button><button class="btn2 sm" data-pa="remove" style="border-color:rgba(242,153,138,0.7);color:var(--danger)">Remove from the Circle</button>` : ''}
        </div>` : ''}
     ${me.role === 'host' ? `<div style="border-top:1px solid var(--line);padding-top:12px"><div class="label" style="margin-bottom:8px">Titles <span style="text-transform:none;letter-spacing:0;font-weight:500">(only you see this)</span></div>
-       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${(p.initiator ? ['Initiator'] : []).concat(p.titles || []).map(t => `<span class="chip" style="gap:6px;padding:0 6px 0 11px">${esc(t)}<button data-untitle="${esc(t)}" aria-label="Remove the ${esc(t)} title" style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%">${I.close(13)}</button></span>`).join('') || '<span class="muted" style="font-size:13px">No titles yet.</span>'}</div>
+       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${(p.initiator ? ['Initiator'] : []).concat(p.titles || []).map(t => `<span class="chip" style="gap:6px;padding:0 6px 0 11px">${esc(t === 'Initiator' ? 'Founding member' : t)}<button data-untitle="${esc(t)}" aria-label="Remove the ${esc(t === 'Initiator' ? 'Founding member' : t)} title" style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%">${I.close(13)}</button></span>`).join('') || '<span class="muted" style="font-size:13px">No titles yet.</span>'}</div>
        <div style="display:flex;gap:8px"><input id="newtitle" class="finput" maxlength="32" placeholder="New title, like Special Guest" style="height:38px;font-size:14px"><button class="btn2 sm" id="addtitle">Add</button></div></div>` : ''}
     <div class="muted" style="display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px">${I.lock(13)}Only Inner Circle members can see this profile</div>
   </div>`, false, p.name + "'s profile");
@@ -2086,7 +2094,7 @@ function openProfile(uid) {
   $('#pclose').onclick = closeOverlay;
   o.querySelectorAll('[data-untitle]').forEach(b => b.onclick = () => sendWs({ t: 'title', uid, remove: b.dataset.untitle }));
   if ($('#addtitle')) {
-    const add = () => { const v = $('#newtitle').value.trim(); if (v) sendWs({ t: 'title', uid, add: v }); };
+    const add = () => { let v = $('#newtitle').value.trim(); if (/^founding member$/i.test(v)) v = 'Initiator'; if (v) sendWs({ t: 'title', uid, add: v }); };
     $('#addtitle').onclick = add; $('#newtitle').onkeydown = e => { if (e.key === 'Enter') add(); };
   }
   if ($('#pedit')) $('#pedit').onclick = () => { closeOverlay(); editProfile(); };
