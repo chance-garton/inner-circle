@@ -596,10 +596,11 @@ function formatText(text) {
   let out = '';
   const urlRe = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g;
   let last = 0, m;
-  const plain = s => esc(s).replace(/(^|[\s(])(?:(\d{1,2}):)?([0-5]?\d):([0-5]\d)(?=$|[\s.,;:!?)])/g, (all, pre, h, mm, ss) => {
+  // a time becomes a play chip only when the message links an episode it can jump into;
+  // anywhere else ("I waited till 8:33") it stays plain text
+  const plain = s => !base ? esc(s) : esc(s).replace(/(^|[\s(])(?:(\d{1,2}):)?([0-5]?\d):([0-5]\d)(?=$|[\s.,;:!?)])/g, (all, pre, h, mm, ss) => {
     const label = (h ? h + ':' : '') + mm + ':' + ss;
-    const chip = `<span class="tchip">${I.tri()}${label}</span>`;
-    return pre + (base ? `<a href="${base}?t=${secs(h, mm, ss)}" target="_blank" rel="noopener">${chip}</a>` : chip);
+    return pre + `<a href="${base}?t=${secs(h, mm, ss)}" target="_blank" rel="noopener"><span class="tchip">${I.tri()}${label}</span></a>`;
   });
   while ((m = urlRe.exec(text))) {
     out += plain(text.slice(last, m.index));
