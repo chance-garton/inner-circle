@@ -289,7 +289,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08u';
+const VERSION = '2026-10-08v';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1093,7 +1093,7 @@ function videoStarted(E) {
   VP.playing = true;
   if (!aud.paused) aud.pause();
   if (E.audio && (!cur || cur.key !== E.key)) {
-    cur = { key: E.key, kind: E.kind, slug: E.slug, title: E.title, show: E.show, thumb: E.thumb, chapters: chaptersOnAudio(E), offset: E.plus ? 0 : E.offset, src: E.audio.url || '', plusKey: E.audio.plusKey || '', dur: 0 };
+    miniHidden = false; cur = { key: E.key, kind: E.kind, slug: E.slug, title: E.title, show: E.show, thumb: E.thumb, chapters: chaptersOnAudio(E), offset: E.plus ? 0 : E.offset, src: E.audio.url || '', plusKey: E.audio.plusKey || '', dur: 0 };
     store('iva_cur', cur);
     try { aud.removeAttribute('src'); aud.load(); } catch (e) {}
     updateMediaSession();
@@ -1199,6 +1199,7 @@ function unlockAudio() {
   if (aud.src && !isSilent()) return;
   try { aud.src = SILENT; const p = aud.play(); if (p) p.catch(() => {}); } catch (e) {}
 }
+let miniHidden = false; // swiped away while still playing
 let cur = load('iva_cur', true); // { key, title, show, thumb, chapters:[{seek,title}] on the audio clock, src?, plusKey?, dur, slug, kind }
 let pendingSeek = null, lastSave = 0, speed = Number(load('iva_speed')) || 1;
 function chaptersOnAudio(E) { return E.chapters.map(c => ({ seek: c.seek + (E.plus ? 0 : E.offset), title: c.title })); }
@@ -1218,7 +1219,7 @@ async function playEpisode(E, at) {
   if (videoOwns) { videoOwns = false; }
   const same = cur && cur.key === E.key && aud.src && !isSilent();
   if (!same) {
-    cur = { key: E.key, kind: E.kind, slug: E.slug, title: E.title, show: E.show, thumb: E.thumb, chapters: chaptersOnAudio(E), offset: E.plus ? 0 : E.offset, src: E.audio.url || '', plusKey: E.audio.plusKey || '', dur: 0 };
+    miniHidden = false; cur = { key: E.key, kind: E.kind, slug: E.slug, title: E.title, show: E.show, thumb: E.thumb, chapters: chaptersOnAudio(E), offset: E.plus ? 0 : E.offset, src: E.audio.url || '', plusKey: E.audio.plusKey || '', dur: 0 };
     store('iva_cur', cur);
     if (at == null) { const p = PROG[E.key]; at = p ? p.t : 0; }
     const ok = await setSource();
@@ -1253,7 +1254,7 @@ aud.addEventListener('timeupdate', () => {
   if (EPV && EPV.key === cur.key) { const s = $('#lbSub'); if (s) s.textContent = currentChapterTitle() || clock(aud.currentTime); markChapter(); }
 });
 aud.addEventListener('play', () => { if (isSilent()) return; updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'playing'; });
-aud.addEventListener('pause', () => { if (isSilent()) return; if (cur) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'paused'; });
+aud.addEventListener('pause', () => { if (isSilent()) return; /* paused: bring a hidden player back so it can be found */ if (miniHidden) { miniHidden = false; syncMini(); } if (cur) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'paused'; });
 aud.addEventListener('ended', () => { if (isSilent()) return; if (cur) { delete PROG[cur.key]; store('iva_prog', PROG); } updateMini(); refreshLB(); });
 let retried = false;
 aud.addEventListener('error', async () => {
@@ -1283,7 +1284,7 @@ function markChapter() {
 // the pop-up player steps aside while its own episode page is open (that page has the controls) or a video is playing
 function syncMini() {
   const own = !!(cur && EPV && EPV.key === cur.key && !$('#ep').hidden);
-  document.documentElement.classList.toggle('playing', !!cur && !videoOwns && !own);
+  document.documentElement.classList.toggle('playing', !!cur && !videoOwns && !own && !miniHidden);
   if (cur) updateMini();
 }
 function showMini() { syncMini(); }
@@ -1297,7 +1298,7 @@ function updateMini() {
   const d = aud.duration || cur.dur; $('#miniBar').style.width = d ? Math.min(100, aud.currentTime / d * 100) + '%' : '0';
 }
 $('#mini').addEventListener('click', e => { if (miniSwiped) { miniSwiped = false; return; } if (e.target.closest('#miniPP')) { e.stopPropagation(); togglePlay(); return; } openNP(); });
-// swipe the pop-up player left or right to stop it and put it away (progress is kept)
+// swipe the pop-up player left or right to hide it; the audio keeps playing
 let miniSwiped = false;
 (function () {
   const m = $('#mini'); let x0 = null, y0 = 0, dx = 0, sideways = false;
@@ -1314,12 +1315,10 @@ let miniSwiped = false;
     if (Math.abs(dx) > 90) {
       m.classList.add('gone'); m.style.transform = `translateX(${dx > 0 ? innerWidth : -innerWidth}px)`;
       setTimeout(() => {
-        if (cur && aud.currentTime) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur);
-        try { aud.pause(); } catch (e) {}
-        cur = null; store('iva_cur', null);
+        // hidden, not stopped: listening carries on (lock screen controls still work); the player
+        // comes back when it is paused or another episode starts
+        miniHidden = true; syncMini();
         m.classList.remove('gone'); m.style.transform = ''; m.style.opacity = '';
-        syncMini();
-        if (navigator.mediaSession) { try { navigator.mediaSession.metadata = null; navigator.mediaSession.playbackState = 'none'; } catch (e) {} }
       }, 230);
     } else { m.style.transition = 'transform .2s ease-out, opacity .2s ease-out'; m.style.transform = ''; m.style.opacity = ''; setTimeout(() => { m.style.transition = ''; }, 220); }
   };
