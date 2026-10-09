@@ -1020,6 +1020,9 @@ const mediaCache = new Map();
 function hydrateMedia(root) {
   (root || document).querySelectorAll('img[data-media]').forEach(img => {
     const key = img.getAttribute('data-media'); img.removeAttribute('data-media');
+    const sz = img.classList.contains('mimg') && mediaSize.get(key);
+    if (sz) { img.style.width = sz.w + 'px'; img.style.height = sz.h + 'px'; }
+    if (img.classList.contains('mimg')) img.addEventListener('load', () => { if (img.offsetWidth && img.offsetHeight) mediaSize.set(key, { w: img.offsetWidth, h: img.offsetHeight }); }, { once: true });
     let p = mediaCache.get(key);
     if (!p) {
       p = fetch(API + '/media/' + encodeURIComponent(key), { headers: { Authorization: 'Bearer ' + S.token } })
@@ -1044,7 +1047,24 @@ function loadIndexes() {
   });
   return S.index;
 }
-function stickDown() { const box = $('#msgs'); if (box && S.stick) box.scrollTop = box.scrollHeight; }
+// Keep the reader's place: remember the first message at the top of the view and its distance from
+// the top; after anything above it changes height (a redraw, an image or card loading) put it back.
+function topAnchor(box) {
+  const bt = box.getBoundingClientRect().top;
+  for (const el of box.querySelectorAll('.row[data-id], .jwrap[data-id]')) {
+    const r = el.getBoundingClientRect(); if (r.bottom > bt + 1) return { id: el.dataset.id, off: r.top - bt };
+  }
+  return null;
+}
+function restoreAnchor(box, a) {
+  if (!a) return false;
+  const el = box.querySelector(`.row[data-id="${a.id}"], .jwrap[data-id="${a.id}"]`); if (!el) return false;
+  const d = (el.getBoundingClientRect().top - box.getBoundingClientRect().top) - a.off;
+  if (Math.abs(d) > 0.5) { S.anchoring = true; box.scrollTop += d; requestAnimationFrame(() => { S.anchoring = false; }); }
+  return true;
+}
+function stickDown() { const box = $('#msgs'); if (!box) return; if (S.stick) box.scrollTop = box.scrollHeight; else restoreAnchor(box, S.anc); }
+const mediaSize = new Map(); // rendered size of each image, so a redraw holds its space before it loads
 function hydrateUnfurls(root) {
   (root || document).querySelectorAll('[data-unfurl]').forEach(el => {
     const [kind, slug] = el.getAttribute('data-unfurl').split(':'); el.removeAttribute('data-unfurl');
@@ -1202,7 +1222,7 @@ function onEvent(m) {
     case 'person':
       S.people[m.p.uid] = Object.assign({}, S.people[m.p.uid], m.p);
       if (S.me && m.p.uid === S.me.uid) Object.assign(S.me, m.p);
-      if (S.view === 'chat') { renderMessages(true); renderSide(); }
+      if (S.view === 'chat') { renderMessages(false); renderSide(); }
       return;
     case 'presence': S.online = m.online; if (S.view === 'chat') { renderSide(); renderHeadCounts(); } return;
     case 'msg': {
@@ -1494,7 +1514,9 @@ function renderChat() {
     }
     S.stick = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
     if (S.stick) $('#jump').classList.remove('show');
+    if (!S.anchoring) S.anc = S.stick ? null : topAnchor(box);
   });
+  box.addEventListener('load', e => { if (e.target && e.target.tagName === 'IMG') stickDown(); }, true);
   $('#jump').onclick = () => { box.scrollTop = box.scrollHeight; $('#jump').classList.remove('show'); };
   $('#peopleBtn').onclick = $('#peopleBtn2').onclick = () => sendWs({ t: 'members' });
   $('#searchBtn').onclick = $('#searchBtn2').onclick = () => openSearch('room');
@@ -1640,6 +1662,7 @@ function msgHtml(m, i, list) {
 function renderMessages(toBottom) {
   const box = $('#msgs'); if (!box) return;
   const keep = box.scrollHeight - box.scrollTop;
+  const anc = toBottom || S.stick ? null : topAnchor(box);
   if (!S.messages.length) {
     box.innerHTML = `<div class="empty">${I.chat(28).replace('<svg', '<svg style="margin:0 auto 12px;color:var(--gold)"')}Welcome, ${esc(S.me ? S.me.name : '')}. This room is brand new. Say hello and start the first conversation.</div><div id="pend">${pendHtml()}</div>`;
     return;
@@ -1650,7 +1673,10 @@ function renderMessages(toBottom) {
   watchSeen(box);
   hydrateMedia(box); hydrateUnfurls(box);
   box.querySelectorAll('img.mimg').forEach(img => img.addEventListener('load', stickDown, { once: true }));
-  if (toBottom) { box.scrollTop = box.scrollHeight; S.stick = true; } else box.scrollTop = box.scrollHeight - keep;
+  if (toBottom) { box.scrollTop = box.scrollHeight; S.stick = true; }
+  else if (S.stick) box.scrollTop = box.scrollHeight;
+  else if (!restoreAnchor(box, anc)) box.scrollTop = box.scrollHeight - keep;
+  if (!S.stick) S.anc = anc || topAnchor(box);
 }
 
 // ------------------------------------------------------------ link previews, Telegram style
