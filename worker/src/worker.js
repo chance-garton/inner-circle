@@ -169,6 +169,41 @@ async function route(req, env, url, path, okOrigin) {
       return room.fetch(new Request('https://room/' + path.split('/').pop(), { method: 'POST', body: JSON.stringify({ uid: who.uid, body }) }));
     }
 
+    // ---- sign-in handoff for the home-screen app. On iPhone a login started from the app can finish in
+    // Safari (Patreon especially), which has its own storage, so the app never sees it. The app makes
+    // a one-time code and sends the login back to /app/handoff.html?h=<code>; that page (in Safari)
+    // posts the sign-in here, and the app, which has been asking with the same code, collects it.
+    if (path === '/api/handoff' && req.method === 'POST') {
+      if (!okOrigin) return json({ error: 'origin not allowed' }, 403);
+      let body = {}; try { body = await req.json(); } catch (e) { /* empty */ }
+      const h = String(body.h || ''), token = String(body.token || '');
+      if (!/^[A-Za-z0-9_-]{22,64}$/.test(h)) return json({ error: 'bad code' }, 400);
+      const who = await verify(token, env);
+      if (!who) return json({ error: 'not signed in' }, 401);
+      const room = env.ROOM.get(env.ROOM.idFromName('lounge'));
+      return room.fetch(new Request('https://room/handoff-put', { method: 'POST', body: JSON.stringify({ h, token }) }));
+    }
+    if (path === '/api/handoff' && req.method === 'GET') {
+      if (!okOrigin) return json({ error: 'origin not allowed' }, 403);
+      const h = url.searchParams.get('h') || '';
+      if (!/^[A-Za-z0-9_-]{22,64}$/.test(h)) return json({ error: 'bad code' }, 400);
+      const room = env.ROOM.get(env.ROOM.idFromName('lounge'));
+      return room.fetch(new Request('https://room/handoff-get', { method: 'POST', body: JSON.stringify({ h }) }));
+    }
+
+    // ---- a member's own library: saved episodes and private notes (members only, follows them
+    // between the app and the site; keyed by the member, never shown to anyone else)
+    if (path === '/api/library') {
+      if (!okOrigin) return json({ error: 'origin not allowed' }, 403);
+      const who = await verify(bearer(req), env);
+      if (!who || !who.entitled) return json({ error: 'not a member' }, 401);
+      let body = {};
+      if (req.method === 'POST') { try { body = await req.json(); } catch (e) { /* empty */ } }
+      else if (req.method !== 'GET') return json({ error: 'method' }, 405);
+      const room = env.ROOM.get(env.ROOM.idFromName('lounge'));
+      return room.fetch(new Request('https://room/' + (req.method === 'GET' ? 'lib-get' : 'lib-set'), { method: 'POST', body: JSON.stringify({ uid: who.uid, body }) }));
+    }
+
     if (path === '/api/upload' && req.method === 'POST') {
       const who = await verify(bearer(req), env);
       if (!who || !who.entitled) return json({ error: 'not a member' }, 401);
@@ -242,6 +277,9 @@ export class Room {
       target TEXT DEFAULT '', msg_id INTEGER DEFAULT 0, detail TEXT DEFAULT '{}', undone INTEGER DEFAULT 0, undone_at INTEGER DEFAULT 0, undone_by TEXT DEFAULT '')`);
     this.sql.exec('CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS push_subs (endpoint TEXT PRIMARY KEY, uid TEXT, p256dh TEXT, auth TEXT, created INTEGER)');
+    this.sql.exec('CREATE TABLE IF NOT EXISTS handoff (h TEXT PRIMARY KEY, token TEXT, created INTEGER)');
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS library (uid TEXT, ekey TEXT, saved INTEGER DEFAULT 0, saved_at INTEGER DEFAULT 0,
+      note TEXT DEFAULT '', note_at INTEGER DEFAULT 0, PRIMARY KEY (uid, ekey)) WITHOUT ROWID`);
     try { this.sql.exec("ALTER TABLE members ADD COLUMN notify TEXT DEFAULT 'all'"); } catch (e) { /* already there */ }
     try { this.sql.exec('ALTER TABLE members ADD COLUMN push_unread INTEGER DEFAULT 0'); } catch (e) { /* already there */ }
     if (!this.one("SELECT v FROM meta WHERE k = 'modlog_backfill'")) {
@@ -362,6 +400,33 @@ export class Room {
   async fetch(req) {
     const path = new URL(req.url).pathname;
     if (path === '/push-key') return json({ key: (await this.vapid()).pub });
+    if (path === '/handoff-put' || path === '/handoff-get') {
+      const { h, token } = await req.json(); const now = Date.now();
+      this.sql.exec('DELETE FROM handoff WHERE created < ?', now - 15 * 60 * 1000);
+      if (path === '/handoff-put') { this.sql.exec('INSERT OR REPLACE INTO handoff (h, token, created) VALUES (?, ?, ?)', h, token, now); return json({ ok: true }); }
+      const row = this.one('SELECT token FROM handoff WHERE h = ?', h);
+      if (!row) return json({ waiting: true });
+      this.sql.exec('DELETE FROM handoff WHERE h = ?', h); // one time only
+      return json({ token: row.token });
+    }
+    if (path === '/lib-get' || path === '/lib-set') {
+      const { uid, body } = await req.json(); const now = Date.now();
+      if (path === '/lib-set') {
+        const k = String(body && body.key || '');
+        if (!/^[ep]:[a-z0-9-]{1,140}$/.test(k)) return json({ error: 'bad episode' }, 400);
+        const cur = this.one('SELECT * FROM library WHERE uid = ? AND ekey = ?', uid, k);
+        if (!cur && this.one('SELECT COUNT(*) AS n FROM library WHERE uid = ?', uid).n >= 3000) return json({ error: 'library full' }, 400);
+        const saved = 'saved' in body ? (body.saved ? 1 : 0) : (cur ? cur.saved : 0);
+        const savedAt = 'saved' in body ? (body.saved ? (cur && cur.saved ? cur.saved_at : now) : 0) : (cur ? cur.saved_at : 0);
+        const note = 'note' in body ? String(body.note || '').slice(0, 10000) : (cur ? cur.note : '');
+        const noteAt = 'note' in body ? now : (cur ? cur.note_at : 0);
+        if (!saved && !note) this.sql.exec('DELETE FROM library WHERE uid = ? AND ekey = ?', uid, k);
+        else this.sql.exec('INSERT OR REPLACE INTO library (uid, ekey, saved, saved_at, note, note_at) VALUES (?, ?, ?, ?, ?, ?)', uid, k, saved, savedAt, note, noteAt);
+        return json({ ok: true, item: { key: k, saved: !!saved, savedAt, note, noteAt } });
+      }
+      const items = this.all('SELECT * FROM library WHERE uid = ?', uid).map(r => ({ key: r.ekey, saved: !!r.saved, savedAt: r.saved_at, note: r.note, noteAt: r.note_at }));
+      return json({ items });
+    }
     if (path === '/subscribe' || path === '/unsubscribe' || path === '/test' || path === '/unfurl') {
       const { uid, body } = await req.json();
       const me = this.member(uid);
