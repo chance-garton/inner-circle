@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Manrope:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols&text=%E2%99%88%E2%99%89%E2%99%8A%E2%99%8B%E2%99%8C%E2%99%8D%E2%99%8E%E2%99%8F%E2%99%90%E2%99%91%E2%99%92%E2%99%93&display=swap">
 <style>
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 :root{
   --ground:#0A0F1C; --surface:#111827; --card:#151E33; --line:rgba(233,238,246,0.12);
   --ink:#E9EEF6; --muted:#9AA6BA; --lapis:#3B74CC; --lapis-lit:#8FB5F0;
@@ -337,8 +338,11 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
   .side{display:none}
   .panel{border-radius:0;border:0}
   .phead.desk{display:none}
-  .ptop{display:flex;align-items:center;gap:6px;height:60px;padding:0 8px 0 4px;border-bottom:1px solid var(--line);background:rgba(10,15,28,0.96);flex:none}
-  .ptop .room{font-size:20px}
+  .ptop{display:flex;align-items:center;gap:4px;min-height:60px;padding:6px 6px 6px 2px;border-bottom:1px solid var(--line);background:rgba(10,15,28,0.96);flex:none}
+  .ptop .room{font-size:clamp(15px,4.6vw,20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ptop .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ptop > img{flex:none}
+  .ptop .ibtn{flex:none}
   .msgs{padding:10px 12px 6px}
   .stack{max-width:86%}
   .compose{padding:8px 8px calc(10px + env(safe-area-inset-bottom)) 6px}
