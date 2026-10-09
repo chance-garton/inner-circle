@@ -286,6 +286,22 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 .sheet li{margin:6px 0}
 .toast{position:fixed;left:50%;bottom:calc(-1 * var(--gap) + var(--tabh) + var(--minih) + max(12px,calc(var(--sb) - 22px)) + 18px);transform:translateX(-50%);z-index:50;background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,0.5);max-width:calc(100% - 32px)}
 .empty{padding:40px 0;text-align:center;color:var(--muted)}
+.librow{border-bottom:1px solid var(--line);padding-bottom:12px}
+.librow .rowep{border-bottom:0;padding-bottom:6px}
+.libnote{margin:2px 0 0;padding:10px 12px;border-left:3px solid var(--gold);background:var(--card);border-radius:0 12px 12px 0;font-size:14px;line-height:1.5;color:var(--ink);white-space:pre-line;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.libnote.hit{-webkit-line-clamp:7}
+.libnote mark{background:rgba(216,170,60,0.28);color:var(--ink);border-radius:3px;padding:0 1px}
+.libnote .ts{display:inline-flex;align-items:center;gap:3px;color:var(--gold);font-weight:800;font-size:13px;padding:0 2px;vertical-align:baseline}
+.libmeta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12.5px;color:var(--muted);align-items:center}
+.libmeta span{display:inline-flex;align-items:center;gap:5px}
+.libmeta .on{color:var(--gold)}
+.libmeta a{color:var(--accent);font-weight:700;margin-left:auto}
+.chip .cnt{opacity:.7;font-weight:600;margin-left:2px}
+.libempty{text-align:center;padding:48px 8px;color:var(--muted)}
+.libempty svg{color:var(--gold)}
+.libempty h3{font-family:var(--display);font-weight:600;font-size:22px;color:var(--ink);margin:10px 0 6px}
+.libempty p{margin:0 auto 18px;max-width:420px;line-height:1.5}
+.libfoot{text-align:center;margin:18px 0 8px}
 @media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .artc{width:176px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -293,6 +309,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <body>
 <section class="view" id="home" aria-label="Home"></section>
 <section class="view" id="search" aria-label="Episodes" hidden></section>
+<section class="view" id="libv" aria-label="My library" hidden></section>
 <section class="view" id="chatv" aria-label="Inner Circle" hidden></section>
 <section class="view" id="me" aria-label="Account" hidden></section>
 <section class="view" id="ep" aria-label="Episode" hidden></section>
@@ -312,7 +329,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-09a';
+const VERSION = '2026-10-09b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -365,6 +382,7 @@ const I = {
   plus: s => P('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>', s),
   back: s => P('<path d="M15 5l-7 7 7 7"/>', s, 2.3),
   heart: (s, on) => P('<path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z"' + (on ? ' fill="currentColor"' : '') + '/>', s),
+  books: s => P('<rect x="3.5" y="4" width="4.5" height="16" rx="1"/><rect x="9.5" y="4" width="4.5" height="16" rx="1"/><path d="m15.6 5.6 3.9-1 3 14.5-3.9 1z"/>', s),
   pen: s => P('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>', s),
   share: s => P('<path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>', s),
   down: s => P('<path d="m6 9 6 6 6-6"/>', s),
@@ -495,7 +513,7 @@ async function checkStatus() {
 function applyMember() {
   document.documentElement.classList.toggle('member', S.member);
   renderTabs();
-  if (S.lib) { renderHome(); renderSearch(true); }
+  if (S.lib) { renderHome(); renderSearch(true); renderLib(true); }
   renderMe();
   const iframe = $('#chatv iframe');
   if (iframe && !S.member) { iframe.remove(); S.chatLoaded = false; }
@@ -623,18 +641,20 @@ function savedList() {
   return library().filter(it => { const x = libGet(it); return x && (x.saved || x.note); }).sort((a, b) => when(b) - when(a));
 }
 function mineMark(it) { const x = libGet(it); if (!x || !(x.saved || x.note)) return ''; return x.saved ? I.heart(15, true) : I.pen(15); }
-function refreshLibViews() { if (!S.lib) return; renderHome(); if (S.show === '__saved') renderSearch(true); }
+function refreshLibViews() { if (!S.lib) return; renderHome(); if (S.show === '__saved') renderSearch(true); renderLib(true); }
 
 // ------------------------------------------------------------ routing
 function go(h) { if (location.hash !== h) location.hash = h; else route(); }
 function setTab(tab) {
   S.tab = tab;
-  for (const id of ['home', 'search', 'chatv', 'me']) $('#' + id).hidden = (id !== (tab === 'chat' ? 'chatv' : tab));
+  for (const id of ['home', 'search', 'libv', 'chatv', 'me']) $('#' + id).hidden = (id !== viewId(tab));
   $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   if (tab === 'chat') { if (!S.member) renderChatDoor(); else { mountChat(); setTimeout(maybeAskPush, 1200); try { navigator.clearAppBadge && navigator.clearAppBadge(); } catch (e) {} } }
   tellChat();
 }
-let lastTabHash = { home: '#/', search: '#/search', chat: '#/chat', me: '#/me' };
+function viewId(tab) { return tab === 'chat' ? 'chatv' : tab === 'lib' ? 'libv' : tab; }
+const TAB_HASH = { home: '#/', search: '#/search', lib: '#/library', chat: '#/chat', me: '#/me' };
+let lastTabHash = Object.assign({}, TAB_HASH);
 let NAV = [location.hash || '#/'];
 function route() {
   const h = location.hash || '#/';
@@ -645,6 +665,9 @@ function route() {
     return;
   }
   closeEpisode();
+  // the website's "Open My library" link, and older links, used the Episodes tab's filter
+  if (/^#\/search\?(?:.*&)?show=__saved/.test(h)) { location.replace('#/library'); return; }
+  if (h.indexOf('#/library') === 0) { setTab('lib'); renderLib(true); return; }
   if (h.indexOf('#/search') === 0) { setTab('search'); const q = new URLSearchParams(h.split('?')[1] || ''); if (q.has('show') || q.has('q') || q.has('theme')) { S.show = q.get('show') || ''; S.q = q.get('q') || ''; S.theme = q.get('theme') || ''; renderSearch(); } }
   else if (h.indexOf('#/chat') === 0) setTab('chat');
   else if (h.indexOf('#/me') === 0) setTab('me');
@@ -658,7 +681,7 @@ window.addEventListener('hashchange', () => { setTimeout(tellChat, 50);
 
 // ------------------------------------------------------------ tabs
 function renderTabs() {
-  const t = [['home', 'Home', I.home(24)], ['search', 'Episodes', I.search(24)]];
+  const t = [['home', 'Home', I.home(24)], ['search', 'Episodes', I.search(24)], ['lib', 'Library', I.books(24)]];
   t.push(['chat', 'Chat', I.chat(24) + (S.member && S.chatUnread ? `<span class="dot">${S.chatUnread > 99 ? '99+' : S.chatUnread}</span>` : '')]);
   t.push(['me', S.member ? 'Account' : 'Plus+', S.member ? I.user(24) : I.plus(24)]);
   $('#tabs').innerHTML = t.map(x => `<button data-tab="${x[0]}" class="${S.tab === x[0] ? 'on' : ''}">${x[2]}<span>${x[1]}</span></button>`).join('');
@@ -666,8 +689,8 @@ function renderTabs() {
 $('#tabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const tab = b.dataset.tab;
-  if (tab === S.tab && $('#ep').hidden) { const v = $('#' + (tab === 'chat' ? 'chatv' : tab)); v.scrollTo({ top: 0, behavior: 'smooth' }); return; }
-  go({ home: '#/', search: '#/search', chat: '#/chat', me: '#/me' }[tab]);
+  if (tab === S.tab && $('#ep').hidden) { const v = $('#' + viewId(tab)); v.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  go(TAB_HASH[tab]);
 });
 
 // ------------------------------------------------------------ pieces
@@ -697,7 +720,7 @@ function headerBrand() {
 function watchScroll(view) {
   view.addEventListener('scroll', () => { const h = $('.hdr', view); if (h) h.classList.toggle('scrolled', view.scrollTop > 4); }, { passive: true });
 }
-['home', 'search', 'me', 'ep'].forEach(id => watchScroll($('#' + id)));
+['home', 'search', 'libv', 'me', 'ep'].forEach(id => watchScroll($('#' + id)));
 function plusPitch(compact) {
   return `<div class="card goldline">
     <div class="eyebrow" style="color:var(--gold)">Inside Plus+</div>
@@ -754,7 +777,7 @@ function renderHome() {
       <div class="body"><div class="muted small">${meta(latest)} · ${esc(fmtDate(latest.date))}</div><a href="${epHref(latest)}" class="t" style="display:block">${esc(latest.title)}</a>${latest.topicLine ? `<div class="muted small">${esc(latest.topicLine)}</div>` : ''}
       <div class="acts"><button class="btn${S.member ? ' gold' : ''}" data-play="${esc(latest.key)}">${I.play(18)} Listen</button><a class="btn line" href="${epHref(latest)}">Open episode</a></div></div></div>` : ''}
     ${cont.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Continue listening</h2></div><div class="hscroll">${cont.map(tile).join('')}</div></div>` : ''}
-    ${(() => { const sv = savedList(); return sv.length ? `<div class="sec"><div class="sechead"><h2 class="h2">My library</h2><a href="#/search?show=__saved">See all</a></div><div class="hscroll">${sv.slice(0, 12).map(tile).join('')}</div></div>` : ''; })()}
+    ${(() => { const sv = savedList(); return sv.length ? `<div class="sec"><div class="sechead"><h2 class="h2">My library</h2><a href="#/library">See all</a></div><div class="hscroll">${sv.slice(0, 12).map(tile).join('')}</div></div>` : ''; })()}
     ${S.member ? '' : `<div class="sec">${plusPitch(true)}</div>`}
     ${firsts.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Good first episodes</h2></div><div class="hscroll">${firsts.map(tile).join('')}</div></div>` : ''}
     ${['Inner Whirled', 'InnerVerse', 'Vibe Rant', 'Astro-Herbalism'].map(showRow).join('')}
@@ -808,7 +831,7 @@ function renderSearch(keepInput) {
   if (!keepInput || !$('#q')) {
     v.innerHTML = `<header class="hdr"><div class="row"><h1>${S.member ? 'Plus+ episodes' : 'Episodes'}</h1></div>
       <div class="row" style="display:block"><label class="searchbox">${I.search(20)}<input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="Search guests, topics, titles" value="${esc(S.q)}"><button class="iconbtn" id="qx" aria-label="Clear" ${S.q ? '' : 'hidden'}>${I.close(18)}</button></label>
-      <div class="chips" id="showchips">${['', '__saved', ...SHOWS].map(s => `<button class="chip${S.show === s ? ' on' : ''}" data-show="${esc(s)}">${s === '__saved' ? I.heart(15, true) + ' My library' : s ? esc(s) : 'All shows'}</button>`).join('')}</div>
+      <div class="chips" id="showchips">${['', ...SHOWS].map(s => `<button class="chip${S.show === s ? ' on' : ''}" data-show="${esc(s)}">${s ? esc(s) : 'All shows'}</button>`).join('')}</div>
       <div class="chips" id="themechips">${THEMES.map(s => `<button class="chip${S.theme === s ? ' on' : ''}" data-theme="${esc(s)}">${esc(s)}</button>`).join('')}</div></div></header>
       <div class="wrap"><div id="reshead"></div><div class="list" id="results"></div><div class="more" id="moreWrap"></div></div>`;
     const q = $('#q');
@@ -838,6 +861,110 @@ function renderResults(already) {
   $('#moreWrap').innerHTML = n > searchShown ? `<button class="btn line" id="moreBtn">Show more</button>` : '';
   const mb = $('#moreBtn'); if (mb) mb.addEventListener('click', () => { searchShown += 30; renderResults(true); });
 }
+
+// ------------------------------------------------------------ my library page (its own tab)
+// Everything this listener saved or wrote a note on, newest first, with the notes on show and a
+// search that reads the notes as well as the titles, guests and shows.
+const LIBF = { q: '', f: '' };
+const TIME_RE = /\b(?:\d{1,2}:)?\d{1,2}:\d{2}\b/g;
+function toSec(t) { return t.split(':').reduce((a, b) => a * 60 + Number(b), 0); }
+function reEsc(t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+// note text with times as play chips and search words marked
+function noteHtml(text, terms) {
+  const parts = ['(' + TIME_RE.source + ')'];
+  if (terms.length) parts.push('(' + terms.map(reEsc).join('|') + ')');
+  const re = new RegExp(parts.join('|'), 'gi');
+  let out = '', i = 0, m;
+  while ((m = re.exec(text))) {
+    if (!m[0]) { re.lastIndex++; continue; }
+    out += esc(text.slice(i, m.index));
+    out += m[1] ? `<button type="button" class="ts" data-t="${toSec(m[1])}">${I.play(11)}${esc(m[1])}</button>` : `<mark>${esc(m[0])}</mark>`;
+    i = m.index + m[0].length;
+  }
+  return out + esc(text.slice(i));
+}
+// a window of the note around the first word that matched
+function noteSnippet(note, terms) {
+  const low = note.toLowerCase();
+  let at = -1;
+  for (const t of terms) { const k = low.indexOf(t); if (k >= 0 && (at < 0 || k < at)) at = k; }
+  if (at < 0 || note.length <= 260) return note;
+  let a = Math.max(0, at - 90), b = Math.min(note.length, at + 170);
+  while (a > 0 && /\S/.test(note[a - 1])) a--;
+  while (b < note.length && /\S/.test(note[b])) b++;
+  return (a > 0 ? '... ' : '') + note.slice(a, b).trim() + (b < note.length ? ' ...' : '');
+}
+function libRows() {
+  const all = savedList();
+  const counts = { all: all.length, saved: 0, notes: 0 };
+  all.forEach(it => { const x = libGet(it); if (x.saved) counts.saved++; if ((x.note || '').trim()) counts.notes++; });
+  let list = all;
+  if (LIBF.f === 'saved') list = list.filter(it => libGet(it).saved);
+  if (LIBF.f === 'notes') list = list.filter(it => (libGet(it).note || '').trim());
+  const terms = norm(LIBF.q).split(' ').filter(Boolean);
+  if (terms.length) {
+    list = list.filter(it => {
+      const hay = ' ' + [it._t, it._g, it._s, it._l, norm(libGet(it).note)].join(' ');
+      return terms.every(t => hay.indexOf(' ' + t) >= 0 || hay.indexOf(t) >= 0);
+    });
+  }
+  return { list, counts, terms };
+}
+function libRow(it, terms) {
+  const x = libGet(it), note = (x.note || '').trim();
+  const inNote = terms.length && terms.some(t => note.toLowerCase().indexOf(t) >= 0);
+  const shown = terms.length ? noteSnippet(note, terms) : note;
+  const when = Math.max(x.savedAt || 0, x.noteAt || 0);
+  return `<div class="librow">${rowEp(it, inNote ? 'Found in your notes' : '')}
+    ${note ? `<div class="libnote${terms.length ? ' hit' : ''}" data-href="${epHref(it)}" role="link" tabindex="0" aria-label="Open your notes on this episode">${noteHtml(shown, terms)}</div>` : ''}
+    <div class="libmeta">${x.saved ? `<span class="on">${I.heart(13, true)} Saved</span>` : ''}${note ? `<span>${I.pen(13)} Note</span>` : ''}${when ? `<span>${esc(fmtDate(new Date(when).toISOString().slice(0, 10)))}</span>` : ''}${note ? '' : `<a href="${epHref(it)}" data-note="1">Add a note</a>`}</div></div>`;
+}
+function renderLib(keepInput) {
+  const v = $('#libv'); if (!v) return;
+  if (!S.lib) { v.innerHTML = `<header class="hdr"><div class="row"><h1>My library</h1></div></header><div class="loading"><div class="spin"></div></div>`; return; }
+  if (!keepInput || !$('#lq')) {
+    v.innerHTML = `<header class="hdr"><div class="row"><h1>My library</h1></div>
+      <div class="row" style="display:block"><label class="searchbox">${I.search(20)}<input id="lq" type="search" enterkeyhint="search" autocomplete="off" placeholder="Search your notes and saved episodes" value="${esc(LIBF.q)}"><button class="iconbtn" id="lqx" aria-label="Clear" ${LIBF.q ? '' : 'hidden'}>${I.close(18)}</button></label>
+      <div class="chips" id="libchips"></div></div></header>
+      <div class="wrap"><div id="libhead"></div><div class="list" id="libres"></div><div class="more" id="libmore"></div><p class="note libfoot" id="libfoot"></p></div>`;
+    const q = $('#lq'); let tmr;
+    q.addEventListener('input', () => { clearTimeout(tmr); $('#lqx').hidden = !q.value; tmr = setTimeout(() => { LIBF.q = q.value; libShown = 30; renderLibResults(); }, 140); });
+    q.addEventListener('keydown', e => { if (e.key === 'Enter') q.blur(); });
+    $('#lqx').addEventListener('click', e => { e.preventDefault(); q.value = ''; LIBF.q = ''; $('#lqx').hidden = true; renderLibResults(); });
+    $('#libchips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; LIBF.f = b.dataset.f; libShown = 30; renderLibResults(); });
+  }
+  renderLibResults();
+}
+let libShown = 30;
+function renderLibResults() {
+  const { list, counts, terms } = libRows();
+  $('#libchips').innerHTML = [['', 'All', counts.all], ['saved', 'Saved', counts.saved], ['notes', 'With notes', counts.notes]]
+    .map(c => `<button class="chip${LIBF.f === c[0] ? ' on' : ''}" data-f="${c[0]}">${c[1]}${c[2] ? ` <span class="cnt">${c[2]}</span>` : ''}</button>`).join('');
+  const n = list.length;
+  $('#libhead').innerHTML = terms.length ? `<div class="reshead">${n ? `${n} ${n === 1 ? 'match' : 'matches'} for "${esc(LIBF.q.trim())}"` : ''}</div>` : '';
+  let empty = '';
+  if (!counts.all) empty = `<div class="libempty">${I.heart(34)}<h3>Your library is empty</h3><p>Tap the heart on any episode to save it here, or open My notes on an episode page to write private notes. Everything you save or write shows up on this page.</p><a class="btn line" href="#/search">Browse episodes</a></div>`;
+  else if (terms.length) empty = `<div class="empty">Nothing in your library matches "${esc(LIBF.q.trim())}".</div>`;
+  else if (LIBF.f === 'saved') empty = `<div class="empty">No saved episodes yet. Tap the heart on an episode to save it.</div>`;
+  else if (LIBF.f === 'notes') empty = `<div class="empty">No notes yet. Open an episode and tap My notes to start one.</div>`;
+  $('#libres').innerHTML = n ? list.slice(0, libShown).map(it => libRow(it, terms)).join('') : empty;
+  $('#libmore').innerHTML = n > libShown ? `<button class="btn line" id="libMoreBtn">Show more</button>` : '';
+  const mb = $('#libMoreBtn'); if (mb) mb.addEventListener('click', () => { libShown += 30; renderLibResults(); });
+  $('#libfoot').textContent = counts.all ? (S.member ? 'Private to you. Your library is kept on your account, so it is the same in the app and on the website.' : 'Private to you, and kept on this phone. With Plus+ it is kept on your account and shows on the website too.') : '';
+}
+$('#libv').addEventListener('click', e => {
+  const ts = e.target.closest('.ts');
+  if (ts) {
+    e.preventDefault(); e.stopPropagation();
+    const href = ts.closest('.libnote').dataset.href, m = href.match(/^#\/(e|p)\/(.+)$/);
+    const it = m && S.lib && S.lib.bySlug[m[1] === 'p' ? 'p:' + m[2] : 'e:' + m[2]];
+    if (it) { unlockAudio(); playItem(it, Number(ts.dataset.t)); toast('Playing from ' + ts.textContent.trim()); }
+    return;
+  }
+  const nt = e.target.closest('.libnote, [data-note]');
+  if (nt) { e.preventDefault(); S.openNote = true; go(nt.dataset.href || nt.getAttribute('href')); }
+});
+$('#libv').addEventListener('keydown', e => { const nt = e.target.closest('.libnote'); if (nt && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); S.openNote = true; go(nt.dataset.href); } });
 
 // ------------------------------------------------------------ account
 function renderMe() {
@@ -1180,6 +1307,11 @@ function renderEpisode() {
   $$('.guest .b', v).forEach(b => b.addEventListener('click', () => b.classList.toggle('full')));
   const nb = $('#notesBtn'); if (nb) nb.addEventListener('click', getNotes);
   wireMine(E);
+  if (S.openNote) {
+    S.openNote = false;
+    const na = $('#noteAcc'); na.classList.add('open');
+    setTimeout(() => na.scrollIntoView({ behavior: 'smooth', block: 'center' }), 250);
+  }
   syncMini();
   $('#chapters') && $('#chapters').addEventListener('click', e => { const c = e.target.closest('.chap[data-seek]'); if (c) seekChapter(Number(c.dataset.seek)); });
   setMode(mode, false);
@@ -1406,7 +1538,7 @@ let miniHidden = false, miniSide = 'right'; // swiped away while still playing, 
 let cur = load('iva_cur', true); // { key, title, show, thumb, chapters:[{seek,title}] on the audio clock, src?, plusKey?, dur, slug, kind }
 let pendingSeek = null, lastSave = 0, speed = Number(load('iva_speed')) || 1;
 function chaptersOnAudio(E) { return E.chapters.map(c => ({ seek: c.seek + (E.plus ? 0 : E.offset), title: c.title })); }
-async function playItem(it) {
+async function playItem(it, at) {
   // play from a list: load the episode's data first
   try {
     const kind = it.kind === 'plus' ? 'p' : 'e';
@@ -1414,7 +1546,7 @@ async function playItem(it) {
     const rec = await episodeFile(it.file);
     const E = buildEp(kind, it, rec);
     if (!E.audio) { go(epHref(it)); return; }
-    playEpisode(E, null);
+    playEpisode(E, at == null ? null : at);
   } catch (e) { go(epHref(it)); }
 }
 async function playEpisode(E, at) {
@@ -1676,12 +1808,12 @@ function noZoom(doc) {
 noZoom(document);
 
 // ------------------------------------------------------------ boot
-renderTabs(); renderHome(); renderSearch(); renderMe();
+renderTabs(); renderHome(); renderSearch(); renderLib(); renderMe();
 if (cur) { showMini(); updateMediaSession(); }
 route();
 loadLibrary().then(async () => {
   await loadMyLib();
-  renderHome(); renderSearch(); route();
+  renderHome(); renderSearch(); renderLib(); route();
   setTimeout(() => { if (S.member) { mountChat(); } }, 1500);
 }).catch(() => {
   $('#home').innerHTML = `<header class="hdr"><div class="row">${headerBrand()}</div></header><div class="wrap"><div class="empty">The episodes could not load. Check your connection and pull this screen down or reopen the app.<br><br><button class="btn line" onclick="location.reload()">Try again</button></div></div>`;
