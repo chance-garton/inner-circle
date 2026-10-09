@@ -245,7 +245,21 @@ html:not(.member) .np .ctl .big{background:var(--lapis);color:#fff}
 .np .chlist{max-width:620px;margin:0 auto;width:100%}
 
 /* chat */
-#chatv{overflow:hidden;padding:0}
+#chatv:not(.doorv){overflow:hidden;padding:0}
+.hobar{position:fixed;left:10px;right:10px;top:calc(var(--st) + 8px);z-index:70;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--card2);border:1px solid rgba(216,170,60,0.55);box-shadow:0 14px 34px rgba(0,0,0,0.55);font-size:14px;line-height:1.4}
+.hobar .spin{width:22px;height:22px;border-width:3px;flex:none}
+.hobar b{display:block;color:var(--gold)}
+.hobar button{flex:none;color:var(--muted);font-weight:700;font-size:13px;padding:6px 4px}
+.hodone{position:fixed;inset:0;z-index:90;background:var(--ground);display:grid;place-items:center;padding:24px;text-align:center}
+.hodone h2{font-family:var(--display);font-size:30px;margin:14px 0 8px}
+.savebtn.on{color:var(--gold)}
+.notebox{display:block;width:100%;min-height:120px;resize:vertical;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--ink);padding:12px 14px;font:inherit;font-size:15px;line-height:1.5;-webkit-user-select:text;user-select:text}
+.notebox:focus{outline:none;border-color:var(--gold)}
+.notebar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.notebar button{color:var(--gold);font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px;flex:none}
+.rowep .mine{display:inline-flex;gap:4px;align-items:center;color:var(--gold)}
+.tile{position:relative}
+.tile .mine{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:999px;background:rgba(10,15,28,0.75);display:grid;place-items:center;color:var(--gold)}
 #chatv iframe{position:absolute;left:0;right:0;top:var(--st);width:100%;height:calc(100% - var(--st) - var(--tabh) - max(12px,calc(var(--sb) - 22px)) - var(--minih));border:0;background:var(--ground)}
 html.kb #chatv iframe{height:calc(100% - var(--st))}
 .loading{display:grid;place-items:center;padding:60px 0;color:var(--muted)}
@@ -298,7 +312,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08w';
+const VERSION = '2026-10-09a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -350,6 +364,8 @@ const I = {
   user: s => P('<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>', s),
   plus: s => P('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>', s),
   back: s => P('<path d="M15 5l-7 7 7 7"/>', s, 2.3),
+  heart: (s, on) => P('<path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z"' + (on ? ' fill="currentColor"' : '') + '/>', s),
+  pen: s => P('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>', s),
   share: s => P('<path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>', s),
   down: s => P('<path d="m6 9 6 6 6-6"/>', s),
   right: s => P('<path d="m9 6 6 6-6 6"/>', s),
@@ -376,11 +392,20 @@ const S = {
 // sign-in token from the members' login redirect (#iv_session=...)
 (function captureToken() {
   const m = location.hash.match(/iv_session=([^&]+)/);
+  const hm = location.search.match(/[?&]h=([A-Za-z0-9_-]{22,64})/);
   if (m) {
-    store(TOKEN_KEY, decodeURIComponent(m[1]));
+    const tok = decodeURIComponent(m[1]);
+    store(TOKEN_KEY, tok);
+    store('iva_handoff', null);
+    // the login finished outside the home-screen app (Safari): hand it back to the app
+    if (hm && !standalone) {
+      S.handoff = 'sending';
+      fetch(CIRCLE_API + '/api/handoff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ h: hm[1], token: tok }) })
+        .then(r => { S.handoff = r.ok ? 'sent' : 'failed'; showHandoffDone(); }, () => { S.handoff = 'failed'; showHandoffDone(); });
+    }
     const after = load('iva_after') || '#/';
     store('iva_after', null);
-    history.replaceState(null, '', location.pathname + location.search + (after.indexOf('#/') === 0 ? after : '#/'));
+    history.replaceState(null, '', location.pathname + (after.indexOf('#/') === 0 ? after : '#/'));
   }
   S.token = load(TOKEN_KEY);
   const last = load('iva_status', true);
@@ -388,11 +413,63 @@ const S = {
   document.documentElement.classList.toggle('member', S.member);
 })();
 
-function loginUrl() {
+function loginUrl(h) {
   store('iva_after', location.hash && location.hash.indexOf('#/') === 0 ? location.hash : '#/');
-  return AUTH + '/auth/choose?return_to=' + encodeURIComponent(location.origin + location.pathname.replace(/[^/]*$/, ''));
+  return AUTH + '/auth/choose?return_to=' + encodeURIComponent(location.origin + location.pathname.replace(/[^/]*$/, '') + (h ? '?h=' + h : ''));
 }
-function login() { location.href = loginUrl(); }
+// In the home-screen app the login carries a one-time code. If it finishes in Safari (Patreon often
+// does, or the Patreon app takes over), that page passes the sign-in to the chat server under the
+// code, and the app, which keeps asking with the same code, picks it up when they come back.
+function newCode() { const b = new Uint8Array(24); crypto.getRandomValues(b); return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function handoffPending() { const p = load('iva_handoff', true); return p && p.h && Date.now() - p.at < 15 * 60 * 1000 ? p : null; }
+function login() {
+  if (!standalone) { location.href = loginUrl(); return; }
+  const h = newCode();
+  store('iva_handoff', { h, at: Date.now() });
+  showHandoffBar(); pollHandoff();
+  location.href = loginUrl(h);
+}
+let hoTimer = null;
+function showHandoffBar() {
+  let b = $('#hobar');
+  if (!handoffPending() || S.member) { if (b) b.remove(); clearInterval(hoTimer); hoTimer = null; return; }
+  if (!b) {
+    b = document.createElement('div'); b.id = 'hobar'; b.className = 'hobar'; b.setAttribute('role', 'status');
+    b.innerHTML = '<div class="spin"></div><div style="flex:1;min-width:0"><b>Finishing your login</b>If it opened Safari or the Patreon app, log in there, then come back here.</div><button type="button" id="hoCancel">Cancel</button>';
+    document.body.appendChild(b);
+    b.querySelector('#hoCancel').onclick = () => { store('iva_handoff', null); showHandoffBar(); };
+  }
+  if (!hoTimer) hoTimer = setInterval(pollHandoff, 2500);
+}
+let hoBusy = false;
+async function pollHandoff() {
+  const p = handoffPending(); if (!p) { showHandoffBar(); return; }
+  if (hoBusy || document.visibilityState === 'hidden') return; hoBusy = true;
+  try {
+    const r = await fetch(CIRCLE_API + '/api/handoff?h=' + encodeURIComponent(p.h), { cache: 'no-store' });
+    const j = await r.json();
+    if (j.token) {
+      store('iva_handoff', null); store(TOKEN_KEY, j.token); S.token = j.token;
+      showHandoffBar();
+      await checkStatus();
+      toast(S.member ? 'You are logged in.' : 'Logged in, but this account has no active Plus+ membership.');
+      const after = load('iva_after'); store('iva_after', null);
+      if (after && after.indexOf('#/') === 0) go(after);
+    }
+  } catch (e) { /* try again shortly */ }
+  hoBusy = false;
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && handoffPending()) pollHandoff(); });
+function showHandoffDone() {
+  if (S.handoff === 'sending' || $('#hodone')) return;
+  const ok = S.handoff === 'sent';
+  const d = document.createElement('div'); d.id = 'hodone'; d.className = 'hodone';
+  d.innerHTML = `<div style="max-width:360px"><img src="${PLUS_LOGO}" alt="" style="width:64px;height:64px;display:block;margin:0 auto"><h2>${ok ? 'You are logged in' : 'Almost there'}</h2>
+    <p class="muted" style="font-size:16px;line-height:1.55">${ok ? 'Go back to the InnerVerse app on your home screen. It will finish logging you in by itself. You can close this tab.' : 'Your login worked here, but it could not be passed to the home screen app. Open the app and log in again, or use "Trouble logging in?" there.'}</p>
+    <button class="btn line block" id="hoStay" style="margin-top:22px">Keep using InnerVerse here instead</button></div>`;
+  document.body.appendChild(d);
+  d.querySelector('#hoStay').onclick = () => d.remove();
+}
 function logout() {
   store(TOKEN_KEY, null); store('iva_status', null);
   S.token = null; S.member = false; S.signedIn = false; S.name = '';
@@ -420,9 +497,10 @@ function applyMember() {
   renderTabs();
   if (S.lib) { renderHome(); renderSearch(true); }
   renderMe();
-  if (!S.member && S.tab === 'chat') go('#/');
   const iframe = $('#chatv iframe');
   if (iframe && !S.member) { iframe.remove(); S.chatLoaded = false; }
+  if (S.tab === 'chat') { if (S.member) { const dv = $('#chatv'); dv.classList.remove('doorv'); const door = $('#chatdoor'); if (door) door.remove(); mountChat(); } else renderChatDoor(); }
+  loadMyLib().then(refreshLibViews);
   epShown = '';
   route();
 }
@@ -489,13 +567,71 @@ function saveProg(key, t, d) {
   store('iva_prog', PROG);
 }
 
+// ------------------------------------------------------------ my library: saved episodes, private notes
+// Members: kept on their account (the chat server), so it follows them to the website.
+// Free listeners: kept on this phone, and carried over to the account if they join.
+const LIB = new Map();
+function twinOf(it) { if (!it) return null; return it.kind === 'plus' ? it.free : it.plus; }
+function libGet(it) { const p = pick(it); if (!p) return null; const t = twinOf(p); return LIB.get(p.key) || (t && LIB.get(t.key)) || null; }
+function libKeyFor(it) { const x = libGet(it); return x ? x.key : pick(it).key; }
+let libReq = 0;
+async function loadMyLib() {
+  const my = ++libReq;
+  const next = new Map();
+  if (S.member && S.token) {
+    let items = null;
+    try { const r = await fetch(CIRCLE_API + '/api/library', { headers: { Authorization: 'Bearer ' + S.token }, cache: 'no-store' }); if (r.ok) items = (await r.json()).items || []; } catch (e) {}
+    if (items) store('iva_mylib_m', items); else items = load('iva_mylib_m', true) || [];
+    items.forEach(x => next.set(x.key, x));
+    if (my !== libReq) return;
+    LIB.clear(); next.forEach((v, k) => LIB.set(k, v));
+    // carry over anything saved on this phone before they joined
+    const local = load('iva_mylib', true);
+    if (local && Object.keys(local).length && S.lib) {
+      for (const k of Object.keys(local)) {
+        const x = local[k], it = S.lib.bySlug[k], key = it ? pick(it).key : k, have = LIB.get(key);
+        const change = {};
+        if (x.saved && !(have && have.saved)) change.saved = true;
+        if (x.note && !(have && have.note)) change.note = x.note;
+        if (Object.keys(change).length && !(await libPut(key, change, true))) return; // offline: try again later
+      }
+      store('iva_mylib', null);
+    }
+  } else {
+    const o = load('iva_mylib', true) || {};
+    if (my !== libReq) return;
+    LIB.clear(); for (const k in o) LIB.set(k, o[k]);
+  }
+}
+async function libPut(key, change, quiet) {
+  const prev = LIB.get(key) || { key, saved: false, savedAt: 0, note: '', noteAt: 0 };
+  const next = Object.assign({}, prev, change, { key });
+  if ('saved' in change) next.savedAt = change.saved ? (prev.saved ? prev.savedAt : Date.now()) : 0;
+  if ('note' in change) next.noteAt = Date.now();
+  if (!next.saved && !next.note) LIB.delete(key); else LIB.set(key, next);
+  if (S.member && S.token) {
+    store('iva_mylib_m', [...LIB.values()]);
+    try {
+      const r = await fetch(CIRCLE_API + '/api/library', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ key }, change)) });
+      if (!r.ok) throw new Error();
+    } catch (e) { if (!quiet) toast('Could not save. Check your connection.'); return false; }
+  } else { const o = {}; LIB.forEach((v, k) => { o[k] = v; }); store('iva_mylib', o); }
+  return true;
+}
+function savedList() {
+  const when = it => { const x = libGet(it); return x ? Math.max(x.savedAt || 0, x.noteAt || 0) : 0; };
+  return library().filter(it => { const x = libGet(it); return x && (x.saved || x.note); }).sort((a, b) => when(b) - when(a));
+}
+function mineMark(it) { const x = libGet(it); if (!x || !(x.saved || x.note)) return ''; return x.saved ? I.heart(15, true) : I.pen(15); }
+function refreshLibViews() { if (!S.lib) return; renderHome(); if (S.show === '__saved') renderSearch(true); }
+
 // ------------------------------------------------------------ routing
 function go(h) { if (location.hash !== h) location.hash = h; else route(); }
 function setTab(tab) {
   S.tab = tab;
   for (const id of ['home', 'search', 'chatv', 'me']) $('#' + id).hidden = (id !== (tab === 'chat' ? 'chatv' : tab));
   $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  if (tab === 'chat') { mountChat(); setTimeout(maybeAskPush, 1200); try { navigator.clearAppBadge && navigator.clearAppBadge(); } catch (e) {} }
+  if (tab === 'chat') { if (!S.member) renderChatDoor(); else { mountChat(); setTimeout(maybeAskPush, 1200); try { navigator.clearAppBadge && navigator.clearAppBadge(); } catch (e) {} } }
   tellChat();
 }
 let lastTabHash = { home: '#/', search: '#/search', chat: '#/chat', me: '#/me' };
@@ -510,7 +646,7 @@ function route() {
   }
   closeEpisode();
   if (h.indexOf('#/search') === 0) { setTab('search'); const q = new URLSearchParams(h.split('?')[1] || ''); if (q.has('show') || q.has('q') || q.has('theme')) { S.show = q.get('show') || ''; S.q = q.get('q') || ''; S.theme = q.get('theme') || ''; renderSearch(); } }
-  else if (h.indexOf('#/chat') === 0) { if (S.member) setTab('chat'); else { history.replaceState(null, '', '#/me'); setTab('me'); } }
+  else if (h.indexOf('#/chat') === 0) setTab('chat');
   else if (h.indexOf('#/me') === 0) setTab('me');
   else setTab('home');
 }
@@ -523,7 +659,7 @@ window.addEventListener('hashchange', () => { setTimeout(tellChat, 50);
 // ------------------------------------------------------------ tabs
 function renderTabs() {
   const t = [['home', 'Home', I.home(24)], ['search', 'Episodes', I.search(24)]];
-  if (S.member) t.push(['chat', 'Chat', I.chat(24) + (S.chatUnread ? `<span class="dot">${S.chatUnread > 99 ? '99+' : S.chatUnread}</span>` : '')]);
+  t.push(['chat', 'Chat', I.chat(24) + (S.member && S.chatUnread ? `<span class="dot">${S.chatUnread > 99 ? '99+' : S.chatUnread}</span>` : '')]);
   t.push(['me', S.member ? 'Account' : 'Plus+', S.member ? I.user(24) : I.plus(24)]);
   $('#tabs').innerHTML = t.map(x => `<button data-tab="${x[0]}" class="${S.tab === x[0] ? 'on' : ''}">${x[2]}<span>${x[1]}</span></button>`).join('');
 }
@@ -543,7 +679,8 @@ function meta(it) {
 }
 function progBar(it) { const p = PROG[it.key]; return p && p.d ? `<div class="bar"><i style="width:${Math.min(100, Math.round(p.t / p.d * 100))}%"></i></div>` : ''; }
 function tile(it) {
-  return `<a class="tile" href="${epHref(it)}"><img class="art" loading="lazy" src="${esc(img(it.thumb, 500))}" alt=""><div class="t">${esc(it.title)}</div><div class="m">${meta(it)}</div>${progBar(it)}</a>`;
+  const mk = mineMark(it);
+  return `<a class="tile" href="${epHref(it)}">${mk ? `<span class="mine" aria-label="In your library">${mk}</span>` : ''}<img class="art" loading="lazy" src="${esc(img(it.thumb, 500))}" alt=""><div class="t">${esc(it.title)}</div><div class="m">${meta(it)}</div>${progBar(it)}</a>`;
 }
 function rowEp(it, why) {
   let plusMark = '';
@@ -552,7 +689,7 @@ function rowEp(it, why) {
     plusMark = `<div class="ext">${I.lock(14)}<span>${extra ? extra + ' min Plus+ extension for members' : 'Plus+ extension for members'}</span></div>`;
   }
   return `<a class="rowep" href="${epHref(it)}"><div class="artc"><img class="art" loading="lazy" src="${esc(img(it.thumb, 300))}" alt="">${it.date ? `<div class="d">${esc(fmtDate(it.date))}</div>` : ''}</div>
-    <div class="info"><div class="k">${meta(it)}</div><div class="t">${esc(it.title)}</div>${it.topicLine ? `<div class="l">${esc(it.topicLine)}</div>` : ''}${plusMark}${why ? `<div class="why">${esc(why)}</div>` : ''}</div></a>`;
+    <div class="info"><div class="k">${meta(it)}${mineMark(it) ? `<span class="mine" aria-label="In your library">${mineMark(it)}</span>` : ''}</div><div class="t">${esc(it.title)}</div>${it.topicLine ? `<div class="l">${esc(it.topicLine)}</div>` : ''}${plusMark}${why ? `<div class="why">${esc(why)}</div>` : ''}</div></a>`;
 }
 function headerBrand() {
   return `<a class="brandmark" href="#/"><img src="${S.member ? PLUS_LOGO : LOGO}" alt=""><span class="word">InnerVerse</span>${S.member ? '<span class="plus">PLUS+</span>' : ''}</a>`;
@@ -617,6 +754,7 @@ function renderHome() {
       <div class="body"><div class="muted small">${meta(latest)} · ${esc(fmtDate(latest.date))}</div><a href="${epHref(latest)}" class="t" style="display:block">${esc(latest.title)}</a>${latest.topicLine ? `<div class="muted small">${esc(latest.topicLine)}</div>` : ''}
       <div class="acts"><button class="btn${S.member ? ' gold' : ''}" data-play="${esc(latest.key)}">${I.play(18)} Listen</button><a class="btn line" href="${epHref(latest)}">Open episode</a></div></div></div>` : ''}
     ${cont.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Continue listening</h2></div><div class="hscroll">${cont.map(tile).join('')}</div></div>` : ''}
+    ${(() => { const sv = savedList(); return sv.length ? `<div class="sec"><div class="sechead"><h2 class="h2">My library</h2><a href="#/search?show=__saved">See all</a></div><div class="hscroll">${sv.slice(0, 12).map(tile).join('')}</div></div>` : ''; })()}
     ${S.member ? '' : `<div class="sec">${plusPitch(true)}</div>`}
     ${firsts.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Good first episodes</h2></div><div class="hscroll">${firsts.map(tile).join('')}</div></div>` : ''}
     ${['Inner Whirled', 'InnerVerse', 'Vibe Rant', 'Astro-Herbalism'].map(showRow).join('')}
@@ -648,7 +786,8 @@ function scoreItem(it, terms, phrase) {
 let searchShown = 30, searchList = [], searchClose = false;
 function runSearch() {
   let list = library();
-  if (S.show) list = list.filter(x => x.shows.includes(S.show));
+  if (S.show === '__saved') { const sv = savedList(); list = sv; }
+  else if (S.show) list = list.filter(x => x.shows.includes(S.show));
   if (S.theme) list = list.filter(x => x.topics.includes(S.theme));
   const phrase = norm(S.q);
   const terms = phrase.split(' ').filter(t => t.length > 1 || /\d/.test(t));
@@ -669,7 +808,7 @@ function renderSearch(keepInput) {
   if (!keepInput || !$('#q')) {
     v.innerHTML = `<header class="hdr"><div class="row"><h1>${S.member ? 'Plus+ episodes' : 'Episodes'}</h1></div>
       <div class="row" style="display:block"><label class="searchbox">${I.search(20)}<input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="Search guests, topics, titles" value="${esc(S.q)}"><button class="iconbtn" id="qx" aria-label="Clear" ${S.q ? '' : 'hidden'}>${I.close(18)}</button></label>
-      <div class="chips" id="showchips">${['', ...SHOWS].map(s => `<button class="chip${S.show === s ? ' on' : ''}" data-show="${esc(s)}">${s ? esc(s) : 'All shows'}</button>`).join('')}</div>
+      <div class="chips" id="showchips">${['', '__saved', ...SHOWS].map(s => `<button class="chip${S.show === s ? ' on' : ''}" data-show="${esc(s)}">${s === '__saved' ? I.heart(15, true) + ' My library' : s ? esc(s) : 'All shows'}</button>`).join('')}</div>
       <div class="chips" id="themechips">${THEMES.map(s => `<button class="chip${S.theme === s ? ' on' : ''}" data-theme="${esc(s)}">${esc(s)}</button>`).join('')}</div></div></header>
       <div class="wrap"><div id="reshead"></div><div class="list" id="results"></div><div class="more" id="moreWrap"></div></div>`;
     const q = $('#q');
@@ -695,7 +834,7 @@ function renderResults(already) {
   if (S.q.trim()) head = searchClose ? `No exact matches. Close matches for "${esc(S.q.trim())}"` : `${n} episode${n === 1 ? '' : 's'} about "${esc(S.q.trim())}"`;
   else if (active) head = `${n} episode${n === 1 ? '' : 's'}`;
   $('#reshead').innerHTML = head ? `<div class="reshead">${head}</div>` : '';
-  $('#results').innerHTML = n ? searchList.slice(0, searchShown).map(x => rowEp(x.it, x.why)).join('') : `<div class="empty">Nothing matches yet. Try a guest's name, a subject or a show.</div>`;
+  $('#results').innerHTML = n ? searchList.slice(0, searchShown).map(x => rowEp(x.it, x.why)).join('') : S.show === '__saved' && !S.q.trim() ? `<div class="empty">Nothing here yet. Tap the heart on an episode to save it, or write a note on its page.</div>` : `<div class="empty">Nothing matches yet. Try a guest's name, a subject or a show.</div>`;
   $('#moreWrap').innerHTML = n > searchShown ? `<button class="btn line" id="moreBtn">Show more</button>` : '';
   const mb = $('#moreBtn'); if (mb) mb.addEventListener('click', () => { searchShown += 30; renderResults(true); });
 }
@@ -835,6 +974,29 @@ window.addEventListener('message', e => {
   }
 });
 document.addEventListener('visibilitychange', tellChat);
+// free visitors: the Chat tab shows the Inner Circle's locked door
+function renderChatDoor() {
+  const v = $('#chatv'); if (S.member || !v) return;
+  v.classList.add('doorv');
+  const pt = (a, b) => `<div class="perk"><b>${a}</b><span>${b}</span></div>`;
+  v.innerHTML = `<div id="chatdoor"><header class="hdr"><div class="row"><h1>Inner Circle</h1></div></header>
+  <div class="wrap">
+    <div class="card goldline" style="margin-top:8px">
+      <div class="eyebrow" style="color:var(--gold)">Members only</div>
+      <h3 style="font-size:26px">Connect with the community.</h3>
+      <p>The members-only chat room for the InnerVerse community. Connect with open-minded others, share inspiration, compare notes, trade sources and talk with Chance between episodes.</p>
+      ${S.signedIn ? '<p class="note" style="color:var(--gold)">You are logged in, but this account has no active Plus+ membership. Start a trial, or log in with the account you joined with.</p>' : ''}
+      <div class="perks">
+        ${pt('Inner Circle Chat', 'A live room with fellow listeners and Chance, open whenever you are.')}
+        ${pt('A thread for every episode (soon)', 'Discuss episodes and find deeper connections than ever.')}
+        ${pt('A member profile', 'Share your name or stay anonymous, with your Sun, Moon &amp; Rising and your favorite episodes.')}
+        ${pt('Notifications', 'Know when someone posts, even with the app closed.')}
+      </div>
+      <div class="acts"><a class="btn gold" href="${SITE}/plus" target="_blank" rel="noopener">Start your 7-day free trial</a><button class="btn line" data-act="login" style="--accent:var(--gold)">Already a member? Log in</button></div>
+      <p class="note" style="margin-top:16px;text-align:center">Then $9 a month. Cancel any time. The Inner Circle comes with every Plus+ membership.</p>
+    </div>
+  </div></div>`;
+}
 function mountChat() {
   if (!S.member || S.chatLoaded) return;
   S.chatLoaded = true;
@@ -987,7 +1149,7 @@ function renderEpisode() {
   const more = (!E.plus && E.plusDuration && E.duration) ? Math.max(0, durMin(E.plusDuration) - durMin(E.duration)) : 0;
   const freePlus = !E.plus && E.plusSlug;
   const related = relatedTo(E.it).slice(0, 6);
-  v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button><span class="eptitle-mini">${esc(E.title)}</span><button class="iconbtn" id="epShare" aria-label="Share">${I.share(21)}</button></div></header>
+  v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button><span class="eptitle-mini">${esc(E.title)}</span><button class="iconbtn savebtn${(libGet(E.it) || {}).saved ? ' on' : ''}" id="epSave" aria-label="Save to my library" aria-pressed="${!!(libGet(E.it) || {}).saved}">${I.heart(22, (libGet(E.it) || {}).saved)}</button><button class="iconbtn" id="epShare" aria-label="Share">${I.share(21)}</button></div></header>
   <div class="wrap">
     <div class="media" id="media"></div>
     ${hasVideo && hasAudio ? `<div class="toggle" role="tablist"><button data-mode="watch" class="${mode === 'watch' ? 'on' : ''}">${I.video(18)} Watch</button><button data-mode="listen" class="${mode === 'listen' ? 'on' : ''}">${I.head(18)} Listen</button></div>` : ''}
@@ -995,6 +1157,10 @@ function renderEpisode() {
     <div class="crumb">${crumb.join(' / ')}${tail ? ' · ' + tail : ''}</div>
     <h1 class="title">${esc(E.title)}</h1>
     <div class="desc">${E.intro.map(p => `<p>${esc(p)}</p>`).join('')}</div>
+    <div class="acc${(libGet(E.it) || {}).note ? ' open' : ''}" id="noteAcc"><button>My notes ${I.down(22)}</button><div class="in">
+      <textarea class="notebox" id="myNote" maxlength="10000" placeholder="Private notes on this episode. Only you can see them.">${esc((libGet(E.it) || {}).note || '')}</textarea>
+      <div class="notebar"><span id="noteMsg">${S.member ? 'Private. Saved to your account, in the app and on the website.' : 'Private. Saved on this phone.'}</span><button type="button" id="noteTime">${I.clock ? I.clock(15) : ''}Add the time</button></div>
+    </div></div>
     ${E.notes ? `<div class="card" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Members' show notes</div><p style="margin-top:6px">The full research notes for this episode, as a document.</p><button class="btn gold" id="notesBtn">${I.doc(18)} Download the show notes</button><p class="note" id="notesMsg"></p></div>` : ''}
     ${freePlus && !S.member ? `<div class="card goldline" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Plus+ full episode</div><h3>${more ? `There are ${more} more minutes of this conversation.` : 'There is more to this conversation.'}</h3><p>Members hear the whole thing${E.plusDuration ? ', ' + esc(E.plusDuration) + ' in all' : ''}, uncut and ad free.</p><div class="acts"><a class="btn gold" href="${SITE}/plus" target="_blank" rel="noopener">Start your 7-day free trial</a><button class="btn line" data-act="login" style="--accent:var(--gold)">Log in</button></div></div>` : ''}
     ${E.chapters.length || E.locked.length ? `<div class="acc open" id="chapAcc"><button>Chapters ${I.down(22)}</button><div class="in" id="chapters">${chaptersHtml()}</div></div>` : ''}
@@ -1013,9 +1179,37 @@ function renderEpisode() {
   $$('.toggle button', v).forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode, true)));
   $$('.guest .b', v).forEach(b => b.addEventListener('click', () => b.classList.toggle('full')));
   const nb = $('#notesBtn'); if (nb) nb.addEventListener('click', getNotes);
+  wireMine(E);
   syncMini();
   $('#chapters') && $('#chapters').addEventListener('click', e => { const c = e.target.closest('.chap[data-seek]'); if (c) seekChapter(Number(c.dataset.seek)); });
   setMode(mode, false);
+}
+function wireMine(E) {
+  const key = () => libKeyFor(E.it);
+  const sb = $('#epSave');
+  sb.addEventListener('click', async () => {
+    const on = !(libGet(E.it) || {}).saved;
+    sb.classList.toggle('on', on); sb.setAttribute('aria-pressed', on); sb.innerHTML = I.heart(22, on);
+    toast(on ? 'Saved to My library.' : 'Removed from My library.');
+    await libPut(key(), { saved: on }); refreshLibViews();
+  });
+  const ta = $('#myNote'), msg = $('#noteMsg'); let t = null, last = ta.value;
+  const base = msg.textContent;
+  let mt = null;
+  const save = async () => { clearTimeout(t); t = null; if (ta.value === last) return; last = ta.value; msg.textContent = 'Saving...'; const ok = await libPut(key(), { note: ta.value }); msg.textContent = ok ? 'Saved' : 'Not saved yet. Check your connection.'; clearTimeout(mt); if (ok) mt = setTimeout(() => { msg.textContent = base; }, 1800); refreshLibViews(); };
+  ta.addEventListener('input', () => { clearTimeout(t); t = setTimeout(save, 900); });
+  ta.addEventListener('blur', save);
+  // drop the moment you are at into the note, like 1:02:15
+  $('#noteTime').addEventListener('click', () => {
+    let s = 0;
+    if (cur && cur.key === E.key) s = aud.currentTime || 0;
+    if (videoOwns && typeof VP !== 'undefined' && VP && VP.t) s = VP.t;
+    const stamp = clock(s) + ' ';
+    const a = ta.selectionStart ?? ta.value.length;
+    ta.value = ta.value.slice(0, a) + (a && !/\s$/.test(ta.value.slice(0, a)) ? '\n' : '') + stamp + ta.value.slice(a);
+    ta.focus(); ta.selectionStart = ta.selectionEnd = ta.value.length;
+    clearTimeout(t); t = setTimeout(save, 900);
+  });
 }
 function durMin(s) { const h = /(\d+)\s*h/.exec(s || ''), m = /(\d+)\s*m/.exec(s || ''); return (h ? +h[1] * 60 : 0) + (m ? +m[1] : 0); }
 function chaptersHtml() {
@@ -1485,13 +1679,15 @@ noZoom(document);
 renderTabs(); renderHome(); renderSearch(); renderMe();
 if (cur) { showMini(); updateMediaSession(); }
 route();
-loadLibrary().then(() => {
+loadLibrary().then(async () => {
+  await loadMyLib();
   renderHome(); renderSearch(); route();
   setTimeout(() => { if (S.member) { mountChat(); } }, 1500);
 }).catch(() => {
   $('#home').innerHTML = `<header class="hdr"><div class="row">${headerBrand()}</div></header><div class="wrap"><div class="empty">The episodes could not load. Check your connection and pull this screen down or reopen the app.<br><br><button class="btn line" onclick="location.reload()">Try again</button></div></div>`;
 });
 checkStatus();
+if (handoffPending()) { showHandoffBar(); pollHandoff(); }
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(v => {
     v = (v || '').trim();
