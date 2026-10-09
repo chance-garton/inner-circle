@@ -235,6 +235,24 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .unfurl .ut{font-weight:600;font-size:14px;line-height:1.38;margin:5px 0 0}
 .unfurl .ue{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);line-height:1.2}
 .unfurl .ue.free{color:var(--lapis-lit)}
+.epfind{padding:4px 16px 10px}
+.epfind input{width:100%;box-sizing:border-box;background:rgba(10,15,28,0.55);border:1px solid rgba(233,238,246,0.2);border-radius:999px;color:var(--ink);font:inherit;font-size:15px;padding:10px 16px;outline:none}
+.epfind input:focus{border-color:var(--lapis-lit)}
+.eplist{max-height:min(60vh,520px);overflow-y:auto;overscroll-behavior:contain;padding:0 8px 12px;-webkit-overflow-scrolling:touch}
+.eprow{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:none;border:0;border-radius:12px;padding:8px;color:var(--ink);font:inherit;cursor:pointer}
+.eprow:hover,.eprow:focus-visible{background:rgba(233,238,246,0.07);outline:none}
+.eprow img{width:104px;height:58px;border-radius:8px;object-fit:cover;flex:none;background:rgba(233,238,246,0.06)}
+.epr{display:flex;flex-direction:column;min-width:0}
+.epr .ue{font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:var(--gold);line-height:1.2}
+.epr .ue.free{color:var(--lapis-lit)}
+.epr .ut{font-weight:600;font-size:14px;line-height:1.35;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.epr .um{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eplmsg{padding:24px 16px;color:var(--muted);text-align:center;font-size:14px}
+.epmore{display:block;margin:10px auto 4px}
+@media (max-width:600px){.eprow img{width:88px;height:50px}}
+.unfurl .um{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.3}
+.epbar .unfurl{flex:1;margin-top:0;max-width:none}
+@media (max-width:380px){.msgs .unfurl{flex-direction:column;gap:8px}.msgs .unfurl img{width:100%;height:auto;aspect-ratio:16/9}}
 .mimg{display:block;margin-top:6px;max-width:100%;max-height:360px;border-radius:10px;cursor:zoom-in;background:rgba(233,238,246,0.06);min-width:120px;min-height:80px}
 .joined{align-self:center;display:flex;align-items:center;gap:7px;margin:10px 0;padding:5px 14px 5px 6px;border-radius:999px;background:rgba(216,170,60,0.09);border:1px solid rgba(216,170,60,0.3);font-size:13.5px;color:var(--muted);flex-wrap:wrap;justify-content:center}
 .joined button{display:inline-flex;align-items:center;gap:7px;color:var(--gold)}
@@ -347,6 +365,7 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
   .msgs{padding:10px 12px 6px}
   .stack{max-width:86%}
   .compose{padding:8px 8px calc(10px + env(safe-area-inset-bottom)) 6px}
+  .compose{gap:2px}.compose .ibtn{width:36px}.compose .field{margin-left:4px}
   .pinbar{padding:8px 14px;font-size:13.5px}
   .unfurl img{width:92px;height:52px}
   .typing{padding-left:40px}
@@ -597,13 +616,19 @@ function toast(text) {
   const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = text;
   document.body.appendChild(t); setTimeout(() => t.remove(), 3600);
 }
-const EP_RE = /https?:\/\/(?:www\.)?innerversepodcast\.com\/(episodes|plus)\/([a-z0-9-]+)/i;
+// an episode link: the website's own address (with or without https:// and www.) or the app's (circle.../app/#/e/<slug>)
+const EP_RE = /(?:https?:\/\/)?(?:www\.)?innerversepodcast\.com\/(episodes|plus)\/([a-z0-9-]+)|circle\.innerversepodcast\.com\/app\/?#\/(e|p)\/([a-z0-9-]+)/i;
+function epFrom(text) {
+  const m = String(text || '').match(EP_RE); if (!m) return null;
+  return m[1] ? { kind: m[1].toLowerCase(), slug: m[2].toLowerCase() } : { kind: m[3].toLowerCase() === 'p' ? 'plus' : 'episodes', slug: m[4].toLowerCase() };
+}
+const epUrl = ep => `${SITE}/${ep.kind}/${ep.slug}`;
 function secs(h, m, s) { return (Number(h) || 0) * 3600 + Number(m) * 60 + Number(s); }
 function formatText(text) {
-  const ep = text.match(EP_RE);
-  const base = ep ? `${SITE}/${ep[1].toLowerCase()}/${ep[2].toLowerCase()}` : '';
+  const ep = epFrom(text);
+  const base = ep ? epUrl(ep) : '';
   let out = '';
-  const urlRe = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g;
+  const urlRe = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]|(?:www\.)?innerversepodcast\.com\/[^\s<]*[^\s<.,;:!?)\]'"])/g;
   let last = 0, m;
   // a time becomes a play chip only when the message links an episode it can jump into;
   // anywhere else ("I waited till 8:33") it stays plain text
@@ -613,12 +638,14 @@ function formatText(text) {
   });
   while ((m = urlRe.exec(text))) {
     out += plain(text.slice(last, m.index));
-    const u = m[1];
-    out += `<a class="lnk" href="${esc(u)}" target="_blank" rel="noopener nofollow ugc">${esc(u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60))}${u.length > 70 ? '…' : ''}</a>`;
+    const u = m[1], ue = epFrom(u);
+    // an episode link always points at the episode's own page, so it opens in the app and on the site alike
+    const href = ue ? epUrl(ue) : (/^https?:/i.test(u) ? u : 'https://' + u);
+    out += `<a class="lnk" href="${esc(href)}" target="_blank" rel="noopener nofollow ugc">${esc(u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60))}${u.length > 70 ? '…' : ''}</a>`;
     last = m.index + u.length;
   }
   out += plain(text.slice(last));
-  return { html: out, ep: ep ? { kind: ep[1].toLowerCase(), slug: ep[2].toLowerCase() } : null };
+  return { html: out, ep };
 }
 
 // ------------------------------------------------------------ @mentions
@@ -702,7 +729,7 @@ function onIncoming(m) {
   const body = m.kind === 'join' ? 'joined the chat' : (m.text || 'Image').slice(0, 140);
   tellApp({ msg: true, name: p.name || 'Member', text: body, tagged, id: m.id });
   if (!tagged && document.hidden && 'Notification' in window && Notification.permission === 'granted' && load('ivc_alerts') !== 'off') {
-    try { const n = new Notification(`${p.name || 'Member'} in the Inner Circle`, { body, icon: PLUS_LOGO, tag: 'ivc-' + m.id }); n.onclick = () => { window.focus(); n.close(); }; } catch (e) {}
+    try { const n = new Notification(`${p.name || 'Member'} in the Inner Circle`, { body, icon: LOGO, tag: 'ivc-' + m.id }); n.onclick = () => { window.focus(); n.close(); }; } catch (e) {}
   }
 }
 function lastSeenMention() { return Number(load('ivc_seen_mention') || 0); }
@@ -734,7 +761,7 @@ function onMention(m) {
   }
   if (document.hidden && 'Notification' in window && Notification.permission === 'granted' && load('ivc_alerts') !== 'off') {
     try {
-      const n = new Notification(`${p.name} mentioned you in the Inner Circle`, { body: (m.text || 'Image').slice(0, 140), icon: PLUS_LOGO, tag: 'ivc-' + m.id });
+      const n = new Notification(`${p.name} mentioned you in the Inner Circle`, { body: (m.text || 'Image').slice(0, 140), icon: LOGO, tag: 'ivc-' + m.id });
       n.onclick = () => { window.focus(); n.close(); sendWs({ t: 'thread', id: m.id }); };
     } catch (e) {}
   }
@@ -1065,23 +1092,45 @@ function restoreAnchor(box, a) {
 }
 function stickDown() { const box = $('#msgs'); if (!box) return; if (S.stick) box.scrollTop = box.scrollHeight; else restoreAnchor(box, S.anc); }
 const mediaSize = new Map(); // rendered size of each image, so a redraw holds its space before it loads
+// an episode's card: thumbnail, Plus+ or free, show and length, title; one look for the chat, the composer and the picker
+function epEntry(ix, kind, slug) { return kind === 'plus' ? (ix.plus[slug] || ix.free[slug]) : (ix.free[slug] || ix.plus[slug]); }
+// Squarespace's image CDN makes a small copy when format= is the first query parameter (100, 300, 500, 750 wide)
+const thumbAt = (u, w) => { u = String(u || ''); return /images\.squarespace-cdn\.com/.test(u) && u.indexOf('?') < 0 ? u + '?format=' + w + 'w' : u; };
+const epTitle = e => String(e.title || '').replace(/\s*\(PLUS\)\s*$/i, '');
+function epMeta(e, isPlus) {
+  const show = String((e.shows && e.shows[0]) || '').replace(/^innerverse$/i, 'InnerVerse');
+  const len = isPlus ? e.plusDuration : e.duration;
+  return [show, len].filter(Boolean).map(esc).join(' · ');
+}
+function unfurlHtml(e, kind, slug, tag) {
+  const isPlus = kind === 'plus' && /\/plus\//.test(e.url || '/plus/');
+  const meta = epMeta(e, isPlus);
+  return `<${tag || 'a'} class="unfurl"${tag ? '' : ` href="${esc(e.url || (SITE + '/' + kind + '/' + slug))}" target="_blank" rel="noopener"`}>
+    <img src="${esc(thumbAt(e.thumb, 500))}" alt="" loading="lazy">
+    <div style="min-width:0"><div class="ue${isPlus ? '' : ' free'}">${isPlus ? 'Plus+ full episode' : 'Free episode'}</div>
+    <div class="ut">${esc(epTitle(e))}</div>${meta ? `<div class="um">${meta}</div>` : ''}</div></${tag || 'a'}>`;
+}
 function hydrateUnfurls(root) {
   (root || document).querySelectorAll('[data-unfurl]').forEach(el => {
     const [kind, slug] = el.getAttribute('data-unfurl').split(':'); el.removeAttribute('data-unfurl');
     loadIndexes().then(ix => {
-      const e = kind === 'plus' ? (ix.plus[slug] || ix.free[slug]) : (ix.free[slug] || ix.plus[slug]);
+      const e = epEntry(ix, kind, slug);
       if (!e) return;
-      const isPlus = kind === 'plus';
-      const title = String(e.title || '').replace(/\s*\(PLUS\)\s*$/i, '');
-      el.innerHTML = `<a class="unfurl" href="${esc(e.url || (SITE + '/' + kind + '/' + slug))}" target="_blank" rel="noopener">
-        <img src="${esc(e.thumb || '')}" alt="" loading="lazy">
-        <div style="min-width:0"><div class="ue${isPlus ? '' : ' free'}">${isPlus ? 'Plus+ full episode' + (e.plusDuration ? ' · ' + esc(e.plusDuration) : '') : 'Free episode'}</div>
-        <div class="ut">${esc(title)}</div></div></a>`;
+      el.innerHTML = unfurlHtml(e, kind, slug);
       stickDown();
       const im = el.querySelector('img'); im && im.addEventListener('load', stickDown, { once: true });
     });
   });
 }
+// inside the home-screen app an episode link opens the episode in the app, never a browser tab
+const IN_APP = (() => { try { return window.parent !== window && window.parent.location.origin === location.origin && /^\/app\//.test(window.parent.location.pathname); } catch (e) { return false; } })();
+if (IN_APP) window.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+  const ep = epFrom(a.href); if (!ep) return;
+  e.preventDefault(); e.stopPropagation();
+  const t = (a.href.match(/[?&]t=(\d+)/) || [])[1];
+  tellApp({ openEp: '#/' + (ep.kind === 'plus' ? 'p' : 'e') + '/' + ep.slug, t: t ? Number(t) : undefined });
+}, true);
 
 // ------------------------------------------------------------ socket
 function connect() {
@@ -1110,7 +1159,7 @@ function sendWs(obj) {
   if (S.view === 'chat') renderConn(); else toast('Loading\u2026 try again in a moment.');
   onResume(); return false;
 }
-const loaderHtml = () => `<div class="ivload" role="status"><img src="${PLUS_LOGO}" alt="" onerror="this.outerHTML='<span class=&quot;ivring&quot;></span>'"><span>Loading\u2026</span></div>`;
+const loaderHtml = () => `<div class="ivload" role="status"><img src="${LOGO}" alt="" onerror="this.outerHTML='<span class=&quot;ivring&quot;></span>'"><span>Loading\u2026</span></div>`;
 // A phone that sleeps or switches networks (Android especially) can keep a socket that looks open but
 // is dead: anything sent into it vanishes. So we ping, and if nothing comes back soon we start over.
 function checkAlive(ms) {
@@ -1498,6 +1547,7 @@ function renderChat() {
       <div class="compose">
         <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
         <button class="ibtn" id="emoBtn" aria-label="Emoji">${P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',{s:21})}</button>
+        <button class="ibtn" id="epBtn" aria-label="Link an episode" title="Link an episode">${P('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',{s:21})}</button>
         <label class="sr" for="field">Message the Inner Circle</label>
         <textarea id="field" class="field" rows="1" maxlength="2000" placeholder="Message the Inner Circle"></textarea>
         <button class="send" id="sendBtn" aria-label="Send">${I.up(21)}</button>
@@ -1684,7 +1734,7 @@ function renderMessages(toBottom) {
 function clientLink(text) {
   const m = String(text || '').match(/(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/);
   if (!m) return '';
-  try { const u = new URL(m[1]); if (/(^|\.)innerversepodcast\.com$/i.test(u.hostname) && /^\/(episodes|plus)\/[^/]+/i.test(u.pathname)) return ''; return u.href.slice(0, 800); } catch (e) { return ''; }
+  try { const u = new URL(m[1]); if (epFrom(u.href)) return ''; return u.href.slice(0, 800); } catch (e) { return ''; }
 }
 const EYE_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 // your own posts always show the eye (even at 0); others' once someone has seen them
@@ -1707,6 +1757,15 @@ function lpHtml(p, id, draft) {
 function linkPreview(text) {
   const box = $('#linkbar'); if (!box) return;
   const link = clientLink(text);
+  const ep = !link ? epFrom(text) : null;
+  if (ep) {
+    const k = 'ep:' + ep.kind + ':' + ep.slug; if (S.lpShown === k) return; S.lpShown = k;
+    loadIndexes().then(ix => {
+      if (S.lpShown !== k) return; const e = epEntry(ix, ep.kind, ep.slug);
+      box.innerHTML = e ? `<div class="lpbar epbar">${unfurlHtml(e, ep.kind, ep.slug, 'div')}</div>` : ''; stickDown();
+    });
+    return;
+  }
   if (!link || link === S.lpOff) { box.innerHTML = ''; S.lpShown = ''; return; }
   if (link === S.lpShown) return;
   S.lpShown = link;
@@ -1904,6 +1963,16 @@ function wireComposer() {
       grow(); if (!S.editMsg) store('ivc_draft', f.value); sendWs({ t: 'used', e: u });
     }));
   };
+  $('#epBtn').onclick = () => {
+    if ($('#ovl #epList')) { closeOverlay(); return; }
+    pickEpisode(url => {
+      const a = f.selectionStart ?? f.value.length, b = f.selectionEnd ?? f.value.length;
+      const pre = f.value.slice(0, a), post = f.value.slice(b);
+      const ins = (pre && !/\s$/.test(pre) ? ' ' : '') + url + (post && !/^\s/.test(post) ? ' ' : '');
+      f.value = pre + ins + post; f.selectionStart = f.selectionEnd = a + ins.length;
+      f.dispatchEvent(new Event('input')); f.focus();
+    });
+  };
   $('#imgBtn').onclick = () => pickImage(key => { queueSend({ text: f.value.trim(), image: key, reply_to: S.reply || undefined }); f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); });
   function send() {
     const text = f.value.trim();
@@ -1915,9 +1984,51 @@ function wireComposer() {
     }
     if (!text) return;
     const lk = clientLink(text);
-    queueSend({ text, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: lk && S.lpOff === lk ? true : undefined });
+    queueSend({ text, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: (lk && S.lpOff === lk) || /circle\.innerversepodcast\.com\/app/i.test(text) ? true : undefined });
     f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); S.lpOff = ''; linkPreview('');
   }
+}
+
+// the episode index: every episode a member can open, searchable by title, guest, show, subject or topic
+function episodeList(ix) {
+  const out = [], seen = new Set();
+  for (const e of Object.values(ix.plus)) { if (!e.url || seen.has(e.url)) continue; seen.add(e.url); if (e.freeSlug) seen.add(SITE + '/episodes/' + e.freeSlug); out.push({ e, kind: /\/plus\//.test(e.url) ? 'plus' : 'episodes', slug: e.slug }); }
+  for (const e of ix.list) { if (!e.url || seen.has(e.url)) continue; seen.add(e.url); out.push({ e, kind: 'episodes', slug: e.slug }); }
+  for (const x of out) x.hay = [epTitle(x.e), (x.e.guests || []).join(' '), (x.e.shows || []).join(' '), (x.e.tags || []).join(' '), x.e.topicLine || '', (x.e.topics || []).join(' ')].map(t => t.toLowerCase());
+  return out.sort((a, b) => String(b.e.date || '').localeCompare(String(a.e.date || '')));
+}
+function rankEpisodes(list, q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean); if (!words.length) return list;
+  const W = [6, 4, 3, 2, 2, 1];
+  return list.map(x => {
+    let sc = 0;
+    for (const w of words) { let best = 0; x.hay.forEach((h, i) => { if (h.includes(w)) best = Math.max(best, W[i] * (new RegExp('(^|[^a-z0-9])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(h) ? 2 : 1)); }); if (!best) return null; sc += best; }
+    if (x.hay[0].includes(q.toLowerCase())) sc += 8;
+    return { x, sc };
+  }).filter(Boolean).sort((a, b) => b.sc - a.sc).map(r => r.x);
+}
+function pickEpisode(done) {
+  const o = overlay(`<div class="emohead"><span>Link an episode</span><button class="ibtn" id="epClose" aria-label="Close the episode list">${I.close()}</button></div>
+    <div class="epfind"><input type="search" id="epQ" placeholder="Search episodes, guests, subjects" aria-label="Search episodes" autocomplete="off" enterkeyhint="search"></div>
+    <div class="eplist" id="epList" role="list"><div class="eplmsg">Loading episodes...</div></div>`, true, 'Link an episode');
+  o.querySelector('#epClose').onclick = () => closeOverlay();
+  const q = o.querySelector('#epQ'), box = o.querySelector('#epList');
+  let all = [], shown = 60;
+  const fmt = d => { if (!d) return ''; const t = new Date(d + 'T12:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); };
+  const draw = () => {
+    const hits = rankEpisodes(all, q.value.trim());
+    if (!hits.length) { box.innerHTML = '<div class="eplmsg">No episodes match that.</div>'; return; }
+    box.innerHTML = hits.slice(0, shown).map((x, i) => {
+      const isPlus = x.kind === 'plus', meta = epMeta(x.e, isPlus);
+      return `<button type="button" class="eprow" role="listitem" data-i="${i}"><img src="${esc(thumbAt(x.e.thumb, 300))}" alt="" loading="lazy">
+        <span class="epr"><span class="ue${isPlus ? '' : ' free'}">${isPlus ? 'Plus+' : 'Free'}${x.e.date ? ' · ' + esc(fmt(x.e.date)) : ''}</span><span class="ut">${esc(epTitle(x.e))}</span>${meta ? `<span class="um">${meta}</span>` : ''}</span></button>`;
+    }).join('') + (hits.length > shown ? '<button type="button" class="btn2 sm epmore" id="epMore">Show more</button>' : '');
+    box.querySelectorAll('.eprow').forEach(b => b.onclick = () => { const x = hits[Number(b.dataset.i)]; closeOverlay(); done(x.e.url || (SITE + '/' + x.kind + '/' + x.slug)); });
+    const more = box.querySelector('#epMore'); if (more) more.onclick = () => { shown += 60; draw(); };
+  };
+  let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { shown = 60; box.scrollTop = 0; draw(); }, 120); });
+  loadIndexes().then(ix => { all = episodeList(ix); draw(); }).catch(() => { box.innerHTML = '<div class="eplmsg">The episode list could not load. Check your connection.</div>'; });
+  if (matchMedia('(hover: hover)').matches) setTimeout(() => q.focus(), 50);
 }
 
 function pickImage(done) {

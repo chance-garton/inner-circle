@@ -247,7 +247,7 @@ html:not(.member) .np .ctl .big{background:var(--lapis);color:#fff}
 /* chat */
 #chatv:not(.doorv){overflow:hidden;padding:0}
 .hobar{position:fixed;left:10px;right:10px;top:calc(var(--st) + 8px);z-index:70;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--card2);border:1px solid rgba(216,170,60,0.55);box-shadow:0 14px 34px rgba(0,0,0,0.55);font-size:14px;line-height:1.4}
-.hobar .spin{width:22px;height:22px;border-width:3px;flex:none}
+.hobar .spin{width:26px;height:26px;flex:none}
 .hobar b{display:block;color:var(--gold)}
 .hobar button{flex:none;color:var(--muted);font-weight:700;font-size:13px;padding:6px 4px}
 .hodone{position:fixed;inset:0;z-index:90;background:var(--ground);display:grid;place-items:center;padding:24px;text-align:center}
@@ -263,7 +263,8 @@ html:not(.member) .np .ctl .big{background:var(--lapis);color:#fff}
 #chatv iframe{position:absolute;left:0;right:0;top:var(--st);width:100%;height:calc(100% - var(--st) - var(--tabh) - max(12px,calc(var(--sb) - 22px)) - var(--minih));border:0;background:var(--ground)}
 html.kb #chatv iframe{height:calc(100% - var(--st))}
 .loading{display:grid;place-items:center;padding:60px 0;color:var(--muted)}
-.spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(233,238,246,0.15);border-top-color:var(--accent);animation:sp 0.8s linear infinite}
+.spin{width:52px;height:52px;background:url('https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-Electric-Logo-2026.png?format=300w') center/contain no-repeat;animation:sp 1.6s linear infinite}
+@media (prefers-reduced-motion: reduce){.spin{animation:none}}
 @keyframes sp{to{transform:rotate(360deg)}}
 
 /* account */
@@ -329,7 +330,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-09b';
+const VERSION = '2026-10-09c';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1087,6 +1088,7 @@ window.addEventListener('message', e => {
   const d = e.data;
   if (d.level) store('iva_level', d.level === 'all' ? null : d.level);
   if (d.videoPlaying && !aud.paused) aud.pause(); // a video started in the chat
+  if (d.openEp && /^#\/[ep]\/[a-z0-9-]+$/.test(d.openEp)) go(d.openEp); // an episode link tapped in the chat opens here
   if (d.openNotify) { go('#/me'); setTimeout(() => { const b = $('#pushBox'); b && b.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }
   if ('unread' in d) {
     S.chatUnread = d.unread || 0; renderTabs();
