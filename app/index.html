@@ -287,7 +287,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-08s';
+const VERSION = '2026-10-08t';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -512,7 +512,7 @@ window.addEventListener('hashchange', () => { setTimeout(tellChat, 50);
 // ------------------------------------------------------------ tabs
 function renderTabs() {
   const t = [['home', 'Home', I.home(24)], ['search', 'Episodes', I.search(24)]];
-  if (S.member) t.push(['chat', 'Inner Circle', I.chat(24) + (S.chatUnread ? `<span class="dot">${S.chatUnread > 99 ? '99+' : S.chatUnread}</span>` : '')]);
+  if (S.member) t.push(['chat', 'Chat', I.chat(24) + (S.chatUnread ? `<span class="dot">${S.chatUnread > 99 ? '99+' : S.chatUnread}</span>` : '')]);
   t.push(['me', S.member ? 'Account' : 'Plus+', S.member ? I.user(24) : I.plus(24)]);
   $('#tabs').innerHTML = t.map(x => `<button data-tab="${x[0]}" class="${S.tab === x[0] ? 'on' : ''}">${x[2]}<span>${x[1]}</span></button>`).join('');
 }
