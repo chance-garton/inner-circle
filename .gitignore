@@ -1,0 +1,5 @@
+# local test leftovers (npm i wrangler@3, wrangler dev)
+worker/node_modules/
+worker/.wrangler/
+worker/package.json
+worker/package-lock.json
