@@ -249,6 +249,12 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .pmenu .mhead{padding:9px 16px 5px;font-size:10px}
 .pmenu .picking,.pmenu:has(.picking){width:100%}
 .pmenu .picking emoji-picker{height:320px}
+.emowrap{position:relative}
+.emores{position:absolute;left:0;right:0;bottom:0;overflow-y:auto;background:var(--card);display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));align-content:start;padding:4px 8px 10px;border-radius:0 0 12px 12px;-webkit-overflow-scrolling:touch}
+.emores[hidden]{display:none}
+.emores button{background:none;border:0;padding:0;height:44px;font-size:28px;line-height:44px;border-radius:10px;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;cursor:pointer}
+.emores button:active,.emores button:hover{background:rgba(233,238,246,0.08)}
+.emores p{grid-column:1/-1;margin:24px 0;text-align:center;color:var(--muted);font-size:14px}
 @media (hover:none){.bub{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}}
 .ment{display:inline;font:inherit;font-weight:700;color:var(--lapis-lit);background:rgba(143,181,240,0.12);border-radius:5px;padding:0 3px}
 .ment.me{color:var(--on-gold);background:var(--gold)}
@@ -439,11 +445,53 @@ const EMOJI_DATA = 'https://cdn.jsdelivr.net/npm/emoji-picker-element-data@1.8.0
 let pickerReady = null;
 function emojiPicker(onPick) {
   if (!pickerReady) pickerReady = import(PICKER_JS);
+  const wrap = document.createElement('div'); wrap.className = 'emowrap';
   const el = document.createElement('emoji-picker');
   el.className = 'dark'; el.setAttribute('data-source', EMOJI_DATA);
   el.addEventListener('emoji-click', e => onPick(e.detail.unicode));
   pickerReady.catch(() => toast('The emoji list could not load. Check your connection.'));
-  return el;
+  // our own search results over the picker's: best match first, loose matches left out
+  const res = document.createElement('div'); res.className = 'emores'; res.hidden = true;
+  res.addEventListener('click', e => { const b = e.target.closest('[data-e]'); if (b) onPick(b.dataset.e); });
+  let seq = 0;
+  el.addEventListener('input', async e => {
+    const inp = e.composedPath()[0]; if (!inp || inp.id !== 'search') return;
+    const q = String(inp.value || '').trim().toLowerCase(), my = ++seq;
+    if (!q) { res.hidden = true; return; }
+    const row = inp.closest('.search-row') || inp.parentElement;
+    res.style.top = Math.max(0, row.getBoundingClientRect().bottom - wrap.getBoundingClientRect().top + 4) + 'px';
+    let list = [];
+    try { list = await el.database.getEmojiBySearchQuery(q); } catch (err) { return; }
+    if (my !== seq) return;
+    const ranked = rankEmoji(list, q);
+    res.innerHTML = ranked.length ? ranked.map(x => `<button type="button" data-e="${esc(x.unicode)}" title="${esc(x.annotation || '')}" aria-label="${esc(x.annotation || x.unicode)}">${x.unicode}</button>`).join('') : '<p>No emoji found</p>';
+    res.hidden = false; res.scrollTop = 0;
+  });
+  wrap.append(el, res);
+  return wrap;
+}
+// exact name first, then names that start with the word, then names that contain it;
+// emojis that only match on a loose keyword are dropped when better matches exist
+function rankEmoji(list, q) {
+  const toks = q.split(/\s+/).filter(Boolean);
+  const words = s => String(s || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const scored = [];
+  list.forEach((x, i) => {
+    if (!x.unicode || (x.version && x.version > 15.1)) return; // newer than most phones can draw
+    const name = String(x.annotation || '').toLowerCase(), w = words(name), sc = (x.shortcodes || []).map(c => c.toLowerCase());
+    const forms = k => [k, k + 's', k + 'es', k + 'ing', k + 'ed', k.replace(/y$/, 'ies')];
+    const whole = k => w.some(v => forms(k).includes(v)); // the word itself, or a plain ending (cry: crying)
+    let t = 9;
+    if (name === q || sc.includes(q)) t = 0;
+    else if (name === q + 's' || sc.includes(q + 's')) t = 1;
+    else if (toks.length === 1 && forms(q).includes(w[0])) t = 2;
+    else if (toks.every(whole)) t = 3;
+    else if (name.startsWith(q) || sc.some(c => c.startsWith(q))) t = 4;
+    else if (toks.every(k => w.some(v => v.startsWith(k)))) t = 5;
+    scored.push({ x, t, i });
+  });
+  const strong = scored.some(o => o.t < 9);
+  return scored.filter(o => !strong || o.t < 9).sort((a, b) => a.t - b.t || a.i - b.i).map(o => o.x);
 }
 const SYMS = {
   sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>',
