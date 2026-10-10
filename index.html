@@ -122,6 +122,34 @@ svg{display:block;flex:none}
 .roomrow.on{background:rgba(216,170,60,0.13)} .roomrow.on svg{color:var(--gold)}
 .roomrow.soon{color:var(--muted);font-weight:500}
 .roomrow .soonchip{margin-left:auto}
+.roomrow{width:100%;text-align:left;color:var(--ink);cursor:pointer}
+.roomrow:hover{background:rgba(255,255,255,0.04)} .roomrow.on:hover{background:rgba(216,170,60,0.16)}
+.roomrow .rn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.roomrow .rth{width:40px;height:24px;border-radius:5px;object-fit:cover;flex:none;background:var(--card)}
+.rbadge{flex:none;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--gold);color:#121826;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.rcount{flex:none;font-size:12px;color:var(--muted);font-weight:600}
+.rsec{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin:12px 0 4px 14px}
+.rbtn{position:relative}
+.rbtn .rdot{position:absolute;top:4px;right:2px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--gold);color:#121826;font-size:10.5px;font-weight:800;display:none;align-items:center;justify-content:center;line-height:1}
+.rlist{display:flex;flex-direction:column;padding:4px 8px 16px}
+.ritem{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:12px;text-align:left;width:100%;color:var(--ink)}
+.ritem:hover,.ritem:focus-visible{background:rgba(255,255,255,0.05)}
+.ritem.on{background:rgba(216,170,60,0.12)}
+.ritem .rimg{width:64px;height:36px;border-radius:7px;object-fit:cover;flex:none;background:var(--card)}
+.ritem .rlogo{width:64px;height:36px;display:grid;place-items:center;flex:none}
+.ritem .rlogo img{width:32px;height:32px}
+.ritem .rt{display:block;font-weight:700;font-size:14.5px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ritem .rl{display:block;font-size:13px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rhead{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);padding:14px 12px 6px}
+.rnote{font-size:13px;color:var(--muted);padding:6px 12px 2px;line-height:1.5}
+.ptop .rth{width:44px;height:28px;border-radius:6px;object-fit:cover;flex:none}
+.phead .rth{width:64px;height:36px;border-radius:7px;object-fit:cover;flex:none}
+.roomintro{margin:8px auto 18px;max-width:460px;text-align:center;color:var(--muted);font-size:14px;line-height:1.55}
+.roomintro .unfurl{margin:0 auto 10px;text-align:left}
+.roomnote{align-self:center;display:flex;flex-direction:column;align-items:center;gap:8px;margin:12px 0;padding:12px 14px;border-radius:16px;background:rgba(216,170,60,0.08);border:1px solid rgba(216,170,60,0.3);max-width:440px;width:100%}
+.roomnote .rk{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold)}
+.roomnote .unfurl{margin:0;width:100%;max-width:none;cursor:pointer;text-align:left}
+.roomnote .time{font-size:12px}
 .person{display:flex;align-items:center;gap:11px;min-height:40px;padding:0 6px;border-radius:10px;font-size:14.5px;font-weight:600;width:100%}
 .person:hover{background:rgba(233,238,246,0.05)}
 .person .role{margin-left:auto;font-size:12px;color:var(--muted);font-weight:500}
@@ -359,6 +387,8 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
   .phead.desk{display:none}
   .ptop{display:flex;align-items:center;gap:4px;min-height:60px;padding:6px 6px 6px 2px;border-bottom:1px solid var(--line);background:rgba(10,15,28,0.96);flex:none}
   .ptop .room{font-size:clamp(15px,4.6vw,20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ptop .room.ep{font-size:15px;line-height:1.2;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .ptop .rth{width:40px;height:26px}
   .ptop .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ptop > img{flex:none}
   .ptop .ibtn{flex:none}
@@ -537,6 +567,7 @@ const S = {
   signs: [], reply: null, oldestDone: false, loadingOlder: false, typing: {}, unread: 0,
   view: 'loading', denied: null, connected: false, retry: 0, editing: false, reports: 0,
   index: null, plusIndex: null, draft: null, stick: true,
+  room: '', roomInfo: { key: '', title: 'Inner Circle Chat' }, rooms: null, where: {}, openRoom: null,
 };
 const $ = (sel, root) => (root || document).querySelector(sel);
 const app = $('#app');
@@ -557,6 +588,8 @@ if (location.protocol === 'http:' && /innerversepodcast\.com$/.test(location.hos
   if (m) { store('ivc_token', decodeURIComponent(m[1])); history.replaceState(null, '', location.pathname + location.search); }
   const ml = location.hash.match(/(?:^#|&)m=(\d+)/);
   if (ml) { S.openLink = Number(ml[1]); history.replaceState(null, '', location.pathname + location.search); }
+  const rm = location.hash.match(/(?:^#|&)room=([^&]+)/) || location.search.match(/[?&]room=([^&]+)/);
+  if (rm) { S.openRoom = decodeURIComponent(rm[1]); history.replaceState(null, '', location.pathname + location.search.replace(/([?&])room=[^&]*&?/, '$1').replace(/[?&]$/, '')); }
   const q = new URLSearchParams(location.search);
   if (DEV && q.get('dev')) {
     const name = q.get('dev'); const id = name.toLowerCase().replace(/[^a-z0-9]/g,'') || 'tester';
@@ -716,6 +749,7 @@ function watchSeen(box) { if (!seenObs || !box) return; seenObs.disconnect(); S.
 function tellApp(obj) { try { if (window.parent !== window) window.parent.postMessage(Object.assign({ ivc: 1 }, obj), location.origin); } catch (e) {} }
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || !e.data.ivcApp) return;
+  if (e.data.room !== undefined) { const r = String(e.data.room || ''); if (S.connected && S.view === 'chat') switchRoom(r); else S.openRoom = r; }
   if ('away' in e.data) { S.appAway = !!e.data.away; if (!S.appAway) onResume(); sendQuiet({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); } }
 });
 function onIncoming(m) {
@@ -780,7 +814,7 @@ function showMentions(r) {
   o.firstElementChild.style.width = 'min(560px, 100%)';
   const box = $('#mres');
   box.innerHTML = r.messages.length ? r.messages.map(m => { const p = person(m.uid);
-    return `<button class="person" data-hit="${m.id}" style="align-items:flex-start;padding:9px 10px;min-height:0;gap:11px">${avatar(m.uid, 32)}<span style="flex:1;min-width:0;text-align:left"><span style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><b style="font-size:14px">${esc(p.name || 'Member')}</b><span class="time">${esc(dayLabel(m.created))} ${fmtTime(m.created)}</span></span><span style="display:block;font-weight:500;font-size:14px;line-height:1.45;margin-top:2px;color:var(--ink)">${m.text ? markMentions(esc(m.text.slice(0, 220)), m) : '<span class="muted">Image</span>'}</span></span></button>`; }).join('')
+    return `<button class="person" data-hit="${m.id}" style="align-items:flex-start;padding:9px 10px;min-height:0;gap:11px">${avatar(m.uid, 32)}<span style="flex:1;min-width:0;text-align:left"><span style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><b style="font-size:14px">${esc(p.name || 'Member')}</b><span class="time">${m.room && r.rooms ? esc(shortRoom(r.rooms[m.room])) + ' · ' : ''}${esc(dayLabel(m.created))} ${fmtTime(m.created)}</span></span><span style="display:block;font-weight:500;font-size:14px;line-height:1.45;margin-top:2px;color:var(--ink)">${m.text ? markMentions(esc(m.text.slice(0, 220)), m) : '<span class="muted">Image</span>'}</span></span></button>`; }).join('')
     : '<p class="muted" style="padding:12px 10px;font-size:14px">Nobody has mentioned you yet. When someone types @ and your name, it shows up here.</p>';
   hydrateMedia(box);
   box.querySelectorAll('[data-hit]').forEach(b => b.onclick = e => { if (e.target.closest('.ment')) return; sendWs({ t: 'thread', id: Number(b.dataset.hit) }); });
@@ -1142,7 +1176,7 @@ function connect() {
   if (S.view === 'chat') renderConn();
   const ws = new WebSocket(API.replace(/^http/, 'ws') + '/ws');
   S.ws = ws;
-  ws.onopen = () => { if (S.ws === ws) ws.send(JSON.stringify({ t: 'hello', token: S.token })); };
+  ws.onopen = () => { if (S.ws === ws) ws.send(JSON.stringify({ t: 'hello', token: S.token, room: S.openRoom || S.room || undefined })); };
   ws.onmessage = ev => { if (S.ws !== ws) return; S.heard = Date.now(); let m; try { m = JSON.parse(ev.data); } catch (e) { return; } onEvent(m); };
   ws.onclose = ev => {
     if (S.ws !== ws) return; // an old socket we already replaced
@@ -1193,7 +1227,7 @@ S.ackedIds = new Set();
 function savePending() { store('ivc_pending', S.pending.length ? JSON.stringify(S.pending.map(p => ({ cid: p.cid, uid: p.uid, o: p.o, at: p.at, tried: !!p.tried }))) : null); }
 function queueSend(o) {
   const cid = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-  const p = { cid, uid: S.me && S.me.uid, o: Object.assign({}, o, { t: 'send', cid }), at: Date.now(), tried: false };
+  const p = { cid, uid: S.me && S.me.uid, o: Object.assign({ room: S.room || '' }, o, { t: 'send', cid }), at: Date.now(), tried: false };
   S.pending.push(p); savePending(); renderPending(true);
   armFail(p); trySend(p);
 }
@@ -1217,6 +1251,7 @@ function flushPending() {
   S.pending = S.pending.filter(p => {
     if (p.uid && p.uid !== S.me.uid) return false;
     if (!p.tried) return true;
+    if ((p.o.room || '') !== S.room) return true; // written in another room: it goes again
     // it may have gone through before the connection died: if it is already in the chat, it is done
     const hit = S.messages.find(m => m.uid === S.me.uid && !used.has(m.id) && m.created >= p.at - 30000 && norm(m.text) === norm(p.o.text) && (m.image || '') === (p.o.image || ''));
     if (hit) { used.add(hit.id); S.ackedIds.add(hit.id); clearTimeout(p.ackT); clearTimeout(p.failT); return false; }
@@ -1227,7 +1262,7 @@ function flushPending() {
 }
 const CLOCK_ICON = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 function pendHtml() {
-  return S.pending.map(p => {
+  return S.pending.filter(p => (p.o.room || '') === S.room).map(p => {
     const t = p.o.text || '';
     return `<div class="row me first pend" data-cid="${esc(p.cid)}"><span class="gap"></span><div class="stack"><div class="bub">${t ? `<div class="txt">${esc(t)}</div>` : ''}${p.o.image ? '<div class="txt">\u{1F4F7} Photo</div>' : ''}${p.failed ? `<button class="pst fail" data-retry="${esc(p.cid)}">Not sent yet. Tap to try again</button>` : `<span class="pst">${CLOCK_ICON} Sending\u2026</span>`}</div></div></div>`;
   }).join('');
@@ -1256,6 +1291,10 @@ function onEvent(m) {
       S.me = m.me; S.people[m.me.uid] = m.me; mergePeople(m.people); setQuick();
       S.messages = m.messages; S.pins = m.pins; S.online = m.online; S.signs = m.signs; if (Array.isArray(m.reactions) && m.reactions.length) DEFAULT_QUICK = m.reactions; setQuick();
       S.oldestDone = m.messages.length < 50;
+      S.where = m.where || {}; setRoom(m.room || { key: '', title: 'Inner Circle Chat' }); S.loadingRoom = false;
+      if (m.roomfail) setTimeout(() => toast('That episode room could not be opened.'), 300);
+      S.openRoom = null;
+      setTimeout(() => sendQuiet({ t: 'rooms' }), 0);
       S.view = !m.me.rules_ok ? 'rules' : (!m.me.profile_done ? 'profile' : 'chat');
       if (S.view === 'chat' && S.editing) S.view = 'profile';
       render();
@@ -1273,10 +1312,12 @@ function onEvent(m) {
       if (S.me && m.p.uid === S.me.uid) Object.assign(S.me, m.p);
       if (S.view === 'chat') { renderMessages(false); renderSide(); }
       return;
-    case 'presence': S.online = m.online; if (S.view === 'chat') { renderSide(); renderHeadCounts(); } return;
+    case 'presence': S.online = m.online; if (m.where) S.where = m.where; if (S.view === 'chat') { renderSide(); renderHeadCounts(); } return;
     case 'msg': {
       mergePeople(m.people);
       if (m.cid) ackPending(m.cid, m.m.id);
+      if ((m.m.room || '') !== S.room) { otherRoomMsg(m.m); return; }
+      if (m.m.kind === 'room') setTimeout(() => sendQuiet({ t: 'rooms' }), 400);
       if (S.messages.some(x => x.id === m.m.id)) return;
       S.messages.push(m.m);
       delete S.typing[m.m.uid];
@@ -1312,8 +1353,9 @@ function onEvent(m) {
       if (!m.m.deleted) onMention(m.m); else countNewMentions();
       return;
     }
-    case 'pins': mergePeople(m.people); S.pins = m.pins; if (S.view === 'chat') renderPinbar(); return;
+    case 'pins': if ('room' in m && (m.room || '') !== S.room) return; mergePeople(m.people); S.pins = m.pins; if (S.view === 'chat') renderPinbar(); return;
     case 'history': {
+      if ('room' in m && (m.room || '') !== S.room) return;
       mergePeople(m.people);
       const box = $('#msgs'); const before = box ? box.scrollHeight - box.scrollTop : 0;
       const have = new Set(S.messages.map(x => x.id));
@@ -1323,7 +1365,7 @@ function onEvent(m) {
       if (box) box.scrollTop = box.scrollHeight - before;
       return;
     }
-    case 'typing': S.typing[m.uid] = Date.now(); renderTyping(); setTimeout(renderTyping, 4200); return;
+    case 'typing': if ((m.room || '') !== S.room) return; S.typing[m.uid] = Date.now(); renderTyping(); setTimeout(renderTyping, 4200); return;
     case 'thread': mergePeople(m.people); showThread(m); return;
     case 'results': mergePeople(m.people); showResults(m); return;
     case 'who': S.people[m.p.uid] = Object.assign({}, S.people[m.p.uid], m.p); openProfile(m.p.uid, true); return;
@@ -1333,6 +1375,7 @@ function onEvent(m) {
     case 'reportlist': mergePeople(m.people); showReports(m); return;
     case 'modlog': mergePeople(m.people); showModlog(m); return;
     case 'restore': {
+      if ((m.m.room || '') !== S.room) return;
       mergePeople(m.people);
       if (!S.messages.some(x => x.id === m.m.id) && (S.oldestDone || !S.messages.length || m.m.id > S.messages[0].id)) {
         S.messages.push(m.m); S.messages.sort((a, b) => a.id - b.id);
@@ -1341,9 +1384,149 @@ function onEvent(m) {
       return;
     }
     case 'notice': toast(m.text); return;
-    case 'error': toast(m.text); return;
+    case 'error': {
+      if (m.cid) { const i = S.pending.findIndex(p => p.cid === m.cid); if (i >= 0) { clearTimeout(S.pending[i].ackT); clearTimeout(S.pending[i].failT); S.pending.splice(i, 1); savePending(); renderPending(false); } }
+      toast(m.text); return;
+    }
+    case 'roomload': {
+      mergePeople(m.people);
+      setRoom(m.room);
+      S.messages = m.messages || []; S.pins = m.pins || []; S.oldestDone = !!m.done; S.loadingOlder = false; S.typing = {};
+      S.reply = null; S.editMsg = null; S.stick = true; S.anc = null; S.loadingRoom = false;
+      S.seenSent = new Set(); S.seenQueue = new Set();
+      const rm = (S.rooms && [S.rooms.main].concat(S.rooms.newest, S.rooms.mine).find(r => r && r.key === S.room)); if (rm) rm.unread = 0;
+      if (S.view === 'chat') { renderChat(); }
+      if (S.afterRoom) { const f = S.afterRoom; S.afterRoom = null; setTimeout(f, 60); }
+      sendQuiet({ t: 'rooms' });
+      return;
+    }
+    case 'roomfail': {
+      S.loadingRoom = false; toast('That episode room could not be opened.');
+      if (S.room) renderChat(); else if (S.view === 'chat') renderChat();
+      return;
+    }
+    case 'rooms': {
+      mergePeople(m.people); S.rooms = m;
+      if (S.view === 'chat') { renderSide(); renderRoomBadge(); }
+      if ($('#roomsSheet')) drawRooms();
+      return;
+    }
   }
 }
+
+// ------------------------------------------------------------ rooms (2026-10-10)
+// Inner Circle Chat is the landing room. Every episode can have a room ('ep:<free slug>'); the Rooms list
+// shows only the newest four episodes and the rooms a member has posted or reacted in. Any other room
+// is found with the search in the Rooms list, or opened from the episode's own page.
+const ROOMS_ICON = s => P('<path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h9A2.5 2.5 0 0 1 17 6.5v5a2.5 2.5 0 0 1-2.5 2.5H9l-3.5 3v-3A2.5 2.5 0 0 1 3 11.5z"/><path d="M20 10v4.5a2.5 2.5 0 0 1-2.5 2.5H17v3l-3.5-3H11"/>', { s });
+const shortRoom = t => String(t || '').replace(/\s*\|\s*(Vibe Rant|Marvelous DeMystifiers|Astro Herbalism|Inner Whirled)[^|]*$/i, '').trim() || String(t || '');
+function setRoom(info) {
+  S.roomInfo = info && typeof info === 'object' ? info : { key: '', title: 'Inner Circle Chat' };
+  S.room = S.roomInfo.key || '';
+  document.title = (S.room ? shortRoom(S.roomInfo.title) + ' | ' : '') + 'Inner Circle | InnerVerse';
+}
+function switchRoom(key, after) {
+  key = key || '';
+  closeOverlay();
+  if (key === S.room && !S.loadingRoom) { if (after) setTimeout(after, 30); return; }
+  if (!S.connected) { S.openRoom = key; S.afterRoom = after || null; return; }
+  S.afterRoom = after || null; S.loadingRoom = true; S.messages = []; S.pins = [];
+  const prev = S.room; S.room = key;
+  const known = S.rooms && [S.rooms.main].concat(S.rooms.newest, S.rooms.mine).find(r => r && r.key === key);
+  S.roomInfo = known ? known : (key ? { key, title: 'Episode room', slug: key.slice(3) } : { key: '', title: 'Inner Circle Chat' });
+  if (S.view === 'chat') renderChat();
+  if (!sendWs({ t: 'room', r: key })) { S.room = prev; S.loadingRoom = false; }
+}
+function allRooms() { return S.rooms ? [S.rooms.main].concat(S.rooms.newest, S.rooms.mine).filter(Boolean) : []; }
+function roomUnreadTotal() { return allRooms().filter(r => r.key !== S.room && r.opened).reduce((n, r) => n + (r.unread || 0), 0); }
+function renderRoomBadge() {
+  const n = roomUnreadTotal();
+  document.querySelectorAll('.rbtn .rdot').forEach(d => { d.textContent = n > 99 ? '99+' : n; d.style.display = n ? 'inline-flex' : 'none'; });
+}
+// a message in a room the member is not looking at: count it where the member can see it
+function otherRoomMsg(m) {
+  if (S.me && m.uid === S.me.uid) { sendQuiet({ t: 'rooms' }); return; }
+  const r = allRooms().find(x => x.key === (m.room || ''));
+  if (m.kind === 'room') setTimeout(() => sendQuiet({ t: 'rooms' }), 400);
+  if (r) {
+    if (r.opened) r.unread = (r.unread || 0) + 1;
+    if (!m.kind) r.total = (r.total || 0) + 1;
+    r.last = { id: m.id, uid: m.uid, text: (m.text || '').replace(/\s+/g, ' ').slice(0, 140), image: !!m.image, kind: m.kind || '', created: m.created };
+    if (S.view === 'chat') { renderSide(); renderRoomBadge(); }
+    if ($('#roomsSheet')) drawRooms();
+    if (!m.kind && (r.engaged || !r.key)) onIncoming(m);
+  }
+  if (mentionedMe(m)) onMention(m);
+}
+function roomIntro(empty) {
+  const ri = S.roomInfo;
+  return `<div class="roomintro"><div data-unfurl="${ri.plus ? 'plus:' + esc(ri.plus) : 'episodes:' + esc(ri.slug || '')}"></div>${empty ? `No one has talked about this episode yet. Start the conversation.` : 'The beginning of the conversation about this episode.'}</div>`;
+}
+function lastLine(r) {
+  if (!r.last) return r.key ? 'No messages yet. Start the conversation.' : '';
+  if (r.last.kind === 'room') return 'New episode room';
+  if (r.last.kind === 'join') return `${esc(person(r.last.uid).name || 'A member')} joined the chat`;
+  return `${esc(person(r.last.uid).name || 'Member')}: ${r.last.image && !r.last.text ? 'Photo' : esc(r.last.text)}`;
+}
+function sideRooms() {
+  const row = r => `<button class="roomrow${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}"${r.key === S.room ? ' aria-current="page"' : ''} title="${esc(r.title)}">${r.key ? (r.thumb ? `<img class="rth" src="${esc(thumbAt(r.thumb, 100))}" alt="">` : I.play()) : I.chat()}<span class="rn">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : ''}</button>`;
+  const R = S.rooms;
+  if (!R) return row({ key: '', title: 'Inner Circle Chat' }) + (S.room ? row(S.roomInfo) : '');
+  let out = row(R.main);
+  if (R.newest.length) out += `<div class="rsec">New episodes</div>` + R.newest.map(row).join('');
+  const cur = S.room && !allRooms().some(r => r.key === S.room) ? [S.roomInfo] : [];
+  if (R.mine.length || cur.length) out += `<div class="rsec">Your rooms</div>` + cur.concat(R.mine).map(row).join('');
+  out += `<button class="btn2 sm" id="findRoom" style="align-self:flex-start;margin:10px 0 0 6px">${I.search(16)}Find an episode room</button>`;
+  return out;
+}
+function openRooms(focusSearch) {
+  const o = overlay(`<div id="roomsSheet"><div style="padding:16px 12px 8px 18px;display:flex;align-items:center;gap:10px"><h2 class="h1" style="font-size:22px;flex:1">Rooms</h2><button class="ibtn" id="rclose" aria-label="Close">${I.close()}</button></div>
+    <div style="padding:0 16px 8px"><input id="rq" class="finput" type="search" placeholder="Find an episode room" aria-label="Find an episode room" autocomplete="off" enterkeyhint="search" style="height:46px;font-size:15px"></div>
+    <div id="rbody" class="rlist"></div></div>`, false, 'Rooms');
+  o.firstElementChild.style.width = 'min(560px, 100%)';
+  $('#rclose').onclick = () => closeOverlay();
+  let t; $('#rq').addEventListener('input', () => { clearTimeout(t); t = setTimeout(drawRooms, 120); });
+  drawRooms(); sendQuiet({ t: 'rooms' });
+  if (focusSearch === true || matchMedia('(hover: hover)').matches) setTimeout(() => { const q = $('#rq'); q && q.focus(); }, 50);
+}
+function drawRooms() {
+  const box = $('#rbody'); if (!box) return;
+  const q = ($('#rq') && $('#rq').value.trim()) || '';
+  const item = r => `<button class="ritem${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}">${r.key ? `<img class="rimg" src="${esc(thumbAt(r.thumb, 300))}" alt="" loading="lazy">` : `<span class="rlogo"><img src="${PLUS_LOGO}" alt=""></span>`}<span style="flex:1;min-width:0"><span class="rt">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span><span class="rl">${lastLine(r)}</span></span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : (r.key && r.total ? `<span class="rcount">${r.total}</span>` : '')}</button>`;
+  if (!q) {
+    const R = S.rooms;
+    if (!R) { box.innerHTML = `<div style="padding:20px">${loaderHtml()}</div>`; return; }
+    box.innerHTML = item(R.main)
+      + (R.newest.length ? `<div class="rhead">New episodes</div>` + R.newest.map(item).join('') : '')
+      + `<div class="rhead">Your rooms</div>` + (R.mine.length ? R.mine.map(item).join('') : `<div class="rnote">Rooms you post or react in show up here. Search above for any episode, or tap Talk about this episode on an episode's page.</div>`);
+  } else {
+    box.innerHTML = '<div class="rnote">Searching...</div>';
+    loadIndexes().then(ix => {
+      if (($('#rq') && $('#rq').value.trim()) !== q) return;
+      const seen = new Set(), hits = [];
+      for (const x of rankEpisodes(episodeList(ix), q)) {
+        const slug = x.kind === 'plus' ? (x.e.freeSlug || x.slug) : x.slug;
+        if (seen.has(slug)) continue; seen.add(slug);
+        const known = allRooms().find(r => r.key === 'ep:' + slug);
+        hits.push(known || { key: 'ep:' + slug, title: epTitle(x.e), thumb: x.e.thumb, last: null, opened: false, total: 0, _date: x.e.date });
+        if (hits.length >= 40) break;
+      }
+      box.innerHTML = hits.length ? hits.map(r => { const h = item(r); return r.last || r.total ? h : h.replace('No messages yet. Start the conversation.', r._date ? esc(new Date(r._date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })) : 'Open the room'); }).join('') : `<div class="rnote">No episodes match that.</div>`;
+      box.querySelectorAll('[data-goroom]').forEach(b => b.onclick = () => switchRoom(b.dataset.goroom));
+    });
+    return;
+  }
+  box.querySelectorAll('[data-goroom]').forEach(b => b.onclick = () => switchRoom(b.dataset.goroom));
+}
+document.addEventListener('click', e => {
+  const g = e.target.closest && e.target.closest('.msgs [data-goroom], #thread [data-goroom]'); if (!g) return;
+  e.preventDefault(); e.stopPropagation(); switchRoom(g.dataset.goroom);
+}, true);
+window.addEventListener('hashchange', () => {
+  const rm = location.hash.match(/(?:^#|&)room=([^&]+)/); if (!rm) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  const r = decodeURIComponent(rm[1]); if (S.connected && S.view === 'chat') switchRoom(r); else S.openRoom = r;
+});
 
 // ------------------------------------------------------------ views
 function render() {
@@ -1377,7 +1560,7 @@ function renderDoor() {
       ${why ? `<div class="note">${esc(why)}</div>` : ''}
       <ul style="display:flex;flex-direction:column;gap:18px;margin-top:30px">
         ${pt(I.chat(), 'Inner Circle Chat', 'A live room with fellow listeners and Chance, open whenever you are.')}
-        ${pt(I.play(), 'A thread for every episode <span class="soonchip">Soon</span>', 'Discuss episodes and find deeper connections than ever.')}
+        ${pt(I.play(), 'A room for every episode', 'Discuss episodes and find deeper connections than ever.')}
         ${pt(I.user(), 'A member profile', 'Share your name or stay anonymous. Your profile can show others your astrological Sun, Moon &amp; Rising signs, and your favorite episodes.')}
         ${pt(I.layers(), 'Rides along as you browse', 'Keep talking while you watch. The room follows you from page to page.')}
       </ul>
@@ -1524,15 +1707,17 @@ function renderChat() {
     <aside class="side" id="side"></aside>
     <main class="panel" aria-label="Inner Circle Chat">
       <div class="ptop">
-        <a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a>
-        <img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">
-        <div style="flex:1;min-width:0;margin-left:4px"><h1 class="room">Inner Circle Chat</h1><div class="sub" id="cnt2"></div></div>
+        ${S.room ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button><button id="roomThumb" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 100))}" alt="">` : `<img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}</button>`
+          : `<a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a><img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}
+        <button id="ptitle" aria-label="Who is here" style="flex:1;min-width:0;margin-left:4px;text-align:left;color:inherit"><h1 class="room${S.room ? ' ep' : ''}">${esc(S.room ? shortRoom(S.roomInfo.title) : 'Inner Circle Chat')}</h1><div class="sub" id="cnt2"></div></button>
+        <button class="ibtn rbtn" id="roomsBtn2" aria-label="Rooms" title="Rooms">${ROOMS_ICON(21)}<span class="rdot"></span></button>
         <button class="ibtn mbtn" id="mentBtn2" aria-label="Settings" title="Settings">${I.gear(21)}<span class="mbadge" style="display:none"></span></button>
         <button class="ibtn" id="searchBtn2" aria-label="Search">${I.search(21)}</button>
-        <button class="ibtn" id="peopleBtn2" aria-label="Who is here">${I.people(21)}</button>
       </div>
       <div class="phead desk">
-        <div style="flex:1;min-width:0"><h2 class="room">Inner Circle Chat</h2><div class="sub" id="cnt"></div></div>
+        ${S.room ? `<button id="roomThumbD" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 300))}" alt="">` : ''}</button>` : ''}
+        <div style="flex:1;min-width:0"><h2 class="room" style="${S.room ? 'font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' : ''}">${esc(S.room ? S.roomInfo.title : 'Inner Circle Chat')}</h2><div class="sub" id="cnt"></div></div>
+        <button class="ibtn rbtn" id="roomsBtn" aria-label="Rooms" title="Rooms">${ROOMS_ICON()}<span class="rdot"></span></button>
         <button class="ibtn mbtn" id="mentBtn" aria-label="Settings" title="Settings">${I.gear()}<span class="mbadge" style="display:none"></span></button>
         <button class="ibtn" id="searchBtn" aria-label="Search">${I.search()}</button>
         <button class="ibtn" id="peopleBtn" aria-label="Who is here">${I.people()}</button>
@@ -1548,8 +1733,8 @@ function renderChat() {
         <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
         <button class="ibtn" id="emoBtn" aria-label="Emoji">${P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',{s:21})}</button>
         <button class="ibtn" id="epBtn" aria-label="Link an episode" title="Link an episode">${P('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',{s:21})}</button>
-        <label class="sr" for="field">Message the Inner Circle</label>
-        <textarea id="field" class="field" rows="1" maxlength="2000" placeholder="Message the Inner Circle"></textarea>
+        <label class="sr" for="field">${S.room ? 'Talk about this episode' : 'Message the Inner Circle'}</label>
+        <textarea id="field" class="field" rows="1" maxlength="2000" placeholder="${S.room ? 'Talk about this episode' : 'Message the Inner Circle'}"></textarea>
         <button class="send" id="sendBtn" aria-label="Send">${I.up(21)}</button>
       </div>
       <button class="jump" id="jump" aria-label="Jump to latest">${I.down()}</button>
@@ -1568,9 +1753,15 @@ function renderChat() {
   });
   box.addEventListener('load', e => { if (e.target && e.target.tagName === 'IMG') stickDown(); }, true);
   $('#jump').onclick = () => { box.scrollTop = box.scrollHeight; $('#jump').classList.remove('show'); };
-  $('#peopleBtn').onclick = $('#peopleBtn2').onclick = () => sendWs({ t: 'members' });
+  $('#peopleBtn').onclick = $('#ptitle').onclick = () => sendWs({ t: 'members' });
   $('#searchBtn').onclick = $('#searchBtn2').onclick = () => openSearch('room');
   $('#mentBtn').onclick = $('#mentBtn2').onclick = openSettings;
+  $('#roomsBtn').onclick = $('#roomsBtn2').onclick = openRooms;
+  if ($('#roomBack')) $('#roomBack').onclick = () => switchRoom('');
+  const openEpPage = () => { const ri = S.roomInfo; const a = document.createElement('a'); a.href = ri.plus && S.me ? SITE + '/plus/' + ri.plus : SITE + '/episodes/' + ri.slug; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); };
+  if ($('#roomThumb')) $('#roomThumb').onclick = openEpPage;
+  if ($('#roomThumbD')) $('#roomThumbD').onclick = openEpPage;
+  renderRoomBadge();
   sendWs({ t: 'members', quiet: true });
   countNewMentions();
   if ($('#repBtn')) $('#repBtn').onclick = () => sendWs({ t: 'reports' });
@@ -1588,8 +1779,9 @@ function renderConn() {
   }, 350);
 }
 
+function hereNow() { return S.online.filter(u => (S.where[u] === undefined ? '' : S.where[u]) === S.room); }
 function renderHeadCounts() {
-  const n = S.online.length;
+  const n = hereNow().length;
   const t = `<span class="dot"></span>${n} here now`;
   if ($('#cnt')) $('#cnt').innerHTML = t;
   if ($('#cnt2')) $('#cnt2').innerHTML = t;
@@ -1598,7 +1790,7 @@ function renderHeadCounts() {
 function renderSide() {
   const side = $('#side'); if (!side || !S.me) return;
   const hostish = S.me.role === 'host' || S.me.role === 'mod';
-  const online = S.online.slice().sort((a, b) => (person(a).role === 'host' ? -1 : 0) - (person(b).role === 'host' ? -1 : 0)).slice(0, 12);
+  const online = hereNow().sort((a, b) => (person(a).role === 'host' ? -1 : 0) - (person(b).role === 'host' ? -1 : 0)).slice(0, 12);
   side.innerHTML = `<div>
       <div class="eyebrow">Members only</div>
       <h1 class="h1" style="font-size:36px;margin-top:10px">The Inner Circle</h1>
@@ -1606,12 +1798,10 @@ function renderSide() {
     </div>
     <nav aria-label="Rooms" style="display:flex;flex-direction:column;gap:4px">
       <div class="label" style="margin:0 0 8px 14px">Rooms</div>
-      <a class="roomrow on" href="/" aria-current="page">${I.chat()}Inner Circle Chat</a>
-      <div class="roomrow soon">${I.play()}Episode threads<span class="soonchip">Soon</span></div>
-      <div class="roomrow soon">${I.hash()}Topics<span class="soonchip">Soon</span></div>
+      ${sideRooms()}
     </nav>
     <section aria-label="Here now" style="display:flex;flex-direction:column;gap:4px">
-      <div class="label" style="margin:0 0 6px 6px">Here now · ${S.online.length}</div>
+      <div class="label" style="margin:0 0 6px 6px">Here now · ${hereNow().length}</div>
       ${online.map(uid => { const p = person(uid); return `<button class="person" data-who="${esc(uid)}">${avatar(uid, 32)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span>${p.role === 'host' ? '<span class="role" style="color:var(--gold)">Host</span>' : p.role === 'mod' ? '<span class="role">Moderator</span>' : ''}</button>`; }).join('')}
       <button class="btn2 sm" id="seeAll" style="align-self:flex-start;margin:6px 0 0 6px">See everyone</button>
       ${hostish && S.reports ? `<button class="btn2 sm" id="seeReports" style="align-self:flex-start;margin:6px 0 0 6px">${I.shield(16)}Reports (${S.reports})</button>` : ''}
@@ -1619,6 +1809,8 @@ function renderSide() {
     <div class="mecard">${avatar(S.me.uid, 40, true)}<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(S.me.name)}</div><div class="muted" style="font-size:12.5px;margin-top:2px">Your profile</div></div><button class="btn2 sm" id="editMe">Edit</button></div>`;
   hydrateMedia(side);
   side.querySelectorAll('[data-who]').forEach(b => b.onclick = () => askProfile(b.dataset.who));
+  side.querySelectorAll('[data-goroom]').forEach(b => b.onclick = () => switchRoom(b.dataset.goroom));
+  if ($('#findRoom')) $('#findRoom').onclick = () => openRooms(true);
   $('#seeAll').onclick = () => sendWs({ t: 'members' });
   if ($('#seeReports')) $('#seeReports').onclick = () => sendWs({ t: 'reports' });
   $('#editMe').onclick = editProfile;
@@ -1678,12 +1870,17 @@ const joinLabel = name => `${name} joined the chat`;
 function msgHtml(m, i, list) {
   if (m.deleted) return '';
   const prev0 = list[i - 1];
+  if (m.kind === 'room') {
+    const slug = String(m.text || '').replace(/^ep:/, '');
+    const day = !prev0 || new Date(prev0.created).toDateString() !== new Date(m.created).toDateString();
+    return (day ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '') + `<div class="jwrap" data-id="${m.id}"><div class="roomnote"><span class="rk">New episode room</span>${m.info && m.info.title ? `<div data-goroom="${esc(m.text)}" style="width:100%">${unfurlHtml({ title: m.info.title, thumb: m.info.thumb, url: m.info.plus ? SITE + '/plus/' + m.info.plus : SITE + '/episodes/' + slug, shows: m.info.show ? [m.info.show] : [] }, m.info.plus ? 'plus' : 'episodes', m.info.plus || slug, 'div')}</div>` : `<div data-unfurl="episodes:${esc(slug)}" data-goroom="${esc(m.text)}" style="width:100%"></div>`}<button class="btn2 sm" data-goroom="${esc(m.text)}">${I.chat(16)}Join the conversation</button><span class="time">${fmtTime(m.created)}</span></div></div>`;
+  }
   if (m.kind === 'join') {
     const jp = person(m.uid);
     const day = !prev0 || new Date(prev0.created).toDateString() !== new Date(m.created).toDateString();
     return (day ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '') + `<div class="jwrap" data-id="${m.id}"><div class="joined" data-press="${m.id}"><button data-who="${esc(m.uid)}" title="View profile">${avatar(m.uid, 22)}<b>${esc(jp.name || 'A new member')}</b></button> joined the chat<span class="time">${fmtTime(m.created)}</span></div>${reactsHtml(m)}</div>`;
   }
-  const prev = prev0 && prev0.kind !== 'join' ? prev0 : null, next = list[i + 1] && list[i + 1].kind !== 'join' ? list[i + 1] : null;
+  const prev = prev0 && !prev0.kind ? prev0 : null, next = list[i + 1] && !list[i + 1].kind ? list[i + 1] : null;
   const mine = S.me && m.uid === S.me.uid;
   const p = person(m.uid);
   const gap = 5 * 60 * 1000;
@@ -1713,11 +1910,13 @@ function renderMessages(toBottom) {
   const box = $('#msgs'); if (!box) return;
   const keep = box.scrollHeight - box.scrollTop;
   const anc = toBottom || S.stick ? null : topAnchor(box);
+  if (S.loadingRoom) { box.innerHTML = `<div style="margin:auto">${loaderHtml()}</div>`; return; }
   if (!S.messages.length) {
-    box.innerHTML = `<div class="empty">${I.chat(28).replace('<svg', '<svg style="margin:0 auto 12px;color:var(--gold)"')}Welcome, ${esc(S.me ? S.me.name : '')}. This room is brand new. Say hello and start the first conversation.</div><div id="pend">${pendHtml()}</div>`;
+    box.innerHTML = (S.room ? roomIntro(true) : `<div class="empty">${I.chat(28).replace('<svg', '<svg style="margin:0 auto 12px;color:var(--gold)"')}Welcome, ${esc(S.me ? S.me.name : '')}. This room is brand new. Say hello and start the first conversation.</div>`) + `<div id="pend">${pendHtml()}</div>`;
+    hydrateUnfurls(box);
     return;
   }
-  const html = (S.oldestDone ? '<div class="day" style="margin-top:4px">The beginning of Inner Circle Chat</div>' : '') + S.messages.map((m, i, l) => msgHtml(m, i, l)).join('') + `<div id="pend">${pendHtml()}</div>`;
+  const html = (S.oldestDone ? (S.room ? roomIntro(false) : '<div class="day" style="margin-top:4px">The beginning of Inner Circle Chat</div>') : '') + S.messages.map((m, i, l) => msgHtml(m, i, l)).join('') + `<div id="pend">${pendHtml()}</div>`;
   const live = box.querySelector('.lpframe');
   if (!live || !redrawAround(box, html, live)) box.innerHTML = html;
   watchSeen(box);
@@ -2223,7 +2422,7 @@ function showResults(r) {
   const hl = t => esc(t).replace(re, '<mark style="background:rgba(216,170,60,0.35);color:inherit;border-radius:3px">$1</mark>');
   const snip = t => { const i = t.toLowerCase().indexOf(r.q.toLowerCase()); const a = Math.max(0, i - 50); return (a ? '…' : '') + t.slice(a, a + 180) + (t.length > a + 180 ? '…' : ''); };
   box.innerHTML = `<div class="muted" style="font-size:12.5px;padding:2px 10px 8px">${r.messages.length}${r.messages.length >= 60 ? '+' : ''} result${r.messages.length === 1 ? '' : 's'}${r.scope === 'all' ? ' across all chats' : ' in this chat'}</div>` + r.messages.map(m => { const p = person(m.uid);
-    return `<button class="person" data-hit="${m.id}" style="align-items:flex-start;padding:9px 10px;min-height:0;gap:11px">${avatar(m.uid, 32)}<span style="flex:1;min-width:0;text-align:left"><span style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><b style="font-size:14px">${hl(p.name || 'Member')}</b><span class="time">${r.scope === 'all' ? esc(r.room) + ' · ' : ''}${esc(dayLabel(m.created))} ${fmtTime(m.created)}</span></span><span style="display:block;font-weight:500;font-size:14px;line-height:1.45;margin-top:2px;color:var(--ink)">${m.text ? hl(snip(m.text)) : '<span class="muted">Image</span>'}</span></span></button>`; }).join('');
+    return `<button class="person" data-hit="${m.id}" style="align-items:flex-start;padding:9px 10px;min-height:0;gap:11px">${avatar(m.uid, 32)}<span style="flex:1;min-width:0;text-align:left"><span style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><b style="font-size:14px">${hl(p.name || 'Member')}</b><span class="time">${r.scope === 'all' ? esc(shortRoom((r.rooms && r.rooms[m.room || '']) || r.room)) + ' · ' : ''}${esc(dayLabel(m.created))} ${fmtTime(m.created)}</span></span><span style="display:block;font-weight:500;font-size:14px;line-height:1.45;margin-top:2px;color:var(--ink)">${m.text ? hl(snip(m.text)) : '<span class="muted">Image</span>'}</span></span></button>`; }).join('');
   hydrateMedia(box);
   box.querySelectorAll('[data-hit]').forEach(b => b.onclick = () => sendWs({ t: 'thread', id: Number(b.dataset.hit) }));
 }
@@ -2238,7 +2437,8 @@ function showThread(t) {
   if (focus) { focus.classList.add('focus'); setTimeout(() => focus.scrollIntoView({ block: 'center' }), 30); }
   hydrateMedia(o); hydrateUnfurls(o);
   $('#thclose').onclick = closeOverlay;
-  $('#threply').onclick = () => { closeOverlay(); startReply(t.id); };
+  $('#threply').onclick = () => { closeOverlay(); if ((t.room || '') !== S.room) switchRoom(t.room || '', () => startReply(t.id)); else startReply(t.id); };
+  if ((t.room || '') !== S.room && $('#threply')) $('#threply').innerHTML = `${I.reply(16)}Reply in ${esc(t.roomTitle || 'that room')}`;
 }
 
 function askProfile(uid) { sendWs({ t: 'who', uid }); }

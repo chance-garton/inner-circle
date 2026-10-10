@@ -10,6 +10,13 @@ const INITIATOR_CUTOFF = Date.UTC(2027, 0, 1); // joined before 1 Jan 2027
 const MAX_TEXT = 2000;
 const MAX_IMAGE = 8 * 1024 * 1024;
 const PAGE = 50;
+// Episode rooms (2026-10-10): every episode can have a room, keyed by its free slug ('ep:<slug>'; '' is
+// Inner Circle Chat). A member's room list holds only the newest few episodes and the rooms they have
+// posted or reacted in; everything else is reached from the episode page or the room search.
+const NEWEST_ROOMS = 4;
+const ROOM_SKIP_SHOWS = ['Chance Guest Spots']; // never spotlighted as a newest room (still open from the page)
+const DATA_DEFAULT = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
+const chicagoDay = () => { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(new Date()); } catch (e) { return new Date().toISOString().slice(0, 10); } };
 // Quick reactions shown first; any single real emoji is accepted.
 const REACTIONS = ['\u2764\uFE0F', '\uD83D\uDE02', '\uD83D\uDD25', '\uD83E\uDD2F', '\uD83D\uDE4F', '\u2728', '\uD83D\uDC4D'];
 const OLD_REACTIONS = { heart: '\u2764\uFE0F', flame: '\uD83D\uDD25', eye: '\uD83D\uDC41\uFE0F', spark: '\u2728', laugh: '\uD83D\uDE02', aha: '\uD83D\uDCA1' };
@@ -264,6 +271,12 @@ export class Room {
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN preview TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     try { this.sql.exec('ALTER TABLE members ADD COLUMN join_alerts INTEGER DEFAULT 1'); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE members ADD COLUMN bolt TEXT DEFAULT ''"); } catch (e) { /* already there */ }
+    try { this.sql.exec("ALTER TABLE messages ADD COLUMN room TEXT DEFAULT ''"); } catch (e) { /* already there */ }
+    this.sql.exec('CREATE INDEX IF NOT EXISTS messages_room ON messages (room, id)');
+    // per member per room: engaged (posted or reacted there) and the last message they have read
+    this.sql.exec('CREATE TABLE IF NOT EXISTS room_state (uid TEXT, room TEXT, engaged INTEGER DEFAULT 0, last_read INTEGER DEFAULT 0, PRIMARY KEY (uid, room)) WITHOUT ROWID');
+    // a check every half hour for a newly released episode, whose room is announced in the main chat
+    state.blockConcurrencyWhile(async () => { try { if (!(await state.storage.getAlarm())) await state.storage.setAlarm(Date.now() + 60 * 1000); } catch (e) { /* no alarms here */ } });
     this.sql.exec('CREATE TABLE IF NOT EXISTS link_previews (url TEXT PRIMARY KEY, data TEXT, fetched INTEGER)');
     // who has had a message on screen (only the count is ever shown, never the names)
     this.sql.exec('CREATE TABLE IF NOT EXISTS views (msg_id INTEGER, uid TEXT, PRIMARY KEY (msg_id, uid)) WITHOUT ROWID');
@@ -306,13 +319,20 @@ export class Room {
   // members looking at the chat right now get it live; everyone else subscribed gets a push, by their setting
   async pushOut(m, author) {
     try {
+      const key = m.room || '';
+      let roomTitle = 'Inner Circle', engagedHere = null;
+      if (key) {
+        engagedHere = new Set(this.all('SELECT uid FROM room_state WHERE room = ? AND engaged = 1', key).map(r => r.uid));
+        roomTitle = trimTo(this.roomInfo(key, await this.eps()).title, 70);
+      }
+      const roomUrl = key ? '/app/#/chat?room=' + encodeURIComponent(key) : '/app/#/chat';
       const subs = this.all('SELECT s.*, m.notify, m.push_unread, m.role, m.join_alerts FROM push_subs s JOIN members m ON m.uid = s.uid WHERE s.uid != ? AND m.banned = 0 AND m.profile_done = 1', author.uid);
       if (!subs.length) return;
       const looking = new Set();
       for (const ws of this.state.getWebSockets()) {
         if (ws.readyState !== 1) continue;
         const a = ws.deserializeAttachment();
-        if (a && a.uid && a.ready && !a.away) looking.add(a.uid);
+        if (a && a.uid && a.ready && !a.away && (a.room || '') === key) looking.add(a.uid);
       }
       const vapid = await this.vapid();
       const mentions = Array.isArray(m.mentions) ? m.mentions : [];
@@ -324,14 +344,20 @@ export class Room {
         if (m.kind === 'join') {
           // a new member joining reaches the host only, whatever their level (Chance, 2026-10-08), unless they switched it off
           if (s.role !== 'host' || s.join_alerts === 0) continue;
+        } else if (m.kind === 'room') {
+          if (level !== 'all') continue; // a new episode room: everyone who hears about every message
         } else if (level === 'none' || (level === 'mentions' && !tagged)) continue;
+        // an episode room only reaches members who have taken part there (Chance, 2026-10-08), or who are tagged
+        else if (key && !tagged && !engagedHere.has(s.uid)) continue;
         if (!bumped.has(s.uid)) { this.sql.exec('UPDATE members SET push_unread = push_unread + 1 WHERE uid = ?', s.uid); bumped.set(s.uid, (s.push_unread || 0) + 1); }
         // Telegram style: the room as the title, "Name: message" as the text (the phone trims it to fit)
         const name = author.name || 'A member';
         const text = (m.text || '').replace(/\s+/g, ' ').trim();
         const body = m.kind === 'join' ? `${name} joined the chat` : `${name}: ${m.image ? '\u{1F4F7} Photo' + (text ? ' ' : '') : ''}${text}`.slice(0, 600);
         const img = typeof author.avatar === 'string' && author.avatar.startsWith('img:') ? author.avatar.slice(4) : '';
-        const payload = JSON.stringify({ title: m.kind === 'join' ? 'New member' : 'Inner Circle', body: m.kind === 'join' ? `${name} just joined the Inner Circle` : body, tag: 'ivc-' + m.id, url: '/app/#/chat', badge: bumped.get(s.uid), avatar: img });
+        let title = m.kind === 'join' ? 'New member' : roomTitle, text2 = m.kind === 'join' ? `${name} just joined the Inner Circle` : body, url = roomUrl, av = img;
+        if (m.kind === 'room') { const ri = this.roomInfo(m.text, await this.eps()); title = 'Inner Circle'; text2 = `New episode room: ${trimTo(ri.title, 140)}`; url = '/app/#/chat?room=' + encodeURIComponent(m.text); av = ''; }
+        const payload = JSON.stringify({ title, body: text2, tag: 'ivc-' + m.id, url, badge: bumped.get(s.uid), avatar: av });
         try {
           const r = await sendPush(s, payload, vapid);
           if (r.status === 404 || r.status === 410) this.sql.exec('DELETE FROM push_subs WHERE endpoint = ?', s.endpoint);
@@ -362,6 +388,127 @@ export class Room {
     if (!row || row.deleted || firstLink(row.text) !== url) return;
     this.sql.exec('UPDATE messages SET preview = ? WHERE id = ?', JSON.stringify(p), id);
     this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', id)) });
+  }
+
+  // ---- episode rooms
+  async eps(force) {
+    if (!force && this.epx && Date.now() - this.epx.at < 10 * 60 * 1000) return this.epx;
+    const base = this.env.DATA_URL || DATA_DEFAULT;
+    try {
+      const [a, b] = await Promise.all(['episodes-index.json', 'plus-index.json'].map(f => fetch(base + f).then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))));
+      const free = new Map(), plus = new Map(), plusByFree = new Map();
+      for (const e of a.episodes || []) if (e && e.slug) free.set(e.slug, e);
+      for (const e of b.episodes || []) if (e && e.slug) { plus.set(e.slug, e); if (e.freeSlug) plusByFree.set(e.freeSlug, e); }
+      if (free.size) this.epx = { at: Date.now(), free, plus, plusByFree, list: (a.episodes || []).filter(e => e && e.slug) };
+    } catch (e) { /* keep what we had */ }
+    if (!this.epx) this.epx = { at: Date.now() - 9 * 60 * 1000, free: new Map(), plus: new Map(), plusByFree: new Map(), list: [] };
+    return this.epx;
+  }
+  // any room name a page sends, made canonical: the free slug for an episode that has one
+  async roomKey(r) {
+    if (r === undefined || r === null || r === '' || r === 'main') return { key: '' };
+    const m = typeof r === 'string' && r.match(/^ep:([a-z0-9-]{1,140})$/);
+    if (!m) return null;
+    const x = await this.eps();
+    let slug = m[1];
+    if (!x.free.has(slug)) {
+      const p = x.plus.get(slug);
+      if (p && p.freeSlug && x.free.has(p.freeSlug)) slug = p.freeSlug;
+      else if (!p && !this.one('SELECT 1 AS x FROM messages WHERE room = ? LIMIT 1', 'ep:' + slug)) return null;
+    }
+    return { key: 'ep:' + slug };
+  }
+  roomInfo(key, x) {
+    if (!key) return { key: '', title: 'Inner Circle Chat' };
+    const slug = key.slice(3);
+    const f = x.free.get(slug), p = x.plusByFree.get(slug) || x.plus.get(slug) || null;
+    const e = f || p || {};
+    return { key, slug, title: String(e.title || slug).replace(/\s*\(PLUS\)\s*$/i, ''), thumb: (f && f.thumb) || (p && p.thumb) || '',
+      date: e.date || '', show: String((e.shows || [])[0] || ''), free: f ? slug : '', plus: p ? p.slug : '' };
+  }
+  newest(x) {
+    return x.list.filter(e => !(e.shows || []).some(s => ROOM_SKIP_SHOWS.includes(s)))
+      .slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, NEWEST_ROOMS);
+  }
+  markRead(uid, key) {
+    this.sql.exec('INSERT OR IGNORE INTO room_state (uid, room) VALUES (?, ?)', uid, key);
+    this.sql.exec('UPDATE room_state SET last_read = MAX(last_read, (SELECT COALESCE(MAX(id), 0) FROM messages WHERE room = ?)) WHERE uid = ? AND room = ?', key, uid, key);
+  }
+  // true when this made them a participant for the first time
+  engage(uid, key) {
+    if (!key) return false;
+    const r = this.one('SELECT engaged FROM room_state WHERE uid = ? AND room = ?', uid, key);
+    if (r && r.engaged) return false;
+    this.sql.exec('INSERT OR IGNORE INTO room_state (uid, room) VALUES (?, ?)', uid, key);
+    this.sql.exec('UPDATE room_state SET engaged = 1 WHERE uid = ? AND room = ?', uid, key);
+    return true;
+  }
+  // everyone looking at this room right now has read it
+  readersRead(key) {
+    for (const ws of this.state.getWebSockets()) {
+      if (ws.readyState !== 1) continue;
+      const a = ws.deserializeAttachment();
+      if (a && a.uid && a.ready && !a.away && (a.room || '') === key) this.markRead(a.uid, key);
+    }
+  }
+  async roomsFor(uid) {
+    const x = await this.eps();
+    const st = new Map(this.all('SELECT room, engaged, last_read FROM room_state WHERE uid = ?', uid).map(r => [r.room, r]));
+    const newest = this.newest(x).map(e => 'ep:' + e.slug);
+    const lastOf = key => this.one("SELECT * FROM messages WHERE room = ? AND deleted = 0 ORDER BY id DESC LIMIT 1", key);
+    const ids = new Set();
+    const one = key => {
+      const s = st.get(key), last = lastOf(key);
+      if (last && last.uid) ids.add(last.uid);
+      return { ...this.roomInfo(key, x), opened: !!s, engaged: !!(s && s.engaged),
+        unread: s ? this.one("SELECT COUNT(*) AS n FROM messages WHERE room = ? AND deleted = 0 AND id > ? AND uid != ? AND COALESCE(kind, '') != 'join'", key, s.last_read, uid).n : 0,
+        total: this.one("SELECT COUNT(*) AS n FROM messages WHERE room = ? AND deleted = 0 AND COALESCE(kind, '') = ''", key).n,
+        last: last ? { id: last.id, uid: last.uid, text: (last.text || '').replace(/\s+/g, ' ').slice(0, 140), image: !!last.image, kind: last.kind || '', created: last.created } : null };
+    };
+    const mine = [...st.values()].filter(r => r.engaged && r.room && !newest.includes(r.room)).map(r => one(r.room))
+      .sort((a, b) => ((b.last && b.last.id) || 0) - ((a.last && a.last.id) || 0));
+    const out = { t: 'rooms', main: one(''), newest: newest.map(one), mine };
+    const people = {}; for (const id of ids) { const p = this.person(this.member(id)); if (p) people[id] = p; }
+    out.people = people;
+    return out;
+  }
+  // a newly released episode gets one notice in the main chat, with a way into its room
+  async announceNew() {
+    if (this.announcing) return; this.announcing = true;
+    try {
+      const x = await this.eps(true);
+      if (!x.list.length) return;
+      const row = this.one("SELECT v FROM meta WHERE k = 'announced'");
+      const done = new Set(row ? safeArr(row.v) : []);
+      if (!row) { for (const e of x.list) done.add(e.slug); } // first run: what is already out counts as announced
+      else {
+        for (const e of this.newest(x).reverse()) {
+          if (done.has(e.slug)) continue;
+          done.add(e.slug);
+          const key = 'ep:' + e.slug;
+          const ins = this.one("INSERT INTO messages (uid, text, image, reply_to, created, kind, room) VALUES ('', ?, '', NULL, ?, 'room', '') RETURNING *", key, Date.now());
+          const m = this.shape(ins);
+          this.broadcast({ t: 'msg', m, people: {}, roomInfo: this.roomInfo(key, x) });
+          this.readersRead('');
+          this.state.waitUntil(this.pushOut(m, { uid: '', name: '', avatar: '' }));
+        }
+      }
+      this.sql.exec("INSERT OR REPLACE INTO meta (k, v) VALUES ('announced', ?)", JSON.stringify([...done].slice(-3000)));
+      this.announcedAt = Date.now();
+    } catch (e) { /* try again next time */ } finally { this.announcing = false; }
+  }
+  async alarm() {
+    await this.announceNew();
+    try { await this.state.storage.setAlarm(Date.now() + 30 * 60 * 1000); } catch (e) { /* ok */ }
+  }
+  where() {
+    const w = {};
+    for (const ws of this.state.getWebSockets()) {
+      if (ws.readyState !== 1) continue;
+      const a = ws.deserializeAttachment();
+      if (a && a.uid && a.ready) w[a.uid] = a.room || '';
+    }
+    return w;
   }
 
   viewCount(id) { return this.one('SELECT COUNT(*) AS n FROM views WHERE msg_id = ?', id).n; }
@@ -496,7 +643,7 @@ export class Room {
     return [...seen];
   }
 
-  presence(skip) { this.broadcast({ t: 'presence', online: this.online(skip) }); }
+  presence(skip) { const w = this.where(); if (skip) { const a = skip.deserializeAttachment(); if (a && a.uid && !this.online(skip).includes(a.uid)) delete w[a.uid]; } this.broadcast({ t: 'presence', online: this.online(skip), where: w }); }
 
   shape(row) {
     if (!row) return null;
@@ -516,18 +663,21 @@ export class Room {
       kind: row.kind || '', mentions: safeArr(row.mentions),
       preview: row.deleted ? null : safeObj(row.preview),
       views: this.viewCount(row.id),
+      room: row.room || '',
+      info: row.kind === 'room' && this.epx ? this.roomInfo(row.text, this.epx) : undefined,
     };
   }
 
-  page(before) {
+  page(room, before) {
+    room = room || '';
     const rows = before
-      ? this.all('SELECT * FROM messages WHERE id < ? AND deleted = 0 ORDER BY id DESC LIMIT ?', before, PAGE)
-      : this.all('SELECT * FROM messages WHERE deleted = 0 ORDER BY id DESC LIMIT ?', PAGE);
+      ? this.all('SELECT * FROM messages WHERE room = ? AND id < ? AND deleted = 0 ORDER BY id DESC LIMIT ?', room, before, PAGE)
+      : this.all('SELECT * FROM messages WHERE room = ? AND deleted = 0 ORDER BY id DESC LIMIT ?', room, PAGE);
     return rows.reverse().map(r => this.shape(r));
   }
 
-  pins() {
-    return this.all('SELECT * FROM messages WHERE pinned = 1 AND deleted = 0 ORDER BY id DESC LIMIT 10').map(r => this.shape(r));
+  pins(room) {
+    return this.all('SELECT * FROM messages WHERE room = ? AND pinned = 1 AND deleted = 0 ORDER BY id DESC LIMIT 10', room || '').map(r => this.shape(r));
   }
 
   peopleFor(msgs, extra) {
@@ -574,13 +724,19 @@ export class Room {
       if (mods.includes(who.email) && !hosts.includes(who.email)) this.sql.exec("UPDATE members SET role = 'mod' WHERE uid = ? AND role = 'member'", who.uid);
       m = this.member(who.uid);
       if (m.banned) { this.send(ws, { t: 'denied', why: 'removed' }); return ws.close(4003, 'removed'); }
-      ws.serializeAttachment({ uid: who.uid, ready: !!(m.rules_ok && m.profile_done) });
+      const rk = (msg.room ? await this.roomKey(msg.room) : null) || { key: '' };
+      ws.serializeAttachment({ uid: who.uid, ready: !!(m.rules_ok && m.profile_done), room: rk.key });
       this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', who.uid);
-      const msgs = this.page();
-      const pins = this.pins();
+      // the main chat counts as read up to now the first time a member is seen after rooms began
+      if (!this.one("SELECT 1 AS x FROM room_state WHERE uid = ? AND room = ''", who.uid)) this.markRead(who.uid, '');
+      this.markRead(who.uid, rk.key);
+      if (!this.epx) await this.eps(); // episode names for room notices
+      const msgs = this.page(rk.key);
+      const pins = this.pins(rk.key);
+      if (!this.announcedAt || Date.now() - this.announcedAt > 10 * 60 * 1000) { this.announcedAt = Date.now(); this.state.waitUntil(this.announceNew()); }
       this.send(ws, {
-        t: 'init', me: this.meFor(who.uid),
-        messages: msgs, pins, online: this.online(),
+        t: 'init', me: this.meFor(who.uid), room: rk.key ? this.roomInfo(rk.key, await this.eps()) : this.roomInfo(''), roomfail: !!msg.room && msg.room !== 'main' && !rk.key,
+        messages: msgs, pins, online: this.online(), where: this.where(),
         people: this.peopleFor(msgs.concat(pins), this.online()),
         signs: SIGNS, symbols: SYMBOLS, reactions: REACTIONS,
       });
@@ -630,19 +786,26 @@ export class Room {
         const text = clean(msg.text, MAX_TEXT, true);
         const image = typeof msg.image === 'string' && /^circle\/[0-9a-f-]{36}\.(png|jpg|gif|webp)$/.test(msg.image) ? msg.image : '';
         if (!text && !image) return;
+        // the room the message was written in (a message waiting to send keeps its room)
+        const rk = 'room' in msg ? await this.roomKey(msg.room) : { key: att.room || '' };
+        if (!rk) return this.send(ws, { t: 'error', what: 'send', text: 'That room is not open.' , cid: clean(msg.cid, 40) });
+        const room = rk.key;
         let reply = null;
         if (Number.isInteger(msg.reply_to)) {
-          const p = this.one('SELECT id FROM messages WHERE id = ?', msg.reply_to);
+          const p = this.one('SELECT id FROM messages WHERE id = ? AND room = ?', msg.reply_to, room);
           if (p) reply = p.id;
         }
         const mentions = this.mentionsFrom(msg.mentions, me.uid);
         // a link gets its preview card (left off if the sender closed it); fetched now if not seen before
         const link = msg.nopreview || image ? '' : firstLink(text);
         const cached = link ? this.cachedPreview(link) : undefined;
-        const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created, mentions, preview) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *', me.uid, text, image, reply, now, JSON.stringify(mentions), cached ? JSON.stringify(cached) : '');
+        const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created, mentions, preview, room) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *', me.uid, text, image, reply, now, JSON.stringify(mentions), cached ? JSON.stringify(cached) : '', room);
         if (link && cached === undefined) this.state.waitUntil(this.fillPreview(row.id, link));
         const m = this.shape(row);
+        const first = this.engage(me.uid, room);
+        this.markRead(me.uid, room); this.readersRead(room);
         this.broadcast({ t: 'msg', m, cid: clean(msg.cid, 40), people: this.peopleFor([m]) });
+        if (first) this.toUser(me.uid, await this.roomsFor(me.uid));
         this.state.waitUntil(this.pushOut(m, this.member(me.uid)));
         if (reply) this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', reply)) });
         return;
@@ -657,6 +820,7 @@ export class Room {
         else { this.sql.exec('INSERT INTO reactions (msg_id, uid, kind) VALUES (?, ?, ?)', msg.id, me.uid, msg.kind); this.useEmoji(me.uid, msg.kind); this.send(ws, { t: 'me', me: this.meFor(me.uid) }); }
         const row = this.one('SELECT * FROM messages WHERE id = ?', msg.id);
         if (row) this.broadcast({ t: 'update', m: this.shape(row) });
+        if (row && !exists && this.engage(me.uid, row.room || '')) this.toUser(me.uid, await this.roomsFor(me.uid));
         return;
       }
 
@@ -670,7 +834,7 @@ export class Room {
         this.sql.exec('DELETE FROM reactions WHERE msg_id = ?', row.id);
         this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', row.id)) });
         if (row.reply_to) { const parent = this.one('SELECT * FROM messages WHERE id = ?', row.reply_to); if (parent) this.broadcast({ t: 'update', m: this.shape(parent) }); }
-        return this.broadcast({ t: 'pins', pins: this.pins() });
+        return this.broadcast({ t: 'pins', room: row.room || '', pins: this.pins(row.room) });
       }
 
       case 'pin': {
@@ -678,9 +842,10 @@ export class Room {
         { const pr = this.one('SELECT uid, pinned FROM messages WHERE id = ? AND deleted = 0', msg.id); if (pr && !!pr.pinned !== !!msg.on) this.log(me.uid, msg.on ? 'pin' : 'unpin', pr.uid, msg.id, {}); }
         this.sql.exec('UPDATE messages SET pinned = ? WHERE id = ? AND deleted = 0', msg.on ? 1 : 0, msg.id);
         const row = this.one('SELECT * FROM messages WHERE id = ?', msg.id);
-        if (row) this.broadcast({ t: 'update', m: this.shape(row) });
-        const pins = this.pins();
-        return this.broadcast({ t: 'pins', pins, people: this.peopleFor(pins) });
+        if (!row) return;
+        this.broadcast({ t: 'update', m: this.shape(row) });
+        const pins = this.pins(row.room);
+        return this.broadcast({ t: 'pins', room: row.room || '', pins, people: this.peopleFor(pins) });
       }
 
       case 'mute': {
@@ -766,8 +931,8 @@ export class Room {
       }
 
       case 'history': {
-        const msgs = this.page(Number(msg.before) || 0);
-        return this.send(ws, { t: 'history', messages: msgs, people: this.peopleFor(msgs), done: msgs.length < PAGE });
+        const msgs = this.page(att.room || '', Number(msg.before) || 0);
+        return this.send(ws, { t: 'history', room: att.room || '', messages: msgs, people: this.peopleFor(msgs), done: msgs.length < PAGE });
       }
 
       case 'used': {
@@ -797,15 +962,20 @@ export class Room {
         const q = clean(msg.q, 100);
         if (!q || q.length < 2) return this.send(ws, { t: 'results', q, scope: msg.scope, messages: [], people: {} });
         const like = '%' + q.replace(/[\\%_]/g, c => '\\' + c) + '%';
-        const rows = this.all("SELECT m.* FROM messages m LEFT JOIN members p ON p.uid = m.uid WHERE m.deleted = 0 AND COALESCE(m.kind, '') = '' AND (m.text LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\') ORDER BY m.id DESC LIMIT 60", like, like);
+        const here = msg.scope !== 'all';
+        const rows = this.all("SELECT m.* FROM messages m LEFT JOIN members p ON p.uid = m.uid WHERE m.deleted = 0 AND COALESCE(m.kind, '') = '' AND (? = 0 OR m.room = ?) AND (m.text LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\') ORDER BY m.id DESC LIMIT 60", here ? 1 : 0, att.room || '', like, like);
         const msgs = rows.map(r => this.shape(r));
-        return this.send(ws, { t: 'results', q, scope: msg.scope, room: 'Inner Circle Chat', messages: msgs, people: this.peopleFor(msgs) });
+        const x = await this.eps(); const rooms = {};
+        for (const m of msgs) if (!(m.room in rooms)) rooms[m.room] = this.roomInfo(m.room, x).title;
+        return this.send(ws, { t: 'results', q, scope: msg.scope, room: rooms[att.room || ''] || this.roomInfo(att.room || '', x).title, rooms, messages: msgs, people: this.peopleFor(msgs) });
       }
 
       case 'mentions': {
         const rows = this.all("SELECT * FROM messages WHERE deleted = 0 AND mentions LIKE ? ORDER BY id DESC LIMIT 50", '%"' + me.uid + '"%');
         const msgs = rows.map(r => this.shape(r));
-        return this.send(ws, { t: 'mentionlist', messages: msgs, people: this.peopleFor(msgs) });
+        const x = await this.eps(); const rooms = {};
+        for (const m of msgs) if (!(m.room in rooms)) rooms[m.room] = this.roomInfo(m.room, x).title;
+        return this.send(ws, { t: 'mentionlist', messages: msgs, rooms, people: this.peopleFor(msgs) });
       }
 
       case 'thread': {
@@ -834,7 +1004,7 @@ export class Room {
         }
         const msgs = [...seen.values()].filter(r => !r.deleted).sort((a, b) => a.id - b.id).map(r => this.shape(r));
         if (!msgs.length) return this.send(ws, { t: 'notice', text: 'That message is no longer here.' });
-        return this.send(ws, { t: 'thread', id: start.id, messages: msgs, people: this.peopleFor(msgs) });
+        return this.send(ws, { t: 'thread', id: start.id, room: start.room || '', roomTitle: this.roomInfo(start.room || '', await this.eps()).title, messages: msgs, people: this.peopleFor(msgs) });
       }
 
       case 'typing': {
@@ -842,7 +1012,7 @@ export class Room {
         const last = this.typingAt.get(me.uid) || 0;
         if (now - last < 2500) return;
         this.typingAt.set(me.uid, now);
-        return this.broadcast({ t: 'typing', uid: me.uid }, ws);
+        return this.broadcast({ t: 'typing', uid: me.uid, room: att.room || '' }, ws);
       }
 
       case 'who': {
@@ -879,14 +1049,13 @@ export class Room {
             this.broadcast({ t: 'restore', m, people: this.peopleFor([m]) });
             if (row.reply_to) { const parent = this.one('SELECT * FROM messages WHERE id = ?', row.reply_to); if (parent) this.broadcast({ t: 'update', m: this.shape(parent) }); }
             for (const r of this.all('SELECT * FROM messages WHERE reply_to = ? AND deleted = 0', row.id)) this.broadcast({ t: 'update', m: this.shape(r) });
-            const pins = this.pins(); this.broadcast({ t: 'pins', pins, people: this.peopleFor(pins) });
+            const pins = this.pins(row.room); this.broadcast({ t: 'pins', room: row.room || '', pins, people: this.peopleFor(pins) });
             note = 'Message restored.';
           }
         } else if (e.action === 'pin' || e.action === 'unpin') {
           this.sql.exec('UPDATE messages SET pinned = ? WHERE id = ? AND deleted = 0', e.action === 'pin' ? 0 : 1, e.msg_id);
           const row = this.one('SELECT * FROM messages WHERE id = ?', e.msg_id);
-          if (row) this.broadcast({ t: 'update', m: this.shape(row) });
-          const pins = this.pins(); this.broadcast({ t: 'pins', pins, people: this.peopleFor(pins) });
+          if (row) { this.broadcast({ t: 'update', m: this.shape(row) }); const pins = this.pins(row.room); this.broadcast({ t: 'pins', room: row.room || '', pins, people: this.peopleFor(pins) }); }
         } else if ((e.action === 'mute' || e.action === 'unmute') && target && target.role !== 'host') {
           const back = e.action === 'mute' ? (d.prev > Date.now() ? d.prev : 0) : (d.prev > Date.now() ? d.prev : 0);
           this.sql.exec('UPDATE members SET muted_until = ? WHERE uid = ?', back, target.uid);
@@ -934,7 +1103,7 @@ export class Room {
         return;
       }
 
-      case 'away': { ws.serializeAttachment(Object.assign({}, att, { away: !!msg.on })); if (!msg.on) this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', me.uid); return; }
+      case 'away': { ws.serializeAttachment(Object.assign({}, att, { away: !!msg.on })); if (!msg.on) { this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', me.uid); this.markRead(me.uid, att.room || ''); } return; }
 
       case 'boltcolor': { // a founding member's own choice of colour for their bolt
         const BOLTS = ['', 'gold', 'blue', 'violet', 'green', 'rose', 'flame', 'red', 'white'];
@@ -954,6 +1123,20 @@ export class Room {
         if (['all', 'mentions', 'none'].includes(msg.level)) this.sql.exec('UPDATE members SET notify = ? WHERE uid = ?', msg.level, me.uid);
         return;
       }
+
+      case 'room': { // move this connection into a room and send its messages
+        const rk = await this.roomKey(msg.r);
+        if (!rk) return this.send(ws, { t: 'roomfail', r: String(msg.r || '').slice(0, 160) });
+        const cur = ws.deserializeAttachment() || att;
+        ws.serializeAttachment(Object.assign({}, cur, { room: rk.key }));
+        this.markRead(me.uid, rk.key);
+        const msgs = this.page(rk.key), pins = this.pins(rk.key);
+        this.send(ws, { t: 'roomload', room: this.roomInfo(rk.key, await this.eps()), req: msg.r, messages: msgs, pins, people: this.peopleFor(msgs.concat(pins), this.online()), done: msgs.length < PAGE });
+        this.presence();
+        return;
+      }
+
+      case 'rooms': return this.send(ws, await this.roomsFor(me.uid));
 
       case 'ping': return this.send(ws, { t: 'pong' });
     }
@@ -982,6 +1165,10 @@ export class Room {
   meFor(uid) {
     const m = this.member(uid);
     return { ...this.person(m), rules_ok: !!m.rules_ok, profile_done: !!m.profile_done, email: m.email, recent: safeArr(m.recent), join_alerts: m.role === 'host' ? m.join_alerts !== 0 : undefined };
+  }
+
+  toUser(uid, obj) {
+    for (const ws of this.state.getWebSockets()) { const a = ws.deserializeAttachment(); if (a && a.uid === uid) this.send(ws, obj); }
   }
 
   notifyMods(obj) {

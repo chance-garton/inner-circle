@@ -330,7 +330,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-09c';
+const VERSION = '2026-10-10a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -670,7 +670,12 @@ function route() {
   if (/^#\/search\?(?:.*&)?show=__saved/.test(h)) { location.replace('#/library'); return; }
   if (h.indexOf('#/library') === 0) { setTab('lib'); renderLib(true); return; }
   if (h.indexOf('#/search') === 0) { setTab('search'); const q = new URLSearchParams(h.split('?')[1] || ''); if (q.has('show') || q.has('q') || q.has('theme')) { S.show = q.get('show') || ''; S.q = q.get('q') || ''; S.theme = q.get('theme') || ''; renderSearch(); } }
-  else if (h.indexOf('#/chat') === 0) setTab('chat');
+  else if (h.indexOf('#/chat') === 0) {
+    // #/chat?room=ep:<slug> (an episode's Talk about this episode button, or a room notification)
+    const rm = h.match(/[?&]room=([^&]+)/);
+    if (rm) { S.chatRoom = decodeURIComponent(rm[1]); history.replaceState(null, '', '#/chat'); NAV[NAV.length - 1] = '#/chat'; }
+    setTab('chat'); sendChatRoom();
+  }
   else if (h.indexOf('#/me') === 0) setTab('me');
   else setTab('home');
 }
@@ -1117,7 +1122,7 @@ function renderChatDoor() {
       ${S.signedIn ? '<p class="note" style="color:var(--gold)">You are logged in, but this account has no active Plus+ membership. Start a trial, or log in with the account you joined with.</p>' : ''}
       <div class="perks">
         ${pt('Inner Circle Chat', 'A live room with fellow listeners and Chance, open whenever you are.')}
-        ${pt('A thread for every episode (soon)', 'Discuss episodes and find deeper connections than ever.')}
+        ${pt('A room for every episode', 'Discuss episodes and find deeper connections than ever.')}
         ${pt('A member profile', 'Share your name or stay anonymous, with your Sun, Moon &amp; Rising and your favorite episodes.')}
         ${pt('Notifications', 'Know when someone posts, even with the app closed.')}
       </div>
@@ -1126,11 +1131,17 @@ function renderChatDoor() {
     </div>
   </div></div>`;
 }
+function sendChatRoom() {
+  if (S.chatRoom == null) return;
+  const f = $('#chatv iframe'); if (!f) return; // the chat is mounted with the room in its address instead
+  try { f.contentWindow.postMessage({ ivcApp: 1, room: S.chatRoom }, location.origin); } catch (e) {}
+  S.chatRoom = null;
+}
 function mountChat() {
   if (!S.member || S.chatLoaded) return;
   S.chatLoaded = true;
   const f = document.createElement('iframe');
-  f.title = 'Inner Circle'; f.src = '/?app=1';
+  f.title = 'Inner Circle'; f.src = '/?app=1' + (S.chatRoom ? '#room=' + encodeURIComponent(S.chatRoom) : ''); S.chatRoom = null;
   f.setAttribute('allow', 'clipboard-write; autoplay');
   $('#chatv').appendChild(f);
   f.addEventListener('load', () => {
@@ -1290,6 +1301,7 @@ function renderEpisode() {
       <textarea class="notebox" id="myNote" maxlength="10000" placeholder="Private notes on this episode. Only you can see them.">${esc((libGet(E.it) || {}).note || '')}</textarea>
       <div class="notebar"><span id="noteMsg">${S.member ? 'Private. Saved to your account, in the app and on the website.' : 'Private. Saved on this phone.'}</span><button type="button" id="noteTime">${I.clock ? I.clock(15) : ''}Add the time</button></div>
     </div></div>
+    ${S.member ? `<div class="card" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Inner Circle</div><h3>Talk about this episode</h3><p>Share what stood out with fellow members in this episode's own room.</p><div class="acts"><button class="btn line" id="epRoom" style="--accent:var(--gold)">${I.chat(18)} Join the conversation</button></div></div>` : ''}
     ${E.notes ? `<div class="card" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Members' show notes</div><p style="margin-top:6px">The full research notes for this episode, as a document.</p><button class="btn gold" id="notesBtn">${I.doc(18)} Download the show notes</button><p class="note" id="notesMsg"></p></div>` : ''}
     ${freePlus && !S.member ? `<div class="card goldline" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Plus+ full episode</div><h3>${more ? `There are ${more} more minutes of this conversation.` : 'There is more to this conversation.'}</h3><p>Members hear the whole thing${E.plusDuration ? ', ' + esc(E.plusDuration) + ' in all' : ''}, uncut and ad free.</p><div class="acts"><a class="btn gold" href="${SITE}/plus" target="_blank" rel="noopener">Start your 7-day free trial</a><button class="btn line" data-act="login" style="--accent:var(--gold)">Log in</button></div></div>` : ''}
     ${E.chapters.length || E.locked.length ? `<div class="acc open" id="chapAcc"><button>Chapters ${I.down(22)}</button><div class="in" id="chapters">${chaptersHtml()}</div></div>` : ''}
@@ -1320,6 +1332,7 @@ function renderEpisode() {
 }
 function wireMine(E) {
   const key = () => libKeyFor(E.it);
+  if ($('#epRoom')) $('#epRoom').onclick = () => go('#/chat?room=' + encodeURIComponent('ep:' + (E.freeSlug || E.slug)));
   const sb = $('#epSave');
   sb.addEventListener('click', async () => {
     const on = !(libGet(E.it) || {}).saved;
