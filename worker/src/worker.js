@@ -274,6 +274,9 @@ export class Room {
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN room TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     this.sql.exec('CREATE INDEX IF NOT EXISTS messages_room ON messages (room, id)');
     // per member per room: engaged (posted or reacted there) and the last message they have read
+    // live rooms (2026-10-10): opened by the host before an episode exists (members watch the recording
+    // together), then tied to the episode once its page is live; tying moves the whole conversation over
+    this.sql.exec("CREATE TABLE IF NOT EXISTS rooms (key TEXT PRIMARY KEY, title TEXT, created INTEGER, created_by TEXT DEFAULT '', tied TEXT DEFAULT '', closed INTEGER DEFAULT 0)");
     this.sql.exec('CREATE TABLE IF NOT EXISTS room_state (uid TEXT, room TEXT, engaged INTEGER DEFAULT 0, last_read INTEGER DEFAULT 0, PRIMARY KEY (uid, room)) WITHOUT ROWID');
     // a check every half hour for a newly released episode, whose room is announced in the main chat
     state.blockConcurrencyWhile(async () => { try { if (!(await state.storage.getAlarm())) await state.storage.setAlarm(Date.now() + 60 * 1000); } catch (e) { /* no alarms here */ } });
@@ -344,7 +347,7 @@ export class Room {
         if (m.kind === 'join') {
           // a new member joining reaches the host only, whatever their level (Chance, 2026-10-08), unless they switched it off
           if (s.role !== 'host' || s.join_alerts === 0) continue;
-        } else if (m.kind === 'room') {
+        } else if (m.kind === 'room' || m.kind === 'live') {
           if (level !== 'all') continue; // a new episode room: everyone who hears about every message
         } else if (level === 'none' || (level === 'mentions' && !tagged)) continue;
         // an episode room only reaches members who have taken part there (Chance, 2026-10-08), or who are tagged
@@ -357,6 +360,7 @@ export class Room {
         const img = typeof author.avatar === 'string' && author.avatar.startsWith('img:') ? author.avatar.slice(4) : '';
         let title = m.kind === 'join' ? 'New member' : roomTitle, text2 = m.kind === 'join' ? `${name} just joined the Inner Circle` : body, url = roomUrl, av = img;
         if (m.kind === 'room') { const ri = this.roomInfo(m.text, await this.eps()); title = 'Inner Circle'; text2 = `New episode room: ${trimTo(ri.title, 140)}`; url = '/app/#/chat?room=' + encodeURIComponent(m.text); av = ''; }
+        if (m.kind === 'live') { const ri = this.roomInfo(m.text, await this.eps()); title = 'Inner Circle'; text2 = `Live now: ${trimTo(ri.title, 140)}`; url = '/app/#/chat?room=' + encodeURIComponent(m.text); av = ''; }
         const payload = JSON.stringify({ title, body: text2, tag: 'ivc-' + m.id, url, badge: bumped.get(s.uid), avatar: av });
         try {
           const r = await sendPush(s, payload, vapid);
@@ -407,6 +411,11 @@ export class Room {
   // any room name a page sends, made canonical: the free slug for an episode that has one
   async roomKey(r) {
     if (r === undefined || r === null || r === '' || r === 'main') return { key: '' };
+    if (typeof r === 'string' && /^live:[a-z0-9]{4,24}$/.test(r)) {
+      const lr = this.one('SELECT * FROM rooms WHERE key = ?', r);
+      if (!lr) return null;
+      return { key: lr.tied || r }; // a tied live room now lives in its episode's room
+    }
     const m = typeof r === 'string' && r.match(/^ep:([a-z0-9-]{1,140})$/);
     if (!m) return null;
     const x = await this.eps();
@@ -420,6 +429,11 @@ export class Room {
   }
   roomInfo(key, x) {
     if (!key) return { key: '', title: 'Inner Circle Chat' };
+    if (key.startsWith('live:')) {
+      const lr = this.one('SELECT * FROM rooms WHERE key = ?', key);
+      if (lr && lr.tied) return this.roomInfo(lr.tied, x);
+      return { key, title: lr ? lr.title : 'Live room', live: true, open: !!(lr && !lr.closed), slug: '', thumb: '', created: lr ? lr.created : 0 };
+    }
     const slug = key.slice(3);
     const f = x.free.get(slug), p = x.plusByFree.get(slug) || x.plus.get(slug) || null;
     const e = f || p || {};
@@ -467,7 +481,8 @@ export class Room {
     };
     const mine = [...st.values()].filter(r => r.engaged && r.room && !newest.includes(r.room)).map(r => one(r.room))
       .sort((a, b) => ((b.last && b.last.id) || 0) - ((a.last && a.last.id) || 0));
-    const out = { t: 'rooms', main: one(''), newest: newest.map(one), mine };
+    const liveKeys = this.all("SELECT key FROM rooms WHERE tied = '' AND closed = 0 ORDER BY created DESC LIMIT 5").map(r => r.key);
+    const out = { t: 'rooms', main: one(''), live: liveKeys.map(one), newest: newest.map(one), mine: mine.filter(r => !liveKeys.includes(r.key)) };
     const people = {}; for (const id of ids) { const p = this.person(this.member(id)); if (p) people[id] = p; }
     out.people = people;
     return out;
@@ -486,6 +501,8 @@ export class Room {
           if (done.has(e.slug)) continue;
           done.add(e.slug);
           const key = 'ep:' + e.slug;
+          const untied = this.all("SELECT key FROM rooms WHERE tied = '' AND created > ?", Date.now() - 21 * 86400e3);
+          if (untied.length === 1) this.tieRoom(untied[0].key, key, '');
           const ins = this.one("INSERT INTO messages (uid, text, image, reply_to, created, kind, room) VALUES ('', ?, '', NULL, ?, 'room', '') RETURNING *", key, Date.now());
           const m = this.shape(ins);
           this.broadcast({ t: 'msg', m, people: {}, roomInfo: this.roomInfo(key, x) });
@@ -497,6 +514,36 @@ export class Room {
       this.announcedAt = Date.now();
     } catch (e) { /* try again next time */ } finally { this.announcing = false; }
   }
+  // move a live room's whole conversation into the episode's room; members inside follow it there
+  tieRoom(live, epKey, actor) {
+    const lr = this.one('SELECT * FROM rooms WHERE key = ?', live);
+    if (!lr || lr.tied) return false;
+    this.sql.exec('UPDATE messages SET room = ? WHERE room = ?', epKey, live);
+    for (const r of this.all('SELECT * FROM room_state WHERE room = ?', live)) {
+      this.sql.exec('INSERT OR IGNORE INTO room_state (uid, room) VALUES (?, ?)', r.uid, epKey);
+      this.sql.exec('UPDATE room_state SET engaged = MAX(engaged, ?), last_read = MAX(last_read, ?) WHERE uid = ? AND room = ?', r.engaged, r.last_read, r.uid, epKey);
+    }
+    this.sql.exec('DELETE FROM room_state WHERE room = ?', live);
+    this.sql.exec('UPDATE rooms SET tied = ?, closed = 1 WHERE key = ?', epKey, live);
+    this.log(actor, 'room_tie', '', 0, { live, title: lr.title, to: epKey });
+    const x = this.epx || { free: new Map(), plus: new Map(), plusByFree: new Map(), list: [] };
+    for (const ws of this.state.getWebSockets()) {
+      if (ws.readyState !== 1) continue;
+      const a = ws.deserializeAttachment();
+      if (!a || !a.uid) continue;
+      if (a.room === live) {
+        ws.serializeAttachment(Object.assign({}, a, { room: epKey }));
+        const msgs = this.page(epKey), pins = this.pins(epKey);
+        this.send(ws, { t: 'roomload', room: this.roomInfo(epKey, x), messages: msgs, pins, people: this.peopleFor(msgs.concat(pins)), done: msgs.length < PAGE, moved: true });
+      }
+      this.send(ws, { t: 'roomsdirty' });
+    }
+    // the notice in the main chat now points at the episode
+    for (const n of this.all("SELECT * FROM messages WHERE kind = 'live' AND text = ?", live)) this.broadcast({ t: 'update', m: this.shape(n) });
+    this.presence();
+    return true;
+  }
+
   async alarm() {
     await this.announceNew();
     try { await this.state.storage.setAlarm(Date.now() + 30 * 60 * 1000); } catch (e) { /* ok */ }
@@ -664,7 +711,7 @@ export class Room {
       preview: row.deleted ? null : safeObj(row.preview),
       views: this.viewCount(row.id),
       room: row.room || '',
-      info: row.kind === 'room' && this.epx ? this.roomInfo(row.text, this.epx) : undefined,
+      info: (row.kind === 'room' && this.epx) || row.kind === 'live' ? this.roomInfo(row.text, this.epx || { free: new Map(), plus: new Map(), plusByFree: new Map(), list: [] }) : undefined,
     };
   }
 
@@ -1137,6 +1184,39 @@ export class Room {
       }
 
       case 'rooms': return this.send(ws, await this.roomsFor(me.uid));
+
+      case 'liveopen': { // host: open a live room before the episode exists
+        if (me.role !== 'host') return;
+        const title = clean(msg.title, 80);
+        if (!title) return this.send(ws, { t: 'error', text: 'Give the live room a name.' });
+        const key = 'live:' + Date.now().toString(36);
+        this.sql.exec('INSERT INTO rooms (key, title, created, created_by) VALUES (?, ?, ?, ?)', key, title, now, me.uid);
+        this.log(me.uid, 'room_open', '', 0, { live: key, title });
+        const row = this.one("INSERT INTO messages (uid, text, image, reply_to, created, kind, room) VALUES (?, ?, '', NULL, ?, 'live', '') RETURNING *", me.uid, key, now);
+        const m = this.shape(row);
+        this.broadcast({ t: 'msg', m, people: this.peopleFor([m]) });
+        this.readersRead('');
+        this.state.waitUntil(this.pushOut(m, this.member(me.uid)));
+        for (const s of this.state.getWebSockets()) this.send(s, { t: 'roomsdirty' });
+        return this.send(ws, { t: 'liveopened', key });
+      }
+
+      case 'livetie': { // host: tie a live room to its episode once the episode's page is live
+        if (me.role !== 'host') return;
+        const lr = this.one('SELECT * FROM rooms WHERE key = ?', String(msg.key || ''));
+        if (!lr || lr.tied) return this.send(ws, { t: 'error', text: 'That live room is already tied or gone.' });
+        const rk = await this.roomKey('ep:' + String(msg.slug || '').toLowerCase());
+        if (!rk || !rk.key) return this.send(ws, { t: 'error', text: 'That episode is not live on the site yet. Tie the room once its page is published.' });
+        this.tieRoom(lr.key, rk.key, me.uid);
+        return this.send(ws, { t: 'notice', text: 'Live room tied to the episode.' });
+      }
+
+      case 'liveclose': { // host: end a live room without an episode (it stays readable)
+        if (me.role !== 'host') return;
+        this.sql.exec("UPDATE rooms SET closed = 1 WHERE key = ? AND tied = ''", String(msg.key || ''));
+        for (const s of this.state.getWebSockets()) this.send(s, { t: 'roomsdirty' });
+        return this.send(ws, { t: 'notice', text: 'Live room ended.' });
+      }
 
       case 'ping': return this.send(ws, { t: 'pong' });
     }

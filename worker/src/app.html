@@ -150,6 +150,13 @@ svg{display:block;flex:none}
 .roomnote .rk{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold)}
 .roomnote .unfurl{margin:0;width:100%;max-width:none;cursor:pointer;text-align:left}
 .roomnote .time{font-size:12px}
+.livedot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#F2998A;box-shadow:0 0 0 0 rgba(242,153,138,0.6);animation:livep 2s infinite;flex:none}
+@keyframes livep{0%{box-shadow:0 0 0 0 rgba(242,153,138,0.55)}70%{box-shadow:0 0 0 8px rgba(242,153,138,0)}100%{box-shadow:0 0 0 0 rgba(242,153,138,0)}}
+@media (prefers-reduced-motion:reduce){.livedot{animation:none}}
+.livebadge{width:64px;height:36px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(242,153,138,0.12);border:1px solid rgba(242,153,138,0.4);font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:#F2998A}
+.livebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.livebar b{color:#F2998A;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px}
+.liveform{display:flex;gap:8px;padding:6px 12px 2px}.liveform .finput{height:42px;font-size:14.5px}
 .person{display:flex;align-items:center;gap:11px;min-height:40px;padding:0 6px;border-radius:10px;font-size:14.5px;font-weight:600;width:100%}
 .person:hover{background:rgba(233,238,246,0.05)}
 .person .role{margin-left:auto;font-size:12px;color:var(--muted);font-weight:500}
@@ -890,6 +897,8 @@ const LOG_TEXT = {
   role: (a, t, d) => d.to === 'mod' ? `${a} made ${t} a moderator` : `${a} took moderator away from ${t}`,
   title_add: (a, t, d) => `${a} gave ${t} the title "${d.title}"`,
   title_remove: (a, t, d) => `${a} took the title "${d.title}" from ${t}`,
+  room_open: (a, t, d) => `${a} opened the live room "${d.title || ''}"`,
+  room_tie: (a, t, d) => `${d && a !== 'Someone' ? a : 'The release check'} tied the live room "${d.title || ''}" to its episode`,
 };
 function showModlog(r) {
   S.modlogAsked = 0;
@@ -1394,12 +1403,15 @@ function onEvent(m) {
       S.messages = m.messages || []; S.pins = m.pins || []; S.oldestDone = !!m.done; S.loadingOlder = false; S.typing = {};
       S.reply = null; S.editMsg = null; S.stick = true; S.anc = null; S.loadingRoom = false;
       S.seenSent = new Set(); S.seenQueue = new Set();
-      const rm = (S.rooms && [S.rooms.main].concat(S.rooms.newest, S.rooms.mine).find(r => r && r.key === S.room)); if (rm) rm.unread = 0;
+      const rm = allRooms().find(r => r.key === S.room); if (rm) rm.unread = 0;
       if (S.view === 'chat') { renderChat(); }
+      if (m.moved) toast('This live room is now the episode\'s room. The whole conversation came with it.');
       if (S.afterRoom) { const f = S.afterRoom; S.afterRoom = null; setTimeout(f, 60); }
       sendQuiet({ t: 'rooms' });
       return;
     }
+    case 'roomsdirty': sendQuiet({ t: 'rooms' }); return;
+    case 'liveopened': toast('Live room open. Everyone has been told.'); switchRoom(m.key); return;
     case 'roomfail': {
       S.loadingRoom = false; toast('That episode room could not be opened.');
       if (S.room) renderChat(); else if (S.view === 'chat') renderChat();
@@ -1432,12 +1444,12 @@ function switchRoom(key, after) {
   if (!S.connected) { S.openRoom = key; S.afterRoom = after || null; return; }
   S.afterRoom = after || null; S.loadingRoom = true; S.messages = []; S.pins = [];
   const prev = S.room; S.room = key;
-  const known = S.rooms && [S.rooms.main].concat(S.rooms.newest, S.rooms.mine).find(r => r && r.key === key);
+  const known = allRooms().find(r => r.key === key);
   S.roomInfo = known ? known : (key ? { key, title: 'Episode room', slug: key.slice(3) } : { key: '', title: 'Inner Circle Chat' });
   if (S.view === 'chat') renderChat();
   if (!sendWs({ t: 'room', r: key })) { S.room = prev; S.loadingRoom = false; }
 }
-function allRooms() { return S.rooms ? [S.rooms.main].concat(S.rooms.newest, S.rooms.mine).filter(Boolean) : []; }
+function allRooms() { return S.rooms ? [S.rooms.main].concat(S.rooms.live || [], S.rooms.newest, S.rooms.mine).filter(Boolean) : []; }
 function roomUnreadTotal() { return allRooms().filter(r => r.key !== S.room && r.opened).reduce((n, r) => n + (r.unread || 0), 0); }
 function renderRoomBadge() {
   const n = roomUnreadTotal();
@@ -1460,19 +1472,22 @@ function otherRoomMsg(m) {
 }
 function roomIntro(empty) {
   const ri = S.roomInfo;
+  if (ri.live) return `<div class="roomintro"><b style="color:var(--ink);font-size:16px">${esc(ri.title)}</b><br>${empty ? 'The live chat starts here. Say hello.' : 'The beginning of this live room.'}</div>`;
   return `<div class="roomintro"><div data-unfurl="${ri.plus ? 'plus:' + esc(ri.plus) : 'episodes:' + esc(ri.slug || '')}"></div>${empty ? `No one has talked about this episode yet. Start the conversation.` : 'The beginning of the conversation about this episode.'}</div>`;
 }
 function lastLine(r) {
   if (!r.last) return r.key ? 'No messages yet. Start the conversation.' : '';
   if (r.last.kind === 'room') return 'New episode room';
+  if (r.last.kind === 'live') return 'Live room opened';
   if (r.last.kind === 'join') return `${esc(person(r.last.uid).name || 'A member')} joined the chat`;
   return `${esc(person(r.last.uid).name || 'Member')}: ${r.last.image && !r.last.text ? 'Photo' : esc(r.last.text)}`;
 }
 function sideRooms() {
-  const row = r => `<button class="roomrow${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}"${r.key === S.room ? ' aria-current="page"' : ''} title="${esc(r.title)}">${r.key ? (r.thumb ? `<img class="rth" src="${esc(thumbAt(r.thumb, 100))}" alt="">` : I.play()) : I.chat()}<span class="rn">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : ''}</button>`;
+  const row = r => `<button class="roomrow${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}"${r.key === S.room ? ' aria-current="page"' : ''} title="${esc(r.title)}">${r.live ? '<span style="width:40px;display:flex;justify-content:center"><span class="livedot"></span></span>' : r.key ? (r.thumb ? `<img class="rth" src="${esc(thumbAt(r.thumb, 100))}" alt="">` : I.play()) : I.chat()}<span class="rn">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : ''}</button>`;
   const R = S.rooms;
   if (!R) return row({ key: '', title: 'Inner Circle Chat' }) + (S.room ? row(S.roomInfo) : '');
   let out = row(R.main);
+  if ((R.live || []).length) out += `<div class="rsec" style="color:#F2998A">Live now</div>` + R.live.map(row).join('');
   if (R.newest.length) out += `<div class="rsec">New episodes</div>` + R.newest.map(row).join('');
   const cur = S.room && !allRooms().some(r => r.key === S.room) ? [S.roomInfo] : [];
   if (R.mine.length || cur.length) out += `<div class="rsec">Your rooms</div>` + cur.concat(R.mine).map(row).join('');
@@ -1492,11 +1507,14 @@ function openRooms(focusSearch) {
 function drawRooms() {
   const box = $('#rbody'); if (!box) return;
   const q = ($('#rq') && $('#rq').value.trim()) || '';
-  const item = r => `<button class="ritem${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}">${r.key ? `<img class="rimg" src="${esc(thumbAt(r.thumb, 300))}" alt="" loading="lazy">` : `<span class="rlogo"><img src="${PLUS_LOGO}" alt=""></span>`}<span style="flex:1;min-width:0"><span class="rt">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span><span class="rl">${lastLine(r)}</span></span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : (r.key && r.total ? `<span class="rcount">${r.total}</span>` : '')}</button>`;
+  const item = r => `<button class="ritem${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}">${r.live ? `<span class="livebadge"><span class="livedot"></span>LIVE</span>` : r.key ? `<img class="rimg" src="${esc(thumbAt(r.thumb, 300))}" alt="" loading="lazy">` : `<span class="rlogo"><img src="${PLUS_LOGO}" alt=""></span>`}<span style="flex:1;min-width:0"><span class="rt">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span><span class="rl">${lastLine(r)}</span></span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : (r.key && r.total ? `<span class="rcount">${r.total}</span>` : '')}</button>`;
   if (!q) {
     const R = S.rooms;
     if (!R) { box.innerHTML = `<div style="padding:20px">${loaderHtml()}</div>`; return; }
+    const host = S.me && S.me.role === 'host';
     box.innerHTML = item(R.main)
+      + ((R.live || []).length ? `<div class="rhead" style="color:#F2998A">Live now</div>` + R.live.map(item).join('') : '')
+      + (host ? `<div class="liveform"><input id="liveName" class="finput" maxlength="80" placeholder="Open a live room, e.g. Dawn Lester recording" aria-label="Live room name"><button class="btn2 sm" id="liveGo">Open</button></div>` : '')
       + (R.newest.length ? `<div class="rhead">New episodes</div>` + R.newest.map(item).join('') : '')
       + `<div class="rhead">Your rooms</div>` + (R.mine.length ? R.mine.map(item).join('') : `<div class="rnote">Rooms you post or react in show up here. Search above for any episode, or tap Talk about this episode on an episode's page.</div>`);
   } else {
@@ -1517,6 +1535,7 @@ function drawRooms() {
     return;
   }
   box.querySelectorAll('[data-goroom]').forEach(b => b.onclick = () => switchRoom(b.dataset.goroom));
+  const lg = $('#liveGo'); if (lg) { const go = () => { const v = $('#liveName').value.trim(); if (v) { sendWs({ t: 'liveopen', title: v }); closeOverlay(); } }; lg.onclick = go; $('#liveName').onkeydown = e => { if (e.key === 'Enter') go(); }; }
 }
 document.addEventListener('click', e => {
   const g = e.target.closest && e.target.closest('.msgs [data-goroom], #thread [data-goroom]'); if (!g) return;
@@ -1666,6 +1685,7 @@ function renderProfile() {
   drawInts();
   $('#pint').onchange = e => { const v = e.target.value; if (v && d.interests.length < 5 && !d.interests.includes(v)) d.interests.push(v); drawInts(); };
   const drawFavs = () => loadIndexes().then(ix => {
+    if (!$('#pfavs')) return; // the profile screen closed before the episode list loaded
     $('#pfavs').innerHTML = d.favorites.map(s => { const e = ix.free[s] || {}; return `<div class="favrow"><img src="${esc(e.thumb || '')}" alt=""><span style="flex:1">${esc(e.title || s)}</span><button class="ibtn" data-unfav="${esc(s)}" aria-label="Remove">${I.close(16)}</button></div>`; }).join('');
     $('#pfavs').querySelectorAll('[data-unfav]').forEach(b => b.onclick = () => { d.favorites = d.favorites.filter(x => x !== b.dataset.unfav); drawFavs(); });
     $('#pfav').disabled = d.favorites.length >= 3;
@@ -1724,6 +1744,7 @@ function renderChat() {
         ${hostish ? `<button class="ibtn" id="repBtn" aria-label="Reports">${I.shield()}</button>` : ''}
         <a class="btn2 sm" href="/" target="ivcircle" id="popout" style="margin-left:4px">${P('<path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',{s:16})}Pop out</a>
       </div>
+      ${S.roomInfo.live && S.me && S.me.role === 'host' ? `<div class="livebar"><b>${S.roomInfo.open ? '<span class="livedot"></span> Live' : 'Live room'}</b><span style="flex:1">When the episode is posted, tie this room to it.</span><button class="btn2 sm" id="liveTie">Tie to episode</button>${S.roomInfo.open ? '<button class="btn2 sm" id="liveEnd">End</button>' : ''}</div>` : ''}
       <div id="pinbar"></div>
       <div class="msgs" id="msgs" aria-live="polite"></div>
       <div class="typing" id="typing"></div>
@@ -1758,6 +1779,8 @@ function renderChat() {
   $('#mentBtn').onclick = $('#mentBtn2').onclick = openSettings;
   $('#roomsBtn').onclick = $('#roomsBtn2').onclick = openRooms;
   if ($('#roomBack')) $('#roomBack').onclick = () => switchRoom('');
+  if ($('#liveTie')) $('#liveTie').onclick = () => pickEpisode(url => { const mm = String(url).match(/\/(?:episodes|plus)\/([a-z0-9-]+)/); if (mm && confirm('Move this live room into that episode\'s room? The whole conversation goes with it.')) sendWs({ t: 'livetie', key: S.room, slug: mm[1] }); });
+  if ($('#liveEnd')) $('#liveEnd').onclick = () => { if (confirm('End the live room? It stays readable, and you can still tie it to the episode later.')) sendWs({ t: 'liveclose', key: S.room }); };
   const openEpPage = () => { const ri = S.roomInfo; const a = document.createElement('a'); a.href = ri.plus && S.me ? SITE + '/plus/' + ri.plus : SITE + '/episodes/' + ri.slug; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); };
   if ($('#roomThumb')) $('#roomThumb').onclick = openEpPage;
   if ($('#roomThumbD')) $('#roomThumbD').onclick = openEpPage;
@@ -1874,6 +1897,12 @@ function msgHtml(m, i, list) {
     const slug = String(m.text || '').replace(/^ep:/, '');
     const day = !prev0 || new Date(prev0.created).toDateString() !== new Date(m.created).toDateString();
     return (day ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '') + `<div class="jwrap" data-id="${m.id}"><div class="roomnote"><span class="rk">New episode room</span>${m.info && m.info.title ? `<div data-goroom="${esc(m.text)}" style="width:100%">${unfurlHtml({ title: m.info.title, thumb: m.info.thumb, url: m.info.plus ? SITE + '/plus/' + m.info.plus : SITE + '/episodes/' + slug, shows: m.info.show ? [m.info.show] : [] }, m.info.plus ? 'plus' : 'episodes', m.info.plus || slug, 'div')}</div>` : `<div data-unfurl="episodes:${esc(slug)}" data-goroom="${esc(m.text)}" style="width:100%"></div>`}<button class="btn2 sm" data-goroom="${esc(m.text)}">${I.chat(16)}Join the conversation</button><span class="time">${fmtTime(m.created)}</span></div></div>`;
+  }
+  if (m.kind === 'live') {
+    const day = !prev0 || new Date(prev0.created).toDateString() !== new Date(m.created).toDateString();
+    const info = m.info || { title: 'Live room', live: true, open: true };
+    const tied = !info.live;
+    return (day ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '') + `<div class="jwrap" data-id="${m.id}"><div class="roomnote"><span class="rk" style="${tied ? '' : 'color:#F2998A'}">${tied ? 'Live room, now the episode room' : (info.open ? '<span class="livedot"></span> Live now' : 'Live room')}</span>${tied && info.slug ? `<div data-goroom="${esc(m.text)}" style="width:100%">${unfurlHtml({ title: info.title, thumb: info.thumb, url: info.plus ? SITE + '/plus/' + info.plus : SITE + '/episodes/' + info.slug, shows: info.show ? [info.show] : [] }, info.plus ? 'plus' : 'episodes', info.plus || info.slug, 'div')}</div>` : `<b style="font-size:16px;text-align:center">${esc(info.title)}</b>`}<button class="btn2 sm" data-goroom="${esc(m.text)}">${I.chat(16)}${tied || !info.open ? 'Open the room' : 'Join the live chat'}</button><span class="time">${fmtTime(m.created)}</span></div></div>`;
   }
   if (m.kind === 'join') {
     const jp = person(m.uid);
