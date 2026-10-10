@@ -506,7 +506,6 @@ export class Room {
           const ins = this.one("INSERT INTO messages (uid, text, image, reply_to, created, kind, room) VALUES ('', ?, '', NULL, ?, 'room', '') RETURNING *", key, Date.now());
           const m = this.shape(ins);
           this.broadcast({ t: 'msg', m, people: {}, roomInfo: this.roomInfo(key, x) });
-          this.readersRead('');
           this.state.waitUntil(this.pushOut(m, { uid: '', name: '', avatar: '' }));
         }
       }
@@ -715,6 +714,24 @@ export class Room {
     };
   }
 
+  // a room opened at the reader's place: up to 300 unseen messages after last_read plus 20 before it
+  // (a room opened for the first time counts as read up to now). Returns the place it opened at.
+  openAt(uid, room) {
+    room = room || '';
+    let st = this.one('SELECT last_read FROM room_state WHERE uid = ? AND room = ?', uid, room);
+    if (!st) { this.markRead(uid, room); st = this.one('SELECT last_read FROM room_state WHERE uid = ? AND room = ?', uid, room); }
+    let lr = st.last_read || 0;
+    const n = this.one('SELECT COUNT(*) AS n FROM messages WHERE room = ? AND deleted = 0 AND id > ?', room, lr).n;
+    if (!n) { const msgs = this.page(room); return { messages: msgs, lastRead: lr, done: msgs.length < PAGE }; }
+    if (n > 300) {
+      const cut = this.one('SELECT id FROM messages WHERE room = ? AND deleted = 0 ORDER BY id DESC LIMIT 1 OFFSET 300', room);
+      if (cut) { lr = Math.max(lr, cut.id); this.sql.exec('UPDATE room_state SET last_read = MAX(last_read, ?) WHERE uid = ? AND room = ?', lr, uid, room); }
+    }
+    const after = this.all('SELECT * FROM messages WHERE room = ? AND deleted = 0 AND id > ? ORDER BY id LIMIT 300', room, lr);
+    const before = this.all('SELECT * FROM messages WHERE room = ? AND deleted = 0 AND id <= ? ORDER BY id DESC LIMIT 20', room, lr).reverse();
+    return { messages: before.concat(after).map(r => this.shape(r)), lastRead: lr, done: before.length < 20 };
+  }
+
   page(room, before) {
     room = room || '';
     const rows = before
@@ -776,14 +793,14 @@ export class Room {
       this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', who.uid);
       // the main chat counts as read up to now the first time a member is seen after rooms began
       if (!this.one("SELECT 1 AS x FROM room_state WHERE uid = ? AND room = ''", who.uid)) this.markRead(who.uid, '');
-      this.markRead(who.uid, rk.key);
       if (!this.epx) await this.eps(); // episode names for room notices
-      const msgs = this.page(rk.key);
+      const at = this.openAt(who.uid, rk.key);
+      const msgs = at.messages;
       const pins = this.pins(rk.key);
       if (!this.announcedAt || Date.now() - this.announcedAt > 10 * 60 * 1000) { this.announcedAt = Date.now(); this.state.waitUntil(this.announceNew()); }
       this.send(ws, {
         t: 'init', me: this.meFor(who.uid), room: rk.key ? this.roomInfo(rk.key, await this.eps()) : this.roomInfo(''), roomfail: !!msg.room && msg.room !== 'main' && !rk.key,
-        messages: msgs, pins, online: this.online(), where: this.where(),
+        messages: msgs, lastRead: at.lastRead, done: at.done, pins, online: this.online(), where: this.where(),
         people: this.peopleFor(msgs.concat(pins), this.online()),
         signs: SIGNS, symbols: SYMBOLS, reactions: REACTIONS,
       });
@@ -850,7 +867,6 @@ export class Room {
         if (link && cached === undefined) this.state.waitUntil(this.fillPreview(row.id, link));
         const m = this.shape(row);
         const first = this.engage(me.uid, room);
-        this.markRead(me.uid, room); this.readersRead(room);
         this.broadcast({ t: 'msg', m, cid: clean(msg.cid, 40), people: this.peopleFor([m]) });
         if (first) this.toUser(me.uid, await this.roomsFor(me.uid));
         this.state.waitUntil(this.pushOut(m, this.member(me.uid)));
@@ -1150,7 +1166,7 @@ export class Room {
         return;
       }
 
-      case 'away': { ws.serializeAttachment(Object.assign({}, att, { away: !!msg.on })); if (!msg.on) { this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', me.uid); this.markRead(me.uid, att.room || ''); } return; }
+      case 'away': { ws.serializeAttachment(Object.assign({}, att, { away: !!msg.on })); if (!msg.on) this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', me.uid); return; }
 
       case 'boltcolor': { // a founding member's own choice of colour for their bolt
         const BOLTS = ['', 'gold', 'blue', 'violet', 'green', 'rose', 'flame', 'red', 'white'];
@@ -1176,14 +1192,22 @@ export class Room {
         if (!rk) return this.send(ws, { t: 'roomfail', r: String(msg.r || '').slice(0, 160) });
         const cur = ws.deserializeAttachment() || att;
         ws.serializeAttachment(Object.assign({}, cur, { room: rk.key }));
-        this.markRead(me.uid, rk.key);
-        const msgs = this.page(rk.key), pins = this.pins(rk.key);
-        this.send(ws, { t: 'roomload', room: this.roomInfo(rk.key, await this.eps()), req: msg.r, messages: msgs, pins, people: this.peopleFor(msgs.concat(pins), this.online()), done: msgs.length < PAGE });
+        const at = this.openAt(me.uid, rk.key);
+        const msgs = at.messages, pins = this.pins(rk.key);
+        this.send(ws, { t: 'roomload', room: this.roomInfo(rk.key, await this.eps()), req: msg.r, messages: msgs, lastRead: at.lastRead, pins, people: this.peopleFor(msgs.concat(pins), this.online()), done: at.done });
         this.presence();
         return;
       }
 
       case 'rooms': return this.send(ws, await this.roomsFor(me.uid));
+
+      case 'read': { // the page says everything up to this message in this room has been seen
+        const id = Number(msg.id), room = typeof msg.room === 'string' ? msg.room : (att.room || '');
+        if (!Number.isInteger(id) || id < 0 || !(room === '' || /^(ep|live):[a-z0-9-]{1,140}$/.test(room))) return;
+        this.sql.exec('INSERT OR IGNORE INTO room_state (uid, room) VALUES (?, ?)', me.uid, room);
+        this.sql.exec('UPDATE room_state SET last_read = MAX(last_read, ?) WHERE uid = ? AND room = ?', id, me.uid, room);
+        return;
+      }
 
       case 'liveopen': { // host: open a live room before the episode exists
         if (me.role !== 'host') return;
@@ -1195,7 +1219,6 @@ export class Room {
         const row = this.one("INSERT INTO messages (uid, text, image, reply_to, created, kind, room) VALUES (?, ?, '', NULL, ?, 'live', '') RETURNING *", me.uid, key, now);
         const m = this.shape(row);
         this.broadcast({ t: 'msg', m, people: this.peopleFor([m]) });
-        this.readersRead('');
         this.state.waitUntil(this.pushOut(m, this.member(me.uid)));
         for (const s of this.state.getWebSockets()) this.send(s, { t: 'roomsdirty' });
         return this.send(ws, { t: 'liveopened', key });

@@ -373,6 +373,15 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .send[disabled]{opacity:.45}
 .jump{position:absolute;right:18px;bottom:84px;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid rgba(233,238,246,0.2);display:none;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(0,0,0,0.4)}
 .jump.show{display:flex}
+.unseen{position:absolute;right:16px;bottom:82px;min-width:44px;height:44px;padding:0 13px 0 10px;border-radius:999px;background:var(--gold);color:#121826;display:none;align-items:center;justify-content:center;gap:6px;font-weight:800;font-size:14px;box-shadow:0 10px 24px rgba(0,0,0,0.45);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.unseen.show{display:flex}
+.jump.show ~ .unseen{bottom:132px}
+.unseen svg{flex:none}
+.newdiv{display:flex;align-items:center;gap:12px;margin:14px 0 10px;color:var(--gold);font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase}
+.newdiv::before,.newdiv::after{content:'';flex:1;height:1px;background:rgba(216,170,60,0.45)}
+.unmenu{position:absolute;right:16px;bottom:184px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 30px rgba(0,0,0,0.5);padding:6px;z-index:5}
+.unmenu button{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap}
+.unmenu button:hover{background:rgba(255,255,255,0.06)}
 .empty{margin:auto;text-align:center;color:var(--muted);font-size:14.5px;line-height:1.6;max-width:320px}
 .conn{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,15,28,0.55);z-index:3;pointer-events:none;animation:connin .25s ease-out}
 @keyframes connin{from{opacity:0}to{opacity:1}}
@@ -740,7 +749,7 @@ function away() { return document.hidden || !!S.appAway; }
 S.seenSent = new Set(); S.seenQueue = new Set(); S.seenOnScreen = new Set();
 const seenObs = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
   for (const en of entries) { const id = Number(en.target.dataset.id); if (en.isIntersecting) S.seenOnScreen.add(id); else S.seenOnScreen.delete(id); }
-  queueSeen();
+  queueSeen(); markSeenOnScreen();
 }, { threshold: 0.5 }) : null;
 function queueSeen() {
   if (away() || S.view !== 'chat') return;
@@ -752,12 +761,87 @@ function queueSeen() {
     if (sendQuiet({ t: 'seen', ids })) ids.forEach(id => { S.seenSent.add(id); S.seenQueue.delete(id); });
   }, 1200);
 }
-function watchSeen(box) { if (!seenObs || !box) return; seenObs.disconnect(); S.seenOnScreen.clear(); box.querySelectorAll('.row[data-id]').forEach(el => seenObs.observe(el)); }
+function watchSeen(box) { if (!seenObs || !box) return; seenObs.disconnect(); S.seenOnScreen.clear(); box.querySelectorAll('.row[data-id], .jwrap[data-id]').forEach(el => seenObs.observe(el)); }
+// ---- unseen messages (2026-10-10): the chat opens at the reader's place, a gold count shows what is
+// still unseen below it, ticking down as messages come on screen; tapping it goes to the oldest one,
+// right-click or press and hold offers "Mark all as seen". Skipped messages stay counted until seen.
+S.unseen = new Set();
+function startAtPlace(lastRead) {
+  S.unseen = new Set();
+  S.firstUnseen = 0;
+  if (typeof lastRead === 'number' && S.me) {
+    for (const x of S.messages) if (x.id > lastRead && x.uid !== S.me.uid && x.kind !== 'join') S.unseen.add(x.id);
+    if (S.unseen.size) { S.firstUnseen = Math.min(...S.unseen); S.openAtUnseen = true; }
+  }
+  S.lastReadSent = lastRead || 0;
+  if (!S.unseen.size) S.restorePlace = true;
+}
+function markSeenOnScreen() {
+  if (away() || S.view !== 'chat' || !S.unseen.size) return;
+  let changed = false;
+  for (const id of S.seenOnScreen) if (S.unseen.delete(id)) changed = true;
+  if (changed) { renderUnseen(); reportRead(); }
+}
+// everything below the oldest unseen message counts as read on the server, so a skipped message is
+// still unseen next time (on any device)
+function reportRead() {
+  clearTimeout(S.readT);
+  S.readT = setTimeout(() => {
+    const ids = S.messages.filter(x => !x.deleted).map(x => x.id); if (!ids.length) return;
+    const upto = S.unseen.size ? Math.min(...S.unseen) - 1 : Math.max(...ids);
+    if (upto > (S.lastReadSent || 0) && sendQuiet({ t: 'read', room: S.room, id: upto })) S.lastReadSent = upto;
+  }, 700);
+}
+function renderUnseen() {
+  for (const id of [...S.unseen]) if (!S.messages.some(x => x.id === id && !x.deleted)) S.unseen.delete(id);
+  const b = $('#unseenBtn'); if (!b) return;
+  const n = S.unseen.size;
+  b.classList.toggle('show', n > 0);
+  $('#unseenN').textContent = n > 999 ? '999+' : n;
+  b.setAttribute('aria-label', `${n} unseen message${n === 1 ? '' : 's'}. Go to the oldest one`);
+  if (!n) { const mn = $('#unmenu'); mn && mn.remove(); }
+}
+function goOldestUnseen() {
+  if (!S.unseen.size) return;
+  const id = Math.min(...S.unseen);
+  const el = document.querySelector(`#msgs [data-id="${id}"]`); if (!el) return;
+  const box = $('#msgs');
+  box.scrollTop += el.getBoundingClientRect().top - box.getBoundingClientRect().top - 56;
+  S.stick = false; el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600);
+}
+function clearUnseen() {
+  const mn = $('#unmenu'); mn && mn.remove();
+  S.unseen.clear(); S.firstUnseen = 0; renderUnseen(); reportRead();
+  const d = $('#msgs .newdiv'); d && d.remove();
+}
+function wireUnseen() {
+  const b = $('#unseenBtn'); if (!b) return;
+  let t = null, held = false;
+  const menu = () => {
+    const old = $('#unmenu'); if (old) { old.remove(); return; }
+    const m = document.createElement('div'); m.className = 'unmenu'; m.id = 'unmenu';
+    m.innerHTML = `<button id="unclear">${P('<path d="M20 6 9 17l-5-5"/>', { s: 16 })}Mark all as seen</button>`;
+    $('.panel').appendChild(m);
+    $('#unclear').onclick = clearUnseen;
+    setTimeout(() => document.addEventListener('click', function off(e) { if (!e.target.closest('#unmenu')) { m.remove(); document.removeEventListener('click', off, true); } }, true), 0);
+  };
+  b.onclick = () => { if (held) { held = false; return; } goOldestUnseen(); };
+  b.oncontextmenu = e => { e.preventDefault(); menu(); };
+  b.addEventListener('touchstart', () => { held = false; t = setTimeout(() => { held = true; haptic(12); menu(); }, 450); }, { passive: true });
+  b.addEventListener('touchend', () => clearTimeout(t));
+  b.addEventListener('touchmove', () => clearTimeout(t), { passive: true });
+}
+// the reader's place in each room, kept in this browser (the unseen count itself is kept on the server)
+function placeKey() { return 'ivc_place:' + (S.room || 'main'); }
+function savePlace() {
+  clearTimeout(S.placeT);
+  S.placeT = setTimeout(() => { const box = $('#msgs'); if (!box || S.loadingRoom) return; store(placeKey(), S.stick ? null : JSON.stringify(topAnchor(box))); }, 400);
+}
 function tellApp(obj) { try { if (window.parent !== window) window.parent.postMessage(Object.assign({ ivc: 1 }, obj), location.origin); } catch (e) {} }
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || !e.data.ivcApp) return;
   if (e.data.room !== undefined) { const r = String(e.data.room || ''); if (S.connected && S.view === 'chat') switchRoom(r); else S.openRoom = r; }
-  if ('away' in e.data) { S.appAway = !!e.data.away; if (!S.appAway) onResume(); sendQuiet({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); } }
+  if ('away' in e.data) { S.appAway = !!e.data.away; if (!S.appAway) onResume(); sendQuiet({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); markSeenOnScreen(); } }
 });
 function onIncoming(m) {
   if (!S.me || !m || m.uid === S.me.uid) return;
@@ -1299,7 +1383,8 @@ function onEvent(m) {
       setTimeout(() => { sendWs({ t: 'notify', level: notifyLevel() }); sendWs({ t: 'away', on: away() }); }, 0);
       S.me = m.me; S.people[m.me.uid] = m.me; mergePeople(m.people); setQuick();
       S.messages = m.messages; S.pins = m.pins; S.online = m.online; S.signs = m.signs; if (Array.isArray(m.reactions) && m.reactions.length) DEFAULT_QUICK = m.reactions; setQuick();
-      S.oldestDone = m.messages.length < 50;
+      S.oldestDone = 'done' in m ? !!m.done : m.messages.length < 50;
+      startAtPlace(m.lastRead);
       S.where = m.where || {}; setRoom(m.room || { key: '', title: 'Inner Circle Chat' }); S.loadingRoom = false;
       if (m.roomfail) setTimeout(() => toast('That episode room could not be opened.'), 300);
       S.openRoom = null;
@@ -1330,6 +1415,8 @@ function onEvent(m) {
       if (S.messages.some(x => x.id === m.m.id)) return;
       S.messages.push(m.m);
       delete S.typing[m.m.uid];
+      if (S.me && m.m.uid !== S.me.uid && m.m.kind !== 'join') { S.unseen.add(m.m.id); renderUnseen(); }
+      else if (S.me && m.m.uid === S.me.uid && !S.unseen.size) reportRead();
       if (S.view === 'chat') {
         const box = $('#msgs'); const atBottom = !box || box.scrollHeight - box.scrollTop - box.clientHeight < 140;
         renderMessages(atBottom || m.m.uid === S.me.uid);
@@ -1402,6 +1489,7 @@ function onEvent(m) {
       setRoom(m.room);
       S.messages = m.messages || []; S.pins = m.pins || []; S.oldestDone = !!m.done; S.loadingOlder = false; S.typing = {};
       S.reply = null; S.editMsg = null; S.stick = true; S.anc = null; S.loadingRoom = false;
+      startAtPlace(m.lastRead);
       S.seenSent = new Set(); S.seenQueue = new Set();
       const rm = allRooms().find(r => r.key === S.room); if (rm) rm.unread = 0;
       if (S.view === 'chat') { renderChat(); }
@@ -1758,7 +1846,8 @@ function renderChat() {
         <textarea id="field" class="field" rows="1" maxlength="2000" placeholder="${S.room ? 'Talk about this episode' : 'Message the Inner Circle'}"></textarea>
         <button class="send" id="sendBtn" aria-label="Send">${I.up(21)}</button>
       </div>
-      <button class="jump" id="jump" aria-label="Jump to latest">${I.down()}</button>
+      <button class="jump" id="jump" aria-label="Jump to the latest message" title="Jump to the latest message">${I.down()}</button>
+      <button class="unseen" id="unseenBtn" aria-label="Unseen messages" title="Go to the oldest unseen message (right-click or hold to clear)">${I.down(18)}<span id="unseenN">0</span></button>
     </main>
   </div>`;
   renderSide(); renderHeadCounts(); renderPinbar(); renderMessages(true); renderReply(); renderConn();
@@ -1769,11 +1858,14 @@ function renderChat() {
       S.loadingOlder = true; sendWs({ t: 'history', before: S.messages[0].id });
     }
     S.stick = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
-    if (S.stick) $('#jump').classList.remove('show');
+    $('#jump').classList.toggle('show', box.scrollHeight - box.scrollTop - box.clientHeight > 240);
     if (!S.anchoring) S.anc = S.stick ? null : topAnchor(box);
+    savePlace();
   });
   box.addEventListener('load', e => { if (e.target && e.target.tagName === 'IMG') stickDown(); }, true);
-  $('#jump').onclick = () => { box.scrollTop = box.scrollHeight; $('#jump').classList.remove('show'); };
+  $('#jump').onclick = () => { box.scrollTop = box.scrollHeight; S.stick = true; $('#jump').classList.remove('show'); };
+  wireUnseen();
+  renderUnseen();
   $('#peopleBtn').onclick = $('#ptitle').onclick = () => sendWs({ t: 'members' });
   $('#searchBtn').onclick = $('#searchBtn2').onclick = () => openSearch('room');
   $('#mentBtn').onclick = $('#mentBtn2').onclick = openSettings;
@@ -1914,7 +2006,7 @@ function msgHtml(m, i, list) {
   const p = person(m.uid);
   const gap = 5 * 60 * 1000;
   const newDay = !prev0 || new Date(prev0.created).toDateString() !== new Date(m.created).toDateString();
-  const first = newDay || !prev || prev.uid !== m.uid || m.created - prev.created > gap;
+  const first = newDay || !prev || prev.uid !== m.uid || m.created - prev.created > gap || m.id === S.firstUnseen;
   const last = !next || next.uid !== m.uid || next.created - m.created > gap || new Date(next.created).toDateString() !== new Date(m.created).toDateString();
   let out = newDay ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '';
   let body = '';
@@ -1945,16 +2037,27 @@ function renderMessages(toBottom) {
     hydrateUnfurls(box);
     return;
   }
-  const html = (S.oldestDone ? (S.room ? roomIntro(false) : '<div class="day" style="margin-top:4px">The beginning of Inner Circle Chat</div>') : '') + S.messages.map((m, i, l) => msgHtml(m, i, l)).join('') + `<div id="pend">${pendHtml()}</div>`;
+  const html = (S.oldestDone ? (S.room ? roomIntro(false) : '<div class="day" style="margin-top:4px">The beginning of Inner Circle Chat</div>') : '') + S.messages.map((m, i, l) => (m.id === S.firstUnseen ? '<div class="newdiv">Unseen messages</div>' : '') + msgHtml(m, i, l)).join('') + `<div id="pend">${pendHtml()}</div>`;
   const live = box.querySelector('.lpframe');
   if (!live || !redrawAround(box, html, live)) box.innerHTML = html;
   watchSeen(box);
   hydrateMedia(box); hydrateUnfurls(box);
   box.querySelectorAll('img.mimg').forEach(img => img.addEventListener('load', stickDown, { once: true }));
+  if (S.openAtUnseen) {
+    S.openAtUnseen = false; S.restorePlace = false;
+    const d = box.querySelector('.newdiv');
+    if (d) { box.scrollTop += d.getBoundingClientRect().top - box.getBoundingClientRect().top - 12; S.stick = box.scrollHeight - box.scrollTop - box.clientHeight < 60; S.anc = topAnchor(box); renderUnseen(); return; }
+  }
+  if (S.restorePlace) {
+    S.restorePlace = false;
+    let a = null; try { a = JSON.parse(load(placeKey()) || 'null'); } catch (e) {}
+    if (a && a.id) { box.scrollTop = box.scrollHeight; if (restoreAnchor(box, a)) { S.stick = false; S.anc = a; $('#jump') && $('#jump').classList.add('show'); renderUnseen(); return; } }
+  }
   if (toBottom) { box.scrollTop = box.scrollHeight; S.stick = true; }
   else if (S.stick) box.scrollTop = box.scrollHeight;
   else if (!restoreAnchor(box, anc)) box.scrollTop = box.scrollHeight - keep;
   if (!S.stick) S.anc = anc || topAnchor(box);
+  renderUnseen();
 }
 
 // ------------------------------------------------------------ link previews, Telegram style
@@ -2551,7 +2654,7 @@ document.addEventListener('mouseover', e => {
   const b = e.target.closest && e.target.closest('button[aria-label],a[aria-label]');
   if (b && !b.hasAttribute('title')) b.setAttribute('title', b.getAttribute('aria-label'));
 });
-document.addEventListener('visibilitychange', () => { sendQuiet({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); } });
+document.addEventListener('visibilitychange', () => { sendQuiet({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); markSeenOnScreen(); } });
 
 S.view = S.token ? 'loading' : 'door';
 render();
