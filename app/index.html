@@ -332,7 +332,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-10b';
+const VERSION = '2026-10-11a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1605,7 +1605,7 @@ aud.addEventListener('timeupdate', () => {
   if (npOpen) updateNP();
   if (EPV && EPV.key === cur.key) { const s = $('#lbSub'); if (s) s.textContent = currentChapterTitle() || clock(aud.currentTime); markChapter(); }
 });
-aud.addEventListener('play', () => { if (isSilent()) return; updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'playing'; });
+aud.addEventListener('play', () => { if (isSilent()) return; { const f = $('#chatv iframe'); try { f && f.contentWindow.postMessage({ ivcApp: 1, appPlaying: 1 }, location.origin); } catch (e) {} } updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'playing'; });
 aud.addEventListener('pause', () => { if (isSilent()) return; /* paused: bring a hidden player back so it can be found */ if (miniHidden) { miniHidden = false; syncMini(); } if (cur) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'paused'; });
 aud.addEventListener('ended', () => { if (isSilent()) return; if (cur) { delete PROG[cur.key]; store('iva_prog', PROG); } updateMini(); refreshLB(); });
 let retried = false;

@@ -423,6 +423,75 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
   .typing{padding-left:40px}
 }
 
+/* the episode player in an episode room (2026-10-11) */
+.plslot{flex:1.45 1 0;min-width:0}
+body.ivc-pl .side{display:none}
+body.ivc-pl .shell{max-width:1480px}
+body.ivc-pl .panel{flex:1 1 0;min-width:380px}
+body.ivc-pl #popout,body.ivc-pl #peopleBtn,body.ivc-pl #roomThumbD{display:none!important}
+body.ivc-pl .phead{padding-left:16px}
+.epp{position:fixed;z-index:4;display:flex;flex-direction:column;background:var(--surface);border:1px solid rgba(216,170,60,0.4);border-radius:16px;overflow:hidden;box-shadow:0 0 34px rgba(216,170,60,0.14)}
+.epp.off{visibility:hidden;pointer-events:none;left:-10000px;top:0;width:480px;height:420px}
+.epph{display:flex;align-items:center;gap:10px;padding:12px 8px 12px 18px;border-bottom:1px solid var(--line);flex:none}
+.eppt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.eppk{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);line-height:1.2}
+.eppk.free{color:var(--lapis-lit)}
+.eppt b{font-family:var(--display);font-weight:600;font-size:17px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eppsw{display:inline-flex;padding:3px;border-radius:999px;border:1px solid var(--line);background:rgba(10,15,28,0.5);flex:none}
+.eppsw button{height:30px;padding:0 13px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.eppsw button[aria-pressed="true"]{background:var(--gold);color:var(--on-gold)}
+.eppv{display:none;position:relative;aspect-ratio:16/9;background:#05080F;flex:none}
+.epp.vmode .eppv{display:block}
+.eppv iframe,.eppv #eppYT{position:absolute;inset:0;width:100%;height:100%;border:0}
+.eppvmsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+.eppvmsg:empty{display:none}
+.eppa{display:flex;align-items:center;gap:14px;padding:16px 18px 6px;flex:none}
+.epplay{width:52px;height:52px;border-radius:50%;background:var(--gold);color:var(--on-gold);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 0 22px rgba(216,170,60,0.35)}
+.epplay svg{margin-left:2px}
+.eppbar{flex:1;min-width:0}
+.eppnow{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:18px}
+#eppSeek{width:100%;margin:6px 0 2px;accent-color:var(--gold);height:22px}
+.epptimes{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.eppact{display:flex;align-items:center;gap:10px;padding:12px 18px 10px;flex:none;flex-wrap:wrap}
+.eppact .btn2 span{font-variant-numeric:tabular-nums;color:var(--gold)}
+.eppcht{margin-left:auto;display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 8px;font-size:13px;font-weight:700;color:var(--muted)}
+.eppcht[aria-expanded="false"] svg{transform:rotate(-90deg)}
+.eppch{list-style:none;margin:0;padding:0 8px 12px;overflow-y:auto;flex:1;min-height:0;overscroll-behavior:contain;border-top:1px solid var(--line)}
+.eppch li{margin:0}
+.eppch button{display:flex;gap:14px;width:100%;text-align:left;padding:10px 10px;border-radius:10px;align-items:baseline;line-height:1.35}
+.eppch button:hover{background:rgba(233,238,246,0.05)}
+.eppch .cht{font-variant-numeric:tabular-nums;font-size:12.5px;font-weight:700;color:var(--lapis-lit);min-width:52px;flex:none}
+.eppch .chn{font-size:14px}
+.eppch button.on{background:rgba(216,170,60,0.12)}
+.eppch button.on .cht,.eppch button.on .chn{color:var(--gold)}
+.eppch button.on .chn{font-weight:700}
+.epp.phone{border-radius:0;border:0;border-bottom:1px solid rgba(216,170,60,0.4);box-shadow:none}
+.epp.phone .epph{padding:8px 4px 8px 14px}
+.epp.phone .eppt b{font-size:15px}
+.epp.phone .eppa{padding:10px 14px 2px}
+.epp.phone .epplay{width:46px;height:46px}
+.epp.phone .eppact{padding:6px 14px 8px}
+.epp.phone .eppch{max-height:min(22dvh,176px);flex:none}
+.epp.phone .eppk{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.epp.phone .eppch button{padding:8px 8px}
+.plslot[data-phone="true"]{flex:none}
+.plbtn.on{background:rgba(216,170,60,0.13)}
+.ibtn.plbtn{color:var(--gold)}
+.plnow{color:var(--gold)}
+.eq{display:inline-flex;align-items:flex-end;gap:2px;height:13px;width:14px}
+.eq i{display:block;width:3px;background:var(--gold);border-radius:1px;animation:ivceq 1s ease-in-out infinite}
+.eq i:nth-child(1){height:6px;animation-delay:-.4s}.eq i:nth-child(2){height:12px;animation-delay:-.2s}.eq i:nth-child(3){height:8px}
+@keyframes ivceq{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
+.eq i{transform-origin:bottom}
+button.tchip{cursor:pointer;font:inherit;font-weight:700;font-size:12.5px;background:none}
+.tsbar .tchip{font-family:var(--sans)}
+.tchip.room{border-color:rgba(216,170,60,0.7);color:var(--gold)}
+
+.tsbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 20px 2px}
+.tsi{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.tsc{font-size:13px;color:var(--ink);max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tsh{font-size:12px;color:var(--muted)}
+@media (max-width:860px){.tsbar{padding:6px 12px 0}.tsh{display:none}}
 /* overlays */
 .scrim{position:fixed;inset:0;background:rgba(5,8,15,0.66);z-index:20;display:flex;align-items:center;justify-content:center;padding:18px}
 .sheet{background:var(--card);border:1px solid rgba(233,238,246,0.16);border-radius:18px;box-shadow:0 18px 44px rgba(0,0,0,0.5);width:min(420px,100%);max-height:calc(100dvh - 36px);overflow:auto}
@@ -679,16 +748,19 @@ function epFrom(text) {
 }
 const epUrl = ep => `${SITE}/${ep.kind}/${ep.slug}`;
 function secs(h, m, s) { return (Number(h) || 0) * 3600 + Number(m) * 60 + Number(s); }
-function formatText(text) {
+function formatText(text, room) {
   const ep = epFrom(text);
   const base = ep ? epUrl(ep) : '';
+  // in an episode room a time with no episode link plays the room's own episode from there (2026-10-11)
+  const inRoom = !base && room && String(room).indexOf('ep:') === 0;
   let out = '';
   const urlRe = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]|(?:www\.)?innerversepodcast\.com\/[^\s<]*[^\s<.,;:!?)\]'"])/g;
   let last = 0, m;
   // a time becomes a play chip only when the message links an episode it can jump into;
   // anywhere else ("I waited till 8:33") it stays plain text
-  const plain = s => !base ? esc(s) : esc(s).replace(/(^|[\s(])(?:(\d{1,2}):)?([0-5]?\d):([0-5]\d)(?=$|[\s.,;:!?)])/g, (all, pre, h, mm, ss) => {
+  const plain = s => !base && !inRoom ? esc(s) : esc(s).replace(/(^|[\s(])(?:(\d{1,2}):)?([0-5]?\d):([0-5]\d)(?=$|[\s.,;:!?)])/g, (all, pre, h, mm, ss) => {
     const label = (h ? h + ':' : '') + mm + ':' + ss;
+    if (inRoom) return pre + `<button class="tchip room" data-t="${secs(h, mm, ss)}" data-room="${esc(room)}" title="Play from ${label}">${I.tri()}${label}</button>`;
     return pre + `<a href="${base}?t=${secs(h, mm, ss)}" target="_blank" rel="noopener"><span class="tchip">${I.tri()}${label}</span></a>`;
   });
   while ((m = urlRe.exec(text))) {
@@ -847,6 +919,7 @@ function tellApp(obj) { try { if (window.parent !== window) window.parent.postMe
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || !e.data.ivcApp) return;
   if (e.data.room !== undefined) { const r = String(e.data.room || ''); if (S.connected && S.view === 'chat') switchRoom(r); else S.openRoom = r; }
+  if (e.data.appPlaying && typeof PL !== 'undefined' && PL.playing) { try { PL.mode === 'audio' ? PL.audio.pause() : PL.vid && PL.vid.pause(); } catch (err) {} } // the app's own player started
   if ('away' in e.data) { S.appAway = !!e.data.away; if (!S.appAway) onResume(); sendQuiet({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); markSeenOnScreen(); } }
 });
 function onIncoming(m) {
@@ -1265,6 +1338,337 @@ if (IN_APP) window.addEventListener('click', e => {
   tellApp({ openEp: '#/' + (ep.kind === 'plus' ? 'p' : 'e') + '/' + ep.slug, t: t ? Number(t) : undefined });
 }, true);
 
+// ------------------------------------------------------------ the episode player in an episode room (2026-10-11)
+// Chance: "in an episode's specific chat room there was a way to play the episode and see the chapters, it's hidden
+// by default but could be opened so it's riding alongside the chat". One player for the whole page, made once and never
+// moved in the page (moving a video frame reloads it), laid over a slot that the chat draws: beside the chat on desktop,
+// above the messages on phones. Members hear the full Plus+ episode; a show with no members' cut plays its free one.
+// Every time in the player is on the chapters' clock (the members' master for Plus+, the free video for a free show).
+const PL = { room: '', slug: '', open: false, data: null, plus: false, mode: '', t: 0, dur: 0, playing: false,
+  chapters: [], off: 0, el: null, audio: null, aSlug: '', aSrc: '', aMinted: 0, vid: null, vKind: '', vId: '', vH: '',
+  vReady: null, vFail: false, want: null, chOpen: null, loading: false };
+const PHONE_Q = '(max-width:860px)';
+const isPhone = () => matchMedia(PHONE_Q).matches;
+const plRoomOk = () => !!(S.room && S.room.indexOf('ep:') === 0 && !S.roomInfo.live && S.roomInfo.slug);
+const plHere = () => PL.room && PL.room === S.room;
+function fmtT(t) {
+  t = Math.max(0, Math.floor(t || 0)); const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s = t % 60;
+  return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0');
+}
+function chList(v) { if (!v) return []; if (typeof v === 'string') { try { v = JSON.parse(v); } catch (e) { return []; } } return Array.isArray(v) ? v.filter(c => c && isFinite(c.seek) && c.title) : []; }
+function durSecs(d) { const m = String(d || '').match(/(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?/i); return m ? (Number(m[1]) || 0) * 3600 + (Number(m[2]) || 0) * 60 : 0; }
+function curCh() { let c = -1; PL.chapters.forEach((x, i) => { if (PL.t + 0.5 >= x.seek) c = i; }); return c; }
+
+function plMake() {
+  if (PL.el) return PL.el;
+  const el = document.createElement('section');
+  el.id = 'epp'; el.className = 'epp off'; el.setAttribute('aria-label', 'Episode player');
+  el.innerHTML = `<div class="epph"><div class="eppt"><span class="eppk" id="eppK"></span><b id="eppTitle"></b></div>
+    <div class="eppsw" id="eppSw" role="group" aria-label="Watch or listen"><button data-m="video" aria-pressed="false">Watch</button><button data-m="audio" aria-pressed="false">Listen</button></div>
+    <button class="ibtn" id="eppX" aria-label="Hide the player" title="Hide the player (it keeps playing)">${I.close(20)}</button></div>
+    <div class="eppv" id="eppV"><div class="eppvmsg" id="eppVmsg"></div></div>
+    <div class="eppa" id="eppA"><button class="epplay" id="eppPlay" aria-label="Play">${I.tri(20)}</button>
+      <div class="eppbar"><div class="eppnow" id="eppNow"></div><input type="range" id="eppSeek" min="0" max="100" step="1" value="0" aria-label="Position in the episode">
+      <div class="epptimes"><span id="eppCur">0:00</span><span id="eppDur"></span></div></div></div>
+    <div class="eppact"><button class="btn2 sm" id="eppShare" title="Put this moment's time in your message">${P('<path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/>',{s:16})}Share this moment <span id="eppShareT">0:00</span></button>
+      <button class="eppcht" id="eppChT" aria-expanded="true">Chapters ${P('<path d="m6 9 6 6 6-6"/>',{s:16})}</button></div>
+    <ol class="eppch" id="eppCh"></ol>`;
+  document.body.appendChild(el);
+  PL.el = el;
+  const a = PL.audio = document.createElement('audio');
+  a.preload = 'none'; a.setAttribute('playsinline', ''); el.appendChild(a);
+  a.addEventListener('timeupdate', () => { if (PL.mode === 'audio' && PL.pendingAt == null) plTick(a.currentTime - PL.off); });
+  a.addEventListener('loadedmetadata', () => { if (PL.mode === 'audio' && isFinite(a.duration)) { PL.dur = a.duration - PL.off; plDraw(); } });
+  a.addEventListener('play', () => { if (PL.mode === 'audio') plPlaying(true); });
+  a.addEventListener('pause', () => { if (PL.mode === 'audio') plPlaying(false); });
+  a.addEventListener('ended', () => { if (PL.mode === 'audio') plPlaying(false); });
+  a.addEventListener('error', () => {
+    // a play link runs out after about six hours; get a fresh one once and carry on from the same place
+    if (PL.mode === 'audio' && PL.aSlug && Date.now() - PL.aMinted > 20000) { const t = PL.t, go = PL.playing; PL.aSrc = ''; plAudioSrc().then(ok => { if (ok) plSeek(t, go); }); }
+  });
+  el.querySelector('#eppX').onclick = () => plShow(false);
+  el.querySelector('#eppPlay').onclick = () => plToggle();
+  el.querySelectorAll('#eppSw button').forEach(b => b.onclick = () => plMode(b.dataset.m));
+  const sk = el.querySelector('#eppSeek');
+  sk.addEventListener('input', () => { PL.dragging = true; el.querySelector('#eppCur').textContent = fmtT(Number(sk.value)); });
+  sk.addEventListener('change', () => { PL.dragging = false; plSeek(Number(sk.value), PL.playing); });
+  el.querySelector('#eppShare').onclick = () => plInsertTime(PL.t, true);
+  el.querySelector('#eppChT').onclick = () => { PL.chOpen = !plChOpen(); plDraw(); plPlace(); };
+  el.querySelector('#eppCh').addEventListener('click', e => {
+    const b = e.target.closest('button[data-seek]'); if (!b) return;
+    const t = Number(b.dataset.seek);
+    const f = $('#field'); if (f && f.value.trim()) plInsertTime(t, false); // writing a message: the chapter's time goes in too
+    plSeek(t, true);
+  });
+  new ResizeObserver(() => plPlace()).observe(el);
+  window.addEventListener('resize', () => plPlace());
+  return el;
+}
+const plChOpen = () => PL.chOpen == null ? true : PL.chOpen;
+
+// open (or bring back) the player for the room the member is in
+async function plOpenRoom(then) {
+  if (!plRoomOk()) return;
+  plMake();
+  if (PL.room !== S.room) {
+    plStop();
+    Object.assign(PL, { room: S.room, slug: S.roomInfo.slug, data: null, t: 0, dur: 0, chapters: [], off: 0, aSlug: '', aSrc: '', vKind: '', vId: '', vH: '', vFail: false, want: null, chOpen: null, mode: '' });
+    PL.loading = true; plShow(true); plDraw();
+    let d = null;
+    try { d = await fetch(DATA + 'episodes/' + encodeURIComponent(PL.slug) + '.json').then(r => r.ok ? r.json() : null); } catch (e) {}
+    if (PL.room !== S.room && !plHere()) { /* moved on while it loaded */ }
+    const f = d && (d.fields || d);
+    PL.loading = false;
+    if (!f) { PL.data = { err: true }; plDraw(); return; }
+    const pv = f['Plus Video URL'] || '', pa = f['Plus Audio URL'] || '';
+    PL.plus = !!(pv || pa);
+    PL.data = { title: shortRoom(f['Title'] || S.roomInfo.title), dur: PL.plus ? f['Plus Duration'] : f['Duration'] };
+    if (PL.plus) {
+      PL.chapters = chList(f['Plus Free Chapters JSON']).concat(chList(f['Plus Chapters JSON']));
+      const vm = String(pv).match(/vimeo\.com\/(?:video\/)?(\d+)(?:\/([0-9a-f]+))?/i); if (vm) { PL.vKind = 'vimeo'; PL.vId = vm[1]; PL.vH = vm[2] || ''; }
+      const am = String(pa).match(/\/audio\/([^/?#]+)/); if (am) PL.aSlug = decodeURIComponent(am[1]); else if (pa) PL.aSrc = pa;
+    } else {
+      PL.chapters = chList(f['Chapters JSON']);
+      PL.off = Number(f['Audio Offset Seconds']) || 0;
+      const v = String(f['Video URL'] || ''), ym = v.match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/|\/live\/)([\w-]{11})/);
+      if (ym) { PL.vKind = 'youtube'; PL.vId = ym[1]; }
+      if (f['Acast Audio URL']) PL.aSrc = f['Acast Audio URL'];
+    }
+    PL.chapters.sort((a, b) => a.seek - b.seek);
+    PL.dur = durSecs(PL.data.dur) || (PL.chapters.length ? PL.chapters[PL.chapters.length - 1].seek : 0);
+    const hasV = !!PL.vKind, hasA = !!(PL.aSlug || PL.aSrc);
+    if (PL.want != null) { PL.t = PL.want; }
+    plMode(hasV && (!isPhone() || !hasA) ? 'video' : hasA ? 'audio' : '', PL.want != null);
+    PL.want = null;
+  } else plShow(true);
+  plDraw();
+  if (then) then();
+}
+function plShow(on) {
+  PL.open = !!on;
+  document.body.classList.toggle('ivc-pl', PL.open && plHere() && !isPhone());
+  if (S.view === 'chat') { renderPlBtns(); plSlot(); }
+  plPlace();
+}
+// the chat draws an empty slot; the player sits exactly over it
+function plSlot() {
+  const want = PL.open && plHere();
+  document.body.classList.toggle('ivc-pl', want && !isPhone());
+  let slot = $('#plslot');
+  if (!want) { if (slot) slot.remove(); return; }
+  const phone = isPhone(), panel = $('.panel'), shell = $('.shell');
+  if (!panel) return;
+  if (slot && slot.dataset.phone !== String(phone)) { slot.remove(); slot = null; }
+  if (!slot) {
+    slot = document.createElement('div'); slot.id = 'plslot'; slot.className = 'plslot'; slot.dataset.phone = String(phone);
+    if (phone) { const after = $('.livebar', panel) || $('.ptop', panel); after.insertAdjacentElement('afterend', slot); }
+    else shell.insertBefore(slot, panel);
+  }
+}
+function plPlace() {
+  const el = PL.el; if (!el) return;
+  const slot = $('#plslot');
+  const on = !!(slot && PL.open && plHere() && S.view === 'chat');
+  el.classList.toggle('off', !on);
+  el.classList.toggle('phone', isPhone());
+  if (!on) { el.style.cssText = ''; return; }
+  const r = slot.getBoundingClientRect();
+  if (isPhone()) {
+    el.style.cssText = `top:${r.top}px;left:${r.left}px;width:${r.width}px;height:auto`;
+    const h = el.offsetHeight; if (Math.abs(slot.offsetHeight - h) > 1) { slot.style.height = h + 'px'; stickDown(); }
+  } else el.style.cssText = `top:${r.top}px;left:${r.left}px;width:${r.width}px;height:${r.height}px`;
+}
+
+// ---- media
+function plStop() {
+  try { PL.audio && PL.audio.pause(); } catch (e) {}
+  if (PL.vid) { try { PL.vid.destroy && PL.vid.destroy(); } catch (e) {} PL.vid = null; }
+  const v = PL.el && PL.el.querySelector('#eppV iframe, #eppV #eppYT'); v && v.remove();
+  PL.vReady = null; PL.playing = false;
+}
+function loadScript(src) {
+  window.__ivcScripts = window.__ivcScripts || {};
+  return window.__ivcScripts[src] || (window.__ivcScripts[src] = new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); }));
+}
+async function plAudioSrc() {
+  const a = PL.audio;
+  if (PL.aSrc) { if (a.getAttribute('src') !== PL.aSrc) a.src = PL.aSrc; return true; }
+  if (!PL.aSlug) return false;
+  try {
+    const r = await fetch(AUTH + '/audio-link/' + encodeURIComponent(PL.aSlug), { headers: { Authorization: 'Bearer ' + S.token } });
+    const j = r.ok ? await r.json() : null;
+    if (!j || !j.url) return false;
+    PL.aSrc = new URL(j.url, AUTH).href; PL.aMinted = Date.now(); a.src = PL.aSrc; return true;
+  } catch (e) { return false; }
+}
+function plVideo() {
+  if (PL.vReady) return PL.vReady;
+  const host = PL.el.querySelector('#eppV');
+  PL.vReady = (async () => {
+    if (PL.vKind === 'vimeo') {
+      await loadScript('https://player.vimeo.com/api/player.js');
+      const f = document.createElement('iframe');
+      f.src = `https://player.vimeo.com/video/${PL.vId}?${PL.vH ? 'h=' + PL.vH + '&' : ''}title=0&byline=0&portrait=0&dnt=1&playsinline=1`;
+      f.allow = 'autoplay; fullscreen; picture-in-picture'; f.setAttribute('allowfullscreen', ''); f.title = 'Episode video';
+      host.appendChild(f);
+      const p = new window.Vimeo.Player(f);
+      p.on('timeupdate', d => { if (PL.mode === 'video') plTick(d.seconds); });
+      p.on('play', () => { if (PL.mode === 'video') plPlaying(true); });
+      p.on('pause', () => { if (PL.mode === 'video') plPlaying(false); });
+      p.on('ended', () => { if (PL.mode === 'video') plPlaying(false); });
+      await Promise.race([p.ready(), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 12000))]);
+      PL.vid = { kind: 'vimeo', seek: t => p.setCurrentTime(Math.max(0, t)).catch(() => {}), play: () => p.play().catch(() => {}), pause: () => p.pause().catch(() => {}),
+        time: () => p.getCurrentTime(), destroy: () => p.destroy() };
+      p.getDuration().then(d => { if (d) { PL.dur = d; plDraw(); } }).catch(() => {});
+    } else if (PL.vKind === 'youtube') {
+      await loadScript('https://www.youtube.com/iframe_api');
+      await new Promise(ok => { if (window.YT && window.YT.Player) ok(); else { const prev = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { prev && prev(); ok(); }; } });
+      const d = document.createElement('div'); d.id = 'eppYT'; host.appendChild(d);
+      let tick = null;
+      const p = await new Promise((ok, no) => {
+        const yp = new window.YT.Player(d, { videoId: PL.vId, host: 'https://www.youtube-nocookie.com', playerVars: { playsinline: 1, rel: 0, modestbranding: 1 },
+          events: { onReady: () => ok(yp), onError: () => no(new Error('yt')),
+            onStateChange: e => { if (PL.mode !== 'video') return; const on = e.data === 1; plPlaying(on); clearInterval(tick); if (on) tick = setInterval(() => plTick(yp.getCurrentTime()), 500); } } });
+        setTimeout(() => no(new Error('slow')), 12000);
+      });
+      PL.vid = { kind: 'youtube', seek: t => p.seekTo(Math.max(0, t), true), play: () => p.playVideo(), pause: () => p.pauseVideo(), time: () => Promise.resolve(p.getCurrentTime()), destroy: () => { clearInterval(tick); p.destroy(); } };
+      const dd = p.getDuration(); if (dd) PL.dur = dd;
+    } else throw new Error('none');
+  })().catch(() => {
+    PL.vFail = true; PL.vReady = null;
+    const f = host.querySelector('iframe, #eppYT'); f && f.remove();
+    if (PL.mode === 'video' && (PL.aSlug || PL.aSrc)) { toast('The video will not play here yet, so here is the audio.'); plMode('audio', true); }
+    plDraw(); throw new Error('video');
+  });
+  return PL.vReady;
+}
+async function plMode(m, keepGoing) {
+  if (!m) { PL.mode = ''; plDraw(); return; }
+  const t = PL.t, go = keepGoing ? PL.playing || keepGoing === 'play' : PL.playing;
+  if (PL.mode && PL.mode !== m) { if (PL.mode === 'audio') PL.audio.pause(); else if (PL.vid) PL.vid.pause(); }
+  PL.mode = m; plDraw();
+  if (m === 'video') { try { await plVideo(); } catch (e) { return; } }
+  else if (!(await plAudioSrc())) { PL.aFail = true; plDraw(); return; }
+  if (t > 1 || go) plSeek(t, go);
+}
+async function plSeek(t, play) {
+  t = Math.max(0, t || 0); PL.t = t; plDraw();
+  if (PL.mode === 'audio') {
+    const a = PL.audio; if (!a.getAttribute('src') && !(await plAudioSrc())) return;
+    const at = Math.max(0, t + PL.off);
+    if (a.readyState >= 1) { PL.pendingAt = null; a.currentTime = at; }
+    else {
+      const first = PL.pendingAt == null; PL.pendingAt = at;
+      if (first) a.addEventListener('loadedmetadata', () => { if (PL.pendingAt != null) { a.currentTime = PL.pendingAt; PL.pendingAt = null; } }, { once: true });
+      if (!play) { a.preload = 'metadata'; a.load(); }
+    }
+    if (play) a.play().catch(() => {});
+  } else if (PL.mode === 'video') {
+    try { await plVideo(); } catch (e) { return; }
+    if (!PL.vid || PL.mode !== 'video') { if (PL.mode === 'audio') plSeek(t, play); return; }
+    await PL.vid.seek(t); if (play) PL.vid.play();
+  }
+}
+function plToggle() {
+  if (PL.mode === 'audio') { if (PL.audio.paused) plSeek(PL.t, true); else PL.audio.pause(); }
+  else if (PL.vid) { if (PL.playing) PL.vid.pause(); else PL.vid.play(); }
+}
+function plTick(t) {
+  if (!isFinite(t) || t < 0) t = 0;
+  const before = curCh(); PL.t = t; if (curCh() !== before) plDraw(); else plDrawTime();
+}
+function plPlaying(on) { PL.playing = on; if (on) tellApp({ videoPlaying: true }); plDraw(); renderPlBtns(); } // inside the app, its own player pauses
+function plInsertTime(t, focus) {
+  const f = $('#field'); if (!f) return;
+  const label = fmtT(t), a = f.selectionStart ?? f.value.length, b = f.selectionEnd ?? f.value.length;
+  const pre = f.value.slice(0, a), post = f.value.slice(b);
+  const ins = (pre && !/\s$/.test(pre) ? ' ' : '') + label + (post && /^\s/.test(post) ? '' : ' ');
+  f.value = pre + ins + post; f.selectionStart = f.selectionEnd = (pre + ins).length;
+  f.dispatchEvent(new Event('input'));
+  if (focus && !isPhone()) f.focus();
+}
+// a time in an episode room's message: play the room's episode from there, opening the player if it is closed
+function plJump(t) {
+  if (!plRoomOk()) return;
+  if (plHere() && PL.data && !PL.data.err) { plShow(true); plSeek(t, true); return; }
+  PL.want = t;
+  plOpenRoom(() => { if (PL.mode) plSeek(t, true); });
+}
+
+// ---- drawing
+function plDrawTime() {
+  const el = PL.el; if (!el) return;
+  if (!PL.dragging) { const sk = el.querySelector('#eppSeek'); sk.max = Math.max(1, Math.floor(PL.dur || 0)); sk.value = Math.floor(PL.t); }
+  el.querySelector('#eppCur').textContent = fmtT(PL.t);
+  el.querySelector('#eppShareT').textContent = fmtT(PL.t);
+}
+function plDraw() {
+  const el = PL.el; if (!el) return;
+  const d = PL.data || {};
+  el.querySelector('#eppK').textContent = PL.loading ? 'Loading' : d.err ? 'Not available' : (PL.plus ? (isPhone() ? 'Plus+' : 'Plus+ full episode') : (isPhone() ? 'Free' : 'Free episode')) + (d.dur ? ' · ' + d.dur : '');
+  el.querySelector('#eppK').classList.toggle('free', !PL.plus);
+  el.querySelector('#eppTitle').textContent = d.title || S.roomInfo.title || '';
+  const hasV = !!PL.vKind && !PL.vFail, hasA = !!(PL.aSlug || PL.aSrc) && !PL.aFail;
+  const sw = el.querySelector('#eppSw'); sw.style.display = hasV && hasA ? '' : 'none';
+  sw.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === PL.mode)));
+  el.classList.toggle('vmode', PL.mode === 'video');
+  el.querySelector('#eppVmsg').textContent = PL.mode === 'video' && !PL.vid ? 'Loading the video' : '';
+  el.querySelector('#eppA').style.display = PL.mode === 'audio' ? '' : 'none';
+  el.querySelector('#eppPlay').innerHTML = PL.playing && PL.mode === 'audio' ? P('<path d="M8 5v14M16 5v14"/>', { s: 20, w: 3 }) : I.tri(20);
+  el.querySelector('#eppPlay').setAttribute('aria-label', PL.playing ? 'Pause' : 'Play');
+  el.querySelector('#eppDur').textContent = PL.dur ? fmtT(PL.dur) : '';
+  const ci = curCh();
+  el.querySelector('#eppNow').textContent = ci >= 0 ? PL.chapters[ci].title : '';
+  const open = plChOpen();
+  el.querySelector('#eppChT').setAttribute('aria-expanded', String(open));
+  el.querySelector('#eppChT').style.display = PL.chapters.length ? '' : 'none';
+  const ol = el.querySelector('#eppCh'); ol.hidden = !open || !PL.chapters.length;
+  const html = PL.chapters.map((c, i) => `<li><button data-seek="${c.seek}" class="${i === ci ? 'on' : ''}"${i === ci ? ' aria-current="true"' : ''}><span class="cht">${esc(fmtT(c.seek))}</span><span class="chn">${esc(c.title)}</span></button></li>`).join('');
+  if (ol.dataset.k !== PL.room + ci + PL.chapters.length) {
+    ol.dataset.k = PL.room + ci + PL.chapters.length; ol.innerHTML = html;
+    const on = ol.querySelector('.on'); if (on && !ol.hidden) { const top = on.offsetTop - ol.offsetTop - 8; if (top < ol.scrollTop || top > ol.scrollTop + ol.clientHeight - 40) ol.scrollTop = top; }
+  }
+  el.querySelector('#eppShare').style.display = PL.mode ? '' : 'none';
+  plDrawTime();
+}
+// the header's Play episode button (and Now playing, when the episode playing belongs to another room)
+function plBtnHtml(phone) {
+  if (!plRoomOk()) return PL.playing && PL.room && !plHere() ? `<button class="${phone ? 'ibtn plnow' : 'btn2 sm plnow'}" id="plNow${phone ? '2' : ''}" title="Back to the episode that is playing" aria-label="Now playing: back to its room">${eqIcon()}${phone ? '' : 'Now playing'}</button>` : '';
+  const here = plHere(), on = here && PL.open, playing = here && PL.playing;
+  const label = on ? 'Hide player' : playing ? 'Show player' : 'Play episode';
+  return phone ? `<button class="ibtn plbtn${on ? ' on' : ''}" id="plBtn2" aria-label="${label}" aria-pressed="${on}" title="${label}">${playing ? eqIcon() : I.tri(19)}</button>`
+    : `<button class="btn2 sm plbtn${on ? ' on' : ''}" id="plBtn" aria-pressed="${on}">${playing ? eqIcon() : I.tri(13)}${label}</button>`;
+}
+const eqIcon = () => `<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>`;
+function renderPlBtns() {
+  ['', '2'].forEach(k => {
+    const host = $('#plHost' + k); if (!host) return;
+    host.innerHTML = plBtnHtml(k === '2');
+    const b = $('#plBtn' + k); if (b) b.onclick = () => { if (plHere() && PL.open) plShow(false); else plOpenRoom(); };
+    const n = $('#plNow' + k); if (n) n.onclick = () => { const r = PL.room; switchRoom(r, () => plShow(true)); };
+  });
+}
+// the times in the message being written, shown above the box as they will look (episode rooms only)
+function tsBar(text) {
+  const box = $('#tsbar'); if (!box) return;
+  const times = plRoomOk() && !epFrom(text) ? [...String(text || '').matchAll(/(?:^|[\s(])((?:\d{1,2}:)?[0-5]?\d:[0-5]\d)(?=$|[\s.,;:!?)])/g)].map(m => m[1]).slice(0, 4) : [];
+  const k = times.join(',');
+  if (box.dataset.k === k) return; box.dataset.k = k;
+  if (!times.length) { box.innerHTML = ''; return; }
+  const chAt = sec => { if (!plHere()) return ''; let c = ''; PL.chapters.forEach(x => { if (sec + 0.5 >= x.seek) c = x.title; }); return c; };
+  box.innerHTML = `<div class="tsbar">${times.map(l => { const p = l.split(':').map(Number), sec = p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1], c = chAt(sec);
+    return `<span class="tsi"><span class="tchip room">${I.tri()}${esc(l)}</span>${c ? `<span class="tsc">${esc(c)}</span>` : ''}</span>`; }).join('')}<span class="tsh">Everyone in the room can tap ${times.length > 1 ? 'these' : 'this'} to play from there.</span></div>`;
+  stickDown();
+}
+function plAfterRender() { renderPlBtns(); plSlot(); plPlace(); }
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('button[data-t]'); if (!b || !b.closest('.msgs, .thread, #ovl')) return;
+  e.preventDefault();
+  const t = Number(b.dataset.t), room = b.dataset.room || S.room;
+  if (b.closest('#ovl')) closeOverlay();
+  if (room !== S.room) switchRoom(room, () => plJump(t)); else plJump(t);
+});
+
 // ------------------------------------------------------------ socket
 function connect() {
   if (!S.token) { S.view = 'door'; render(); return; }
@@ -1644,6 +2048,9 @@ window.addEventListener('hashchange', () => {
 // ------------------------------------------------------------ views
 function render() {
   document.body.className = '';
+  try { return render0(); } finally { if (PL.el) plPlace(); }
+}
+function render0() {
   if (S.view === 'loading') { app.innerHTML = `<div style="display:grid;place-items:center;min-height:100vh;min-height:100dvh">${loaderHtml()}</div>`; return; }
   if (S.view === 'door') return renderDoor();
   if (S.view === 'rules') return renderRules();
@@ -1824,14 +2231,14 @@ function renderChat() {
         ${S.room ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button><button id="roomThumb" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 100))}" alt="">` : `<img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}</button>`
           : `<a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a><img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}
         <button id="ptitle" aria-label="Who is here" style="flex:1;min-width:0;margin-left:4px;text-align:left;color:inherit"><h1 class="room${S.room ? ' ep' : ''}">${esc(S.room ? shortRoom(S.roomInfo.title) : 'Inner Circle Chat')}</h1><div class="sub" id="cnt2"></div></button>
-        <button class="ibtn rbtn" id="roomsBtn2" aria-label="Rooms" title="Rooms">${ROOMS_ICON(21)}<span class="rdot"></span></button>
+        <span id="plHost2" style="display:contents"></span><button class="ibtn rbtn" id="roomsBtn2" aria-label="Rooms" title="Rooms">${ROOMS_ICON(21)}<span class="rdot"></span></button>
         <button class="ibtn mbtn" id="mentBtn2" aria-label="Settings" title="Settings">${I.gear(21)}<span class="mbadge" style="display:none"></span></button>
         <button class="ibtn" id="searchBtn2" aria-label="Search">${I.search(21)}</button>
       </div>
       <div class="phead desk">
         ${S.room ? `<button id="roomThumbD" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 300))}" alt="">` : ''}</button>` : ''}
         <div style="flex:1;min-width:0"><h2 class="room" style="${S.room ? 'font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' : ''}">${esc(S.room ? S.roomInfo.title : 'Inner Circle Chat')}</h2><div class="sub" id="cnt"></div></div>
-        <button class="ibtn rbtn" id="roomsBtn" aria-label="Rooms" title="Rooms">${ROOMS_ICON()}<span class="rdot"></span></button>
+        <span id="plHost" style="display:contents"></span><button class="ibtn rbtn" id="roomsBtn" aria-label="Rooms" title="Rooms">${ROOMS_ICON()}<span class="rdot"></span></button>
         <button class="ibtn mbtn" id="mentBtn" aria-label="Settings" title="Settings">${I.gear()}<span class="mbadge" style="display:none"></span></button>
         <button class="ibtn" id="searchBtn" aria-label="Search">${I.search()}</button>
         <button class="ibtn" id="peopleBtn" aria-label="Who is here">${I.people()}</button>
@@ -1845,6 +2252,7 @@ function renderChat() {
       <div id="replybar"></div>
       <div id="attachbar"></div>
       <div id="linkbar"></div>
+      <div id="tsbar"></div>
       <div class="compose">
         <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
         <button class="ibtn" id="emoBtn" aria-label="Emoji">${P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',{s:21})}</button>
@@ -1857,7 +2265,7 @@ function renderChat() {
       <button class="unseen" id="unseenBtn" aria-label="Unseen messages" title="Go to the oldest unseen message (right-click or hold to clear)">${I.down(18)}<span id="unseenN">0</span></button>
     </main>
   </div>`;
-  renderSide(); renderHeadCounts(); renderPinbar(); renderMessages(true); renderReply(); renderConn();
+  renderSide(); renderHeadCounts(); plAfterRender(); renderPinbar(); renderMessages(true); renderReply(); renderConn();
   wireComposer();
   const box = $('#msgs');
   box.addEventListener('scroll', () => {
@@ -2024,7 +2432,7 @@ function msgHtml(m, i, list) {
       body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b><span class="qt">${m.reply.deleted ? 'Message deleted' : rk === 'join' ? 'joined the chat' : esc((m.reply.text || (m.reply.image ? 'Photo' : '')).replace(/\s+/g, ' ').slice(0, 200))}</span></button>`;
     }
     if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
-    if (m.text) { const f = formatText(m.text); body += `<div class="txt">${markMentions(f.html, m)}${m.edited ? ' <span class="time" title="Edited">(edited)</span>' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
+    if (m.text) { const f = formatText(m.text, m.room != null ? m.room : S.room); body += `<div class="txt">${markMentions(f.html, m)}${m.edited ? ' <span class="time" title="Edited">(edited)</span>' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
     if (m.preview && m.preview.url) body += lpHtml(m.preview, m.id);
   }
   const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile">${esc(p.name)}</button>${badges(p)}${signRow(p)}<span class="time">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span></div>` : '';
@@ -2277,6 +2685,7 @@ function wireComposer() {
   f.addEventListener('input', () => {
     grow(); if (!S.editMsg) store('ivc_draft', f.value || null);
     clearTimeout(S.lpTimer); S.lpTimer = setTimeout(() => linkPreview(f.value), 450);
+    tsBar(f.value);
     if (Date.now() - lastTyping > 2500 && f.value.trim()) { lastTyping = Date.now(); sendQuiet({ t: 'typing' }); }
   });
   f.addEventListener('keydown', e => {
@@ -2328,7 +2737,7 @@ function wireComposer() {
     const lk = clientLink(text);
     queueSend({ text, image: at ? at.key : undefined, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: at || (lk && S.lpOff === lk) || /circle\.innerversepodcast\.com\/app/i.test(text) ? true : undefined });
     if (at) clearAttach();
-    f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); S.lpOff = ''; linkPreview('');
+    f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); S.lpOff = ''; linkPreview(''); tsBar('');
   }
 }
 
