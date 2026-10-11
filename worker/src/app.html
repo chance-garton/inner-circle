@@ -288,7 +288,13 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .unfurl .um{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.3}
 .epbar .unfurl{flex:1;margin-top:0;max-width:none}
 @media (max-width:380px){.msgs .unfurl{flex-direction:column;gap:8px}.msgs .unfurl img{width:100%;height:auto;aspect-ratio:16/9}}
-.mimg{display:block;margin-top:6px;max-width:100%;max-height:360px;border-radius:10px;cursor:zoom-in;background:rgba(233,238,246,0.06);min-width:120px;min-height:80px}
+.mimg{display:block;margin-top:6px;width:auto;height:auto;max-width:min(260px,100%);max-height:260px;border-radius:10px;cursor:zoom-in;background:rgba(233,238,246,0.06);min-width:90px;min-height:70px;object-fit:contain}
+.attachbar{display:flex;align-items:center;gap:10px;padding:8px 14px 0}
+.attach{position:relative;width:72px;height:72px;border-radius:10px;overflow:hidden;flex:none;background:var(--card);border:1px solid var(--line)}
+.attach img{width:100%;height:100%;object-fit:cover;display:block}
+.attach .ax{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;background:rgba(10,15,28,0.8);color:var(--ink);display:flex;align-items:center;justify-content:center}
+.attach .ast{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,15,28,0.55);font-size:11px;font-weight:700;color:var(--ink);text-align:center;padding:4px}
+.attachnote{font-size:13px;color:var(--muted);line-height:1.4}
 .joined{align-self:center;display:flex;align-items:center;gap:7px;margin:10px 0;padding:5px 14px 5px 6px;border-radius:999px;background:rgba(216,170,60,0.09);border:1px solid rgba(216,170,60,0.3);font-size:13.5px;color:var(--muted);flex-wrap:wrap;justify-content:center}
 .joined button{display:inline-flex;align-items:center;gap:7px;color:var(--gold)}
 .joined .time{margin-left:4px}
@@ -1837,6 +1843,7 @@ function renderChat() {
       <div class="msgs" id="msgs" aria-live="polite"></div>
       <div class="typing" id="typing"></div>
       <div id="replybar"></div>
+      <div id="attachbar"></div>
       <div id="linkbar"></div>
       <div class="compose">
         <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
@@ -2016,9 +2023,9 @@ function msgHtml(m, i, list) {
       const rk = m.reply.kind || ((findMsg(m.reply.id) || {}).kind);
       body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b><span class="qt">${m.reply.deleted ? 'Message deleted' : rk === 'join' ? 'joined the chat' : esc((m.reply.text || (m.reply.image ? 'Photo' : '')).replace(/\s+/g, ' ').slice(0, 200))}</span></button>`;
     }
+    if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
     if (m.text) { const f = formatText(m.text); body += `<div class="txt">${markMentions(f.html, m)}${m.edited ? ' <span class="time" title="Edited">(edited)</span>' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
     if (m.preview && m.preview.url) body += lpHtml(m.preview, m.id);
-    if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
   }
   const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile">${esc(p.name)}</button>${badges(p)}${signRow(p)}<span class="time">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span></div>` : '';
   const rx = reactsHtml(m);
@@ -2304,7 +2311,9 @@ function wireComposer() {
       f.dispatchEvent(new Event('input')); f.focus();
     });
   };
-  $('#imgBtn').onclick = () => pickImage(key => { queueSend({ text: f.value.trim(), image: key, reply_to: S.reply || undefined }); f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); });
+  $('#imgBtn').onclick = () => { if (S.editMsg) { toast('Finish editing first.'); return; } pickImage(); };
+  f.addEventListener('paste', e => { const it = [...((e.clipboardData && e.clipboardData.files) || [])].find(x => /^image\//.test(x.type)); if (it && !S.editMsg) { e.preventDefault(); attachImage(it); } });
+  renderAttach();
   function send() {
     const text = f.value.trim();
     if (S.editMsg) {
@@ -2313,9 +2322,12 @@ function wireComposer() {
       if (sendWs({ t: 'edit', id: S.editMsg, text, mentions: findMentions(text), nopreview: clientLink(text) && S.lpOff === clientLink(text) ? true : undefined })) { S.editMsg = null; f.value = S.editDraft || ''; S.editDraft = ''; grow(); renderReply(); }
       return;
     }
-    if (!text) return;
+    const at = S.attach;
+    if (at && !at.key) { toast(at.failed ? 'That image did not upload. Remove it or pick it again.' : 'The image is still uploading. One moment.'); if (!at.failed) at.sendWhenReady = true; return; }
+    if (!text && !at) return;
     const lk = clientLink(text);
-    queueSend({ text, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: (lk && S.lpOff === lk) || /circle\.innerversepodcast\.com\/app/i.test(text) ? true : undefined });
+    queueSend({ text, image: at ? at.key : undefined, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: at || (lk && S.lpOff === lk) || /circle\.innerversepodcast\.com\/app/i.test(text) ? true : undefined });
+    if (at) clearAttach();
     f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); S.lpOff = ''; linkPreview('');
   }
 }
@@ -2362,21 +2374,35 @@ function pickEpisode(done) {
   if (matchMedia('(hover: hover)').matches) setTimeout(() => q.focus(), 50);
 }
 
-function pickImage(done) {
+// an image waits in the message box (a thumbnail with an x) until Send, so words can go with it;
+// it uploads in the background as soon as it is picked (2026-10-10, Chance)
+function pickImage() {
   const input = $('#filepick');
   input.value = '';
-  input.onchange = async () => {
-    const file = input.files && input.files[0]; if (!file) return;
-    if (file.size > 8 * 1024 * 1024) { toast('That image is over 8 MB.'); return; }
-    toast('Uploading…');
-    try {
-      const r = await fetch(API + '/api/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': file.type }, body: file });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error || 'Upload failed');
-      done(j.key);
-    } catch (e) { toast(e.message || 'Upload failed'); }
-  };
+  input.onchange = () => { const file = input.files && input.files[0]; if (file) attachImage(file); };
   input.click();
+}
+function attachImage(file) {
+  if (!/^image\/(png|jpeg|gif|webp)$/.test(file.type)) { toast('Images only (png, jpg, gif or webp).'); return; }
+  if (file.size > 8 * 1024 * 1024) { toast('That image is over 8 MB.'); return; }
+  clearAttach();
+  const at = { url: URL.createObjectURL(file), key: '', failed: false, sendWhenReady: false };
+  S.attach = at; renderAttach();
+  fetch(API + '/api/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': file.type }, body: file })
+    .then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Upload failed'); return j.key; })
+    .then(key => { if (S.attach !== at) return; at.key = key; renderAttach(); if (at.sendWhenReady) { const b = $('#sendBtn'); b && b.click(); } })
+    .catch(e => { if (S.attach !== at) return; at.failed = true; renderAttach(); toast(e.message || 'Upload failed'); });
+  const fld = $('#field'); fld && fld.focus();
+}
+function clearAttach() { if (S.attach) { try { URL.revokeObjectURL(S.attach.url); } catch (e) {} } S.attach = null; renderAttach(); }
+function renderAttach() {
+  const box = $('#attachbar'); if (!box) return;
+  const at = S.attach;
+  if (!at) { box.innerHTML = ''; box.className = ''; return; }
+  box.className = 'attachbar';
+  box.innerHTML = `<div class="attach"><img src="${esc(at.url)}" alt="Image to send">${at.key ? '' : `<span class="ast">${at.failed ? 'Not uploaded' : 'Uploading\u2026'}</span>`}<button class="ax" id="attachX" aria-label="Remove the image">${I.close(14)}</button></div><span class="attachnote">${at.failed ? 'Upload failed. Remove it and try again.' : 'Add a message if you like, then send.'}</span>`;
+  $('#attachX').onclick = () => clearAttach();
+  stickDown();
 }
 
 // ------------------------------------------------------------ overlays
