@@ -343,7 +343,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-11c';
+const VERSION = '2026-10-11d';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1044,7 +1044,7 @@ function renderMe() {
   v.innerHTML = `<header class="hdr"><div class="row"><h1>${S.member ? 'Account' : 'Plus+'}</h1></div></header>
   <div class="wrap">${body}
     ${!standalone ? `<div class="sec"><button class="btn line block" data-act="install">Add InnerVerse to your Home Screen</button></div>` : ''}
-    <p class="note" style="text-align:center;margin-top:28px">InnerVerse app ${VERSION}</p><p class="note" style="text-align:center;margin-top:4px">${esc(screenReport())}</p>
+    <p class="note" style="text-align:center;margin-top:28px">InnerVerse app ${VERSION}</p>
   </div>`;
   renderPushBox();
   const ct = $('#copyTok');
