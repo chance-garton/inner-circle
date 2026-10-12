@@ -834,7 +834,15 @@ const notified = new Set();
 // what a member hears about: 'all' messages, only 'mentions' (when tagged), or 'none'
 function notifyLevel() { const v = load('ivc_notify'); return v === 'mentions' || v === 'none' ? v : 'all'; }
 // away: the tab is hidden, or (inside the InnerVerse app) another tab of the app is showing
-function away() { return document.hidden || !!S.appAway; }
+function away() { return document.hidden || !!S.appAway || !!S.idle; }
+// Nobody at the screen (no touch, click, key or scroll for 3 minutes) counts as away, so a chat left open
+// on a desk, or an app sitting open on a phone, does not swallow that member's phone notifications.
+S.lastInput = Date.now();
+['pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'].forEach(ev => window.addEventListener(ev, () => {
+  S.lastInput = Date.now();
+  if (S.idle) { S.idle = false; sendQuiet({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); markSeenOnScreen(); } }
+}, { capture: true, passive: true }));
+setInterval(() => { if (!S.idle && Date.now() - S.lastInput > 180000) { S.idle = true; sendQuiet({ t: 'away', on: true }); } }, 20000);
 // views: messages that have been on screen while the member is looking, sent in small batches
 S.seenSent = new Set(); S.seenQueue = new Set(); S.seenOnScreen = new Set();
 const seenObs = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {

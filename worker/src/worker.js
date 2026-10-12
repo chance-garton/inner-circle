@@ -10,6 +10,7 @@ const INITIATOR_CUTOFF = Date.UTC(2027, 0, 1); // joined before 1 Jan 2027
 const MAX_TEXT = 2000;
 const MAX_IMAGE = 8 * 1024 * 1024;
 const PAGE = 50;
+const LOOKING_MS = 65 * 1000; // a screen silent this long is not looking, so its member gets the push
 // Episode rooms (2026-10-10): every episode can have a room, keyed by its free slug ('ep:<slug>'; '' is
 // Inner Circle Chat). A member's room list holds only the newest few episodes and the rooms they have
 // posted or reacted in; everything else is reached from the episode page or the room search.
@@ -338,7 +339,9 @@ export class Room {
       for (const ws of this.state.getWebSockets()) {
         if (ws.readyState !== 1) continue;
         const a = ws.deserializeAttachment();
-        if (a && a.uid && a.ready && !a.away && (a.room || '') === key) looking.add(a.uid);
+        // looking = this screen showed the chat and spoke to us in the last minute (a phone that locked
+        // or a page left open on an empty desk goes quiet or reports itself away, and gets the push)
+        if (a && a.uid && a.ready && !a.away && (a.room || '') === key && a.act && Date.now() - a.act < LOOKING_MS) looking.add(a.uid);
       }
       const vapid = await this.vapid();
       const mentions = Array.isArray(m.mentions) ? m.mentions : [];
@@ -804,7 +807,7 @@ export class Room {
       m = this.member(who.uid);
       if (m.banned) { this.send(ws, { t: 'denied', why: 'removed' }); return ws.close(4003, 'removed'); }
       const rk = (msg.room ? await this.roomKey(msg.room, who.uid) : null) || { key: '' };
-      ws.serializeAttachment({ uid: who.uid, ready: !!(m.rules_ok && m.profile_done), room: rk.key });
+      ws.serializeAttachment({ uid: who.uid, ready: !!(m.rules_ok && m.profile_done), room: rk.key, act: Date.now() });
       this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', who.uid);
       // the main chat counts as read up to now the first time a member is seen after rooms began
       if (!this.one("SELECT 1 AS x FROM room_state WHERE uid = ? AND room = ''", who.uid)) this.markRead(who.uid, '');
@@ -826,6 +829,8 @@ export class Room {
     const me = this.member(att.uid);
     if (!me || me.banned) return ws.close(4003, 'removed');
     const now = Date.now();
+    // when this screen last spoke (every page pings at least every 25 seconds while it is awake)
+    if (!att.act || now - att.act > 10000) { att.act = now; ws.serializeAttachment(Object.assign({}, ws.deserializeAttachment() || att, { act: now })); }
 
     switch (msg.t) {
       case 'rules_ok': {
