@@ -45,6 +45,7 @@ html.playing{--minih:66px}
 /* an app, not a page: no stray highlighting or press-and-hold callouts, except where you type */
 html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,textarea,[contenteditable="true"]{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{touch-action:pan-x pan-y;margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 *{touch-action:pan-x pan-y}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
@@ -332,7 +333,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-11a';
+const VERSION = '2026-10-11b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
