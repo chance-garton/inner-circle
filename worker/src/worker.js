@@ -272,6 +272,8 @@ export class Room {
     try { this.sql.exec('ALTER TABLE members ADD COLUMN join_alerts INTEGER DEFAULT 1'); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE members ADD COLUMN bolt TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN room TEXT DEFAULT ''"); } catch (e) { /* already there */ }
+    // a saved or forwarded copy (2026-10-11): who first wrote it, where and when, kept as it was when saved
+    try { this.sql.exec("ALTER TABLE messages ADD COLUMN fwd TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     this.sql.exec('CREATE INDEX IF NOT EXISTS messages_room ON messages (room, id)');
     // per member per room: engaged (posted or reacted there) and the last message they have read
     // live rooms (2026-10-10): opened by the host before an episode exists (members watch the recording
@@ -323,6 +325,7 @@ export class Room {
   async pushOut(m, author) {
     try {
       const key = m.room || '';
+      if (isPrivate(key)) return; // Saved messages never notify anyone
       let roomTitle = 'Inner Circle', engagedHere = null;
       if (key) {
         engagedHere = new Set(this.all('SELECT uid FROM room_state WHERE room = ? AND engaged = 1', key).map(r => r.uid));
@@ -409,8 +412,10 @@ export class Room {
     return this.epx;
   }
   // any room name a page sends, made canonical: the free slug for an episode that has one
-  async roomKey(r) {
+  async roomKey(r, uid) {
     if (r === undefined || r === null || r === '' || r === 'main') return { key: '' };
+    // Saved messages: a private room per member, only ever its owner's
+    if (r === 'saved' || (typeof r === 'string' && r.startsWith('saved:'))) return uid && (r === 'saved' || r === savedKey(uid)) ? { key: savedKey(uid) } : null;
     if (typeof r === 'string' && /^live:[a-z0-9]{4,24}$/.test(r)) {
       const lr = this.one('SELECT * FROM rooms WHERE key = ?', r);
       if (!lr) return null;
@@ -429,6 +434,7 @@ export class Room {
   }
   roomInfo(key, x) {
     if (!key) return { key: '', title: 'Inner Circle Chat' };
+    if (isPrivate(key)) return { key, title: 'Saved messages', saved: true };
     if (key.startsWith('live:')) {
       const lr = this.one('SELECT * FROM rooms WHERE key = ?', key);
       if (lr && lr.tied) return this.roomInfo(lr.tied, x);
@@ -479,10 +485,10 @@ export class Room {
         total: this.one("SELECT COUNT(*) AS n FROM messages WHERE room = ? AND deleted = 0 AND COALESCE(kind, '') = ''", key).n,
         last: last ? { id: last.id, uid: last.uid, text: (last.text || '').replace(/\s+/g, ' ').slice(0, 140), image: !!last.image, kind: last.kind || '', created: last.created } : null };
     };
-    const mine = [...st.values()].filter(r => r.engaged && r.room && !newest.includes(r.room)).map(r => one(r.room))
+    const mine = [...st.values()].filter(r => r.engaged && r.room && !isPrivate(r.room) && !newest.includes(r.room)).map(r => one(r.room))
       .sort((a, b) => ((b.last && b.last.id) || 0) - ((a.last && a.last.id) || 0));
     const liveKeys = this.all("SELECT key FROM rooms WHERE tied = '' AND closed = 0 ORDER BY created DESC LIMIT 5").map(r => r.key);
-    const out = { t: 'rooms', main: one(''), live: liveKeys.map(one), newest: newest.map(one), mine: mine.filter(r => !liveKeys.includes(r.key)) };
+    const out = { t: 'rooms', main: one(''), saved: one(savedKey(uid)), live: liveKeys.map(one), newest: newest.map(one), mine: mine.filter(r => !liveKeys.includes(r.key)) };
     const people = {}; for (const id of ids) { const p = this.person(this.member(id)); if (p) people[id] = p; }
     out.people = people;
     return out;
@@ -552,7 +558,7 @@ export class Room {
     for (const ws of this.state.getWebSockets()) {
       if (ws.readyState !== 1) continue;
       const a = ws.deserializeAttachment();
-      if (a && a.uid && a.ready) w[a.uid] = a.room || '';
+      if (a && a.uid && a.ready && !isPrivate(a.room || '')) w[a.uid] = a.room || '';
     }
     return w;
   }
@@ -618,7 +624,11 @@ export class Room {
         return json({ ok: true, item: { key: k, saved: !!saved, savedAt, note, noteAt } });
       }
       const items = this.all('SELECT * FROM library WHERE uid = ?', uid).map(r => ({ key: r.ekey, saved: !!r.saved, savedAt: r.saved_at, note: r.note, noteAt: r.note_at }));
-      return json({ items });
+      // Saved messages, newest first, for the app's Library tab (2026-10-11)
+      const msgs = this.all("SELECT * FROM messages WHERE room = ? AND deleted = 0 AND COALESCE(kind, '') = '' ORDER BY id DESC LIMIT 500", savedKey(uid)).map(r => this.shape(r));
+      const people = {};
+      for (const m of msgs) for (const id of [m.uid, m.fwd && m.fwd.uid]) if (id && !people[id]) { const p = this.member(id); if (p) people[id] = { name: p.name || 'Member', avatar: p.avatar || '' }; }
+      return json({ items, messages: msgs.map(m => ({ id: m.id, uid: m.uid, text: m.text, image: m.image, created: m.created, fwd: m.fwd, preview: m.preview })), people, room: savedKey(uid) });
     }
     if (path === '/subscribe' || path === '/unsubscribe' || path === '/test' || path === '/unfurl') {
       const { uid, body } = await req.json();
@@ -658,12 +668,16 @@ export class Room {
 
   broadcast(obj, exceptWs) {
     const s = JSON.stringify(obj);
+    const room = obj && obj.m ? obj.m.room : obj && typeof obj.room === 'string' ? obj.room : '';
+    const owner = isPrivate(room || '') ? ownerOf(room) : '';
     for (const ws of this.state.getWebSockets()) {
       if (ws === exceptWs) continue;
       const a = ws.deserializeAttachment();
-      if (a && a.uid) { try { ws.send(s); } catch (e) { /* closed */ } }
+      if (a && a.uid && (!owner || a.uid === owner)) { try { ws.send(s); } catch (e) { /* closed */ } }
     }
   }
+  // a private room's messages are for its owner only
+  canSee(row, uid) { return !!row && (!isPrivate(row.room || '') || ownerOf(row.room) === uid); }
 
   one(q, ...args) { const r = this.sql.exec(q, ...args).toArray(); return r[0] || null; }
   all(q, ...args) { return this.sql.exec(q, ...args).toArray(); }
@@ -710,6 +724,7 @@ export class Room {
       preview: row.deleted ? null : safeObj(row.preview),
       views: this.viewCount(row.id),
       room: row.room || '',
+      fwd: row.fwd ? safeObj(row.fwd) : null,
       info: (row.kind === 'room' && this.epx) || row.kind === 'live' ? this.roomInfo(row.text, this.epx || { free: new Map(), plus: new Map(), plusByFree: new Map(), list: [] }) : undefined,
     };
   }
@@ -746,7 +761,7 @@ export class Room {
 
   peopleFor(msgs, extra) {
     const ids = new Set(extra || []);
-    for (const m of msgs) { ids.add(m.uid); if (m.reply) ids.add(m.reply.uid); for (const u of (m.mentions || [])) ids.add(u); }
+    for (const m of msgs) { ids.add(m.uid); if (m.reply) ids.add(m.reply.uid); if (m.fwd && m.fwd.uid) ids.add(m.fwd.uid); for (const u of (m.mentions || [])) ids.add(u); }
     const out = {};
     for (const id of ids) { const p = this.person(this.member(id)); if (p) out[id] = p; }
     return out;
@@ -788,7 +803,7 @@ export class Room {
       if (mods.includes(who.email) && !hosts.includes(who.email)) this.sql.exec("UPDATE members SET role = 'mod' WHERE uid = ? AND role = 'member'", who.uid);
       m = this.member(who.uid);
       if (m.banned) { this.send(ws, { t: 'denied', why: 'removed' }); return ws.close(4003, 'removed'); }
-      const rk = (msg.room ? await this.roomKey(msg.room) : null) || { key: '' };
+      const rk = (msg.room ? await this.roomKey(msg.room, who.uid) : null) || { key: '' };
       ws.serializeAttachment({ uid: who.uid, ready: !!(m.rules_ok && m.profile_done), room: rk.key });
       this.sql.exec('UPDATE members SET push_unread = 0 WHERE uid = ?', who.uid);
       // the main chat counts as read up to now the first time a member is seen after rooms began
@@ -845,13 +860,14 @@ export class Room {
 
       case 'send': {
         if (!me.profile_done || !me.rules_ok) return;
-        if (me.muted_until > now) return this.send(ws, { t: 'error', what: 'send', text: 'You are muted for now. Try again later.' });
-        if (this.limited(me.uid)) return this.send(ws, { t: 'error', what: 'send', text: 'Easy there. A few seconds between messages, please.' });
+        const toSaved = msg.room === 'saved' || (typeof msg.room === 'string' && msg.room === savedKey(me.uid)) || (!('room' in msg) && isPrivate(att.room || ''));
+        if (me.muted_until > now && !toSaved) return this.send(ws, { t: 'error', what: 'send', text: 'You are muted for now. Try again later.' });
+        if (!toSaved && this.limited(me.uid)) return this.send(ws, { t: 'error', what: 'send', text: 'Easy there. A few seconds between messages, please.' });
         const text = clean(msg.text, MAX_TEXT, true);
         const image = typeof msg.image === 'string' && /^circle\/[0-9a-f-]{36}\.(png|jpg|gif|webp)$/.test(msg.image) ? msg.image : '';
         if (!text && !image) return;
         // the room the message was written in (a message waiting to send keeps its room)
-        const rk = 'room' in msg ? await this.roomKey(msg.room) : { key: att.room || '' };
+        const rk = 'room' in msg ? await this.roomKey(msg.room, me.uid) : { key: att.room || '' };
         if (!rk) return this.send(ws, { t: 'error', what: 'send', text: 'That room is not open.' , cid: clean(msg.cid, 40) });
         const room = rk.key;
         let reply = null;
@@ -859,7 +875,7 @@ export class Room {
           const p = this.one('SELECT id FROM messages WHERE id = ? AND room = ?', msg.reply_to, room);
           if (p) reply = p.id;
         }
-        const mentions = this.mentionsFrom(msg.mentions, me.uid);
+        const mentions = isPrivate(room) ? [] : this.mentionsFrom(msg.mentions, me.uid);
         // a link gets its preview card (left off if the sender closed it); fetched now if not seen before
         const link = msg.nopreview || image ? '' : firstLink(text);
         const cached = link ? this.cachedPreview(link) : undefined;
@@ -876,6 +892,7 @@ export class Room {
 
       case 'react': {
         if (!me.profile_done || !isEmoji(msg.kind) || !Number.isInteger(msg.id)) return;
+        if (!this.canSee(this.one('SELECT room FROM messages WHERE id = ?', msg.id), me.uid)) return;
         if (!this.one('SELECT 1 AS x FROM reactions WHERE msg_id = ? AND kind = ?', msg.id, msg.kind)
           && this.one('SELECT COUNT(DISTINCT kind) AS n FROM reactions WHERE msg_id = ?', msg.id).n >= 20) return;
         const exists = this.one('SELECT 1 AS x FROM reactions WHERE msg_id = ? AND uid = ? AND kind = ?', msg.id, me.uid, msg.kind);
@@ -890,9 +907,10 @@ export class Room {
       case 'delete': {
         const row = this.one('SELECT * FROM messages WHERE id = ?', msg.id);
         if (!row) return;
+        if (!this.canSee(row, me.uid)) return;
         if (row.uid !== me.uid && !this.isMod(me)) return;
         if (row.deleted) return;
-        this.log(me.uid, 'delete', row.uid, row.id, { self: row.uid === me.uid, pinned: !!row.pinned, reacts: this.all('SELECT uid, kind FROM reactions WHERE msg_id = ?', row.id) });
+        if (!isPrivate(row.room || '')) this.log(me.uid, 'delete', row.uid, row.id, { self: row.uid === me.uid, pinned: !!row.pinned, reacts: this.all('SELECT uid, kind FROM reactions WHERE msg_id = ?', row.id) });
         this.sql.exec('UPDATE messages SET deleted = 1, pinned = 0 WHERE id = ?', row.id);
         this.sql.exec('DELETE FROM reactions WHERE msg_id = ?', row.id);
         this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', row.id)) });
@@ -901,8 +919,9 @@ export class Room {
       }
 
       case 'pin': {
-        if (!this.isMod(me)) return;
-        { const pr = this.one('SELECT uid, pinned FROM messages WHERE id = ? AND deleted = 0', msg.id); if (pr && !!pr.pinned !== !!msg.on) this.log(me.uid, msg.on ? 'pin' : 'unpin', pr.uid, msg.id, {}); }
+        if (!this.isMod(me) && !isPrivate(att.room || '')) return;
+        if (!this.canSee(this.one('SELECT room FROM messages WHERE id = ?', msg.id), me.uid)) return;
+        if (!isPrivate(att.room || '')) { const pr = this.one('SELECT uid, pinned FROM messages WHERE id = ? AND deleted = 0', msg.id); if (pr && !!pr.pinned !== !!msg.on) this.log(me.uid, msg.on ? 'pin' : 'unpin', pr.uid, msg.id, {}); }
         this.sql.exec('UPDATE messages SET pinned = ? WHERE id = ? AND deleted = 0', msg.on ? 1 : 0, msg.id);
         const row = this.one('SELECT * FROM messages WHERE id = ?', msg.id);
         if (!row) return;
@@ -973,8 +992,8 @@ export class Room {
       }
 
       case 'report': {
-        const row = this.one('SELECT id FROM messages WHERE id = ?', msg.id);
-        if (!row) return;
+        const row = this.one('SELECT id, room FROM messages WHERE id = ?', msg.id);
+        if (!row || isPrivate(row.room || '')) return;
         this.sql.exec('INSERT INTO reports (msg_id, uid, reason, created) VALUES (?, ?, ?, ?)', row.id, me.uid, clean(msg.reason, 300), now);
         this.notifyMods({ t: 'reports', count: this.one('SELECT COUNT(*) AS n FROM reports WHERE resolved = 0').n });
         return this.send(ws, { t: 'notice', text: 'Thanks. Chance will take a look.' });
@@ -1005,15 +1024,15 @@ export class Room {
 
       case 'edit': {
         const row = this.one('SELECT * FROM messages WHERE id = ?', Number(msg.id));
-        if (!row || row.deleted || row.uid !== me.uid) return;
-        if (me.muted_until > now) return this.send(ws, { t: 'error', text: 'You are muted for now. Try again later.' });
+        if (!row || row.deleted || row.uid !== me.uid || row.fwd) return;
+        if (me.muted_until > now && !isPrivate(row.room || '')) return this.send(ws, { t: 'error', text: 'You are muted for now. Try again later.' });
         const text = clean(msg.text, MAX_TEXT, true);
         if (!text && !row.image) return;
         if (text === row.text) return;
         const link = msg.nopreview || row.image ? '' : firstLink(text);
         const old = safeObj(row.preview);
         const cached = link ? (old && old.url === link ? old : this.cachedPreview(link)) : undefined;
-        this.sql.exec('UPDATE messages SET text = ?, edited = ?, mentions = ?, preview = ? WHERE id = ?', text, now, JSON.stringify(this.mentionsFrom(msg.mentions, me.uid)), cached ? JSON.stringify(cached) : '', row.id);
+        this.sql.exec('UPDATE messages SET text = ?, edited = ?, mentions = ?, preview = ? WHERE id = ?', text, now, JSON.stringify(isPrivate(row.room || '') ? [] : this.mentionsFrom(msg.mentions, me.uid)), cached ? JSON.stringify(cached) : '', row.id);
         if (link && cached === undefined) this.state.waitUntil(this.fillPreview(row.id, link));
         this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', row.id)) });
         // replies quoting it show the new words
@@ -1026,7 +1045,7 @@ export class Room {
         if (!q || q.length < 2) return this.send(ws, { t: 'results', q, scope: msg.scope, messages: [], people: {} });
         const like = '%' + q.replace(/[\\%_]/g, c => '\\' + c) + '%';
         const here = msg.scope !== 'all';
-        const rows = this.all("SELECT m.* FROM messages m LEFT JOIN members p ON p.uid = m.uid WHERE m.deleted = 0 AND COALESCE(m.kind, '') = '' AND (? = 0 OR m.room = ?) AND (m.text LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\') ORDER BY m.id DESC LIMIT 60", here ? 1 : 0, att.room || '', like, like);
+        const rows = this.all("SELECT m.* FROM messages m LEFT JOIN members p ON p.uid = m.uid WHERE m.deleted = 0 AND COALESCE(m.kind, '') = '' AND (m.room NOT LIKE 'saved:%' OR m.room = ?) AND (? = 0 OR m.room = ?) AND (m.text LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\') ORDER BY m.id DESC LIMIT 60", savedKey(me.uid), here ? 1 : 0, att.room || '', like, like);
         const msgs = rows.map(r => this.shape(r));
         const x = await this.eps(); const rooms = {};
         for (const m of msgs) if (!(m.room in rooms)) rooms[m.room] = this.roomInfo(m.room, x).title;
@@ -1034,7 +1053,7 @@ export class Room {
       }
 
       case 'mentions': {
-        const rows = this.all("SELECT * FROM messages WHERE deleted = 0 AND mentions LIKE ? ORDER BY id DESC LIMIT 50", '%"' + me.uid + '"%');
+        const rows = this.all("SELECT * FROM messages WHERE deleted = 0 AND room NOT LIKE 'saved:%' AND mentions LIKE ? ORDER BY id DESC LIMIT 50", '%"' + me.uid + '"%');
         const msgs = rows.map(r => this.shape(r));
         const x = await this.eps(); const rooms = {};
         for (const m of msgs) if (!(m.room in rooms)) rooms[m.room] = this.roomInfo(m.room, x).title;
@@ -1044,7 +1063,7 @@ export class Room {
       case 'thread': {
         // the whole conversation this message belongs to
         const start = this.one('SELECT * FROM messages WHERE id = ?', Number(msg.id));
-        if (!start) return this.send(ws, { t: 'notice', text: 'That message is no longer here.' });
+        if (!start || !this.canSee(start, me.uid)) return this.send(ws, { t: 'notice', text: 'That message is no longer here.' });
         const seen = new Map([[start.id, start]]);
         let up = start;
         for (let i = 0; i < 50 && up.reply_to; i++) {
@@ -1157,6 +1176,7 @@ export class Room {
           if (!Number.isInteger(id)) continue;
           const row = this.one('SELECT uid, deleted FROM messages WHERE id = ?', id);
           if (!row || row.deleted || row.uid === me.uid) continue;
+          if (!this.canSee(this.one('SELECT room FROM messages WHERE id = ?', id), me.uid)) continue;
           const before = this.viewCount(id);
           this.sql.exec('INSERT OR IGNORE INTO views (msg_id, uid) VALUES (?, ?)', id, me.uid);
           const after = this.viewCount(id);
@@ -1188,7 +1208,7 @@ export class Room {
       }
 
       case 'room': { // move this connection into a room and send its messages
-        const rk = await this.roomKey(msg.r);
+        const rk = await this.roomKey(msg.r, me.uid);
         if (!rk) return this.send(ws, { t: 'roomfail', r: String(msg.r || '').slice(0, 160) });
         const cur = ws.deserializeAttachment() || att;
         ws.serializeAttachment(Object.assign({}, cur, { room: rk.key }));
@@ -1203,7 +1223,7 @@ export class Room {
 
       case 'read': { // the page says everything up to this message in this room has been seen
         const id = Number(msg.id), room = typeof msg.room === 'string' ? msg.room : (att.room || '');
-        if (!Number.isInteger(id) || id < 0 || !(room === '' || /^(ep|live):[a-z0-9-]{1,140}$/.test(room))) return;
+        if (!Number.isInteger(id) || id < 0 || !(room === '' || /^(ep|live):[a-z0-9-]{1,140}$/.test(room) || room === savedKey(me.uid))) return;
         this.sql.exec('INSERT OR IGNORE INTO room_state (uid, room) VALUES (?, ?)', me.uid, room);
         this.sql.exec('UPDATE room_state SET last_read = MAX(last_read, ?) WHERE uid = ? AND room = ?', id, me.uid, room);
         return;
@@ -1239,6 +1259,41 @@ export class Room {
         this.sql.exec("UPDATE rooms SET closed = 1 WHERE key = ? AND tied = ''", String(msg.key || ''));
         for (const s of this.state.getWebSockets()) this.send(s, { t: 'roomsdirty' });
         return this.send(ws, { t: 'notice', text: 'Live room ended.' });
+      }
+
+      // Save (to the member's own Saved messages) or Forward (to any room they can post in) a copy of a
+      // message. The copy keeps who first wrote it, where and when, and stays as it was (Chance, 2026-10-11).
+      case 'save': {
+        if (!me.profile_done || !me.rules_ok) return;
+        const src = this.one('SELECT * FROM messages WHERE id = ?', Number(msg.id));
+        if (!src || src.deleted || !this.canSee(src, me.uid) || (src.kind || '') !== '' || (!src.text && !src.image)) return this.send(ws, { t: 'notice', text: 'That message is no longer here.' });
+        const to = msg.to === undefined || msg.to === 'saved' ? 'saved' : msg.to;
+        const rk = await this.roomKey(to, me.uid);
+        if (!rk) return this.send(ws, { t: 'error', text: 'That room is not open.' });
+        const room = rk.key, toSaved = isPrivate(room);
+        if (!toSaved) {
+          if (me.muted_until > now) return this.send(ws, { t: 'error', text: 'You are muted for now. Try again later.' });
+          if (this.limited(me.uid)) return this.send(ws, { t: 'error', text: 'Easy there. A few seconds between messages, please.' });
+        }
+        // the original author and place; a copy of a copy points at the first one
+        const prev = src.fwd ? safeObj(src.fwd) : null;
+        const x = await this.eps();
+        let f;
+        if (prev && prev.uid) f = prev;
+        else if (isPrivate(src.room || '')) f = { uid: src.uid, room: '', title: '', id: 0, created: src.created, note: true }; // a private note: no way back into Saved messages
+        else f = { uid: src.uid, room: src.room || '', title: trimTo(this.roomInfo(src.room || '', x).title, 140), id: src.id, created: src.created };
+        if (toSaved && f.id && this.one("SELECT 1 AS x FROM messages WHERE room = ? AND deleted = 0 AND fwd LIKE ?", room, '%"id":' + f.id + ',%')) {
+          return this.send(ws, { t: 'saved', already: true, to: room, cid: clean(msg.cid, 40) });
+        }
+        const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created, mentions, preview, room, fwd) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?) RETURNING *',
+          me.uid, src.text || '', src.image || '', now, '[]', src.preview || '', room, JSON.stringify(f));
+        const m = this.shape(row);
+        const first = this.engage(me.uid, room);
+        this.broadcast({ t: 'msg', m, cid: clean(msg.cid, 40), people: this.peopleFor([m]) });
+        this.send(ws, { t: 'saved', to: room, title: this.roomInfo(room, x).title, id: row.id, cid: clean(msg.cid, 40) });
+        if (first) this.toUser(me.uid, await this.roomsFor(me.uid));
+        if (!toSaved) this.state.waitUntil(this.pushOut(m, this.member(me.uid)));
+        return;
       }
 
       case 'ping': return this.send(ws, { t: 'pong' });
@@ -1382,5 +1437,9 @@ async function pagePreview(url) {
   return { url, site: trimTo(pick('og:site_name') || new URL(base).hostname.replace(/^www\./, ''), 60), title: t, desc: d, image: img, big };
 }
 
+// Saved messages (2026-10-11): one private room per member, 'saved:<uid>'
+function savedKey(uid) { return 'saved:' + uid; }
+function isPrivate(key) { return typeof key === 'string' && key.startsWith('saved:'); }
+function ownerOf(key) { return isPrivate(key) ? key.slice(6) : ''; }
 function safeObj(s) { try { const o = JSON.parse(s || 'null'); return o && typeof o === 'object' && !Array.isArray(o) ? o : null; } catch (e) { return null; } }
 function safeArr(s) { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }

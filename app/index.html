@@ -296,6 +296,16 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 .libnote mark{background:rgba(216,170,60,0.28);color:var(--ink);border-radius:3px;padding:0 1px}
 .libnote .ts{display:inline-flex;align-items:center;gap:3px;color:var(--gold);font-weight:800;font-size:13px;padding:0 2px;vertical-align:baseline}
 .libmeta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12.5px;color:var(--muted);align-items:center}
+.msgrow{display:block;padding:12px 2px;color:inherit;text-decoration:none}
+.msgfrom{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);line-height:1.35}
+.msgfrom svg{flex:none;color:var(--gold)}
+.msgfrom b{color:var(--ink)}
+.msgfrom>span:first-of-type{flex:1;min-width:0}
+.msgdate{flex:none}
+.msgtext{margin-top:6px;padding:10px 12px;border-left:3px solid var(--gold);background:var(--card);border-radius:0 12px 12px 0;font-size:14px;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.msgphoto{margin-top:6px;font-size:12.5px;color:var(--muted)}
+.libsec{display:flex;align-items:center;gap:7px;margin-top:22px}
+.libsec svg{color:var(--gold)}
 .libmeta span{display:inline-flex;align-items:center;gap:5px}
 .libmeta .on{color:var(--gold)}
 .libmeta a{color:var(--accent);font-weight:700;margin-left:auto}
@@ -333,7 +343,7 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-11b';
+const VERSION = '2026-10-11c';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -602,8 +612,11 @@ async function loadMyLib() {
   const next = new Map();
   if (S.member && S.token) {
     let items = null;
-    try { const r = await fetch(CIRCLE_API + '/api/library', { headers: { Authorization: 'Bearer ' + S.token }, cache: 'no-store' }); if (r.ok) items = (await r.json()).items || []; } catch (e) {}
+    let saved = null;
+    try { const r = await fetch(CIRCLE_API + '/api/library', { headers: { Authorization: 'Bearer ' + S.token }, cache: 'no-store' }); if (r.ok) { const j = await r.json(); items = j.items || []; saved = { messages: j.messages || [], people: j.people || {} }; } } catch (e) {}
     if (items) store('iva_mylib_m', items); else items = load('iva_mylib_m', true) || [];
+    if (saved) store('iva_savedmsgs', saved); else saved = load('iva_savedmsgs', true) || { messages: [], people: {} };
+    if (my === libReq) S.savedMsgs = saved;
     items.forEach(x => next.set(x.key, x));
     if (my !== libReq) return;
     LIB.clear(); next.forEach((v, k) => LIB.set(k, v));
@@ -620,6 +633,7 @@ async function loadMyLib() {
       store('iva_mylib', null);
     }
   } else {
+    S.savedMsgs = { messages: [], people: {} };
     const o = load('iva_mylib', true) || {};
     if (my !== libReq) return;
     LIB.clear(); for (const k in o) LIB.set(k, o[k]);
@@ -671,7 +685,7 @@ function route() {
   closeEpisode();
   // the website's "Open My library" link, and older links, used the Episodes tab's filter
   if (/^#\/search\?(?:.*&)?show=__saved/.test(h)) { location.replace('#/library'); return; }
-  if (h.indexOf('#/library') === 0) { setTab('lib'); renderLib(true); return; }
+  if (h.indexOf('#/library') === 0) { setTab('lib'); renderLib(true); if (S.member && (!S.libAt || Date.now() - S.libAt > 15000)) { S.libAt = Date.now(); loadMyLib().then(refreshLibViews); } return; }
   if (h.indexOf('#/search') === 0) { setTab('search'); const q = new URLSearchParams(h.split('?')[1] || ''); if (q.has('show') || q.has('q') || q.has('theme')) { S.show = q.get('show') || ''; S.q = q.get('q') || ''; S.theme = q.get('theme') || ''; renderSearch(); } }
   else if (h.indexOf('#/chat') === 0) {
     // #/chat?room=ep:<slug> (an episode's Talk about this episode button, or a room notification)
@@ -877,6 +891,8 @@ function renderResults(already) {
 const LIBF = { q: '', f: '' };
 const TIME_RE = /\b(?:\d{1,2}:)?\d{1,2}:\d{2}\b/g;
 function toSec(t) { return t.split(':').reduce((a, b) => a * 60 + Number(b), 0); }
+// a time as YYYY-MM-DD on the phone's own calendar (not UTC, which runs a day ahead in the evening)
+function localDay(t) { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function reEsc(t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 // note text with times as play chips and search words marked
 function noteHtml(text, terms) {
@@ -903,13 +919,34 @@ function noteSnippet(note, terms) {
   while (b < note.length && /\S/.test(note[b])) b++;
   return (a > 0 ? '... ' : '') + note.slice(a, b).trim() + (b < note.length ? ' ...' : '');
 }
+// Saved messages from the Inner Circle (2026-10-11): kept on the account, opened in the chat
+function savedMsgRows(terms) {
+  const sm = S.savedMsgs || { messages: [], people: {} };
+  const name = uid => (sm.people[uid] && sm.people[uid].name) || 'A member';
+  const list = sm.messages.map(m => {
+    const from = m.fwd && m.fwd.uid ? name(m.fwd.uid) : 'Your note';
+    return Object.assign({}, m, { _from: from, _hay: ' ' + norm([m.text || '', from, (m.fwd && m.fwd.title) || ''].join(' ')) });
+  });
+  return terms.length ? list.filter(m => terms.every(t => m._hay.indexOf(' ' + t) >= 0 || m._hay.indexOf(t) >= 0)) : list;
+}
+function msgRow(m, terms) {
+  const where = m.fwd && m.fwd.title ? ' in ' + esc(m.fwd.title.replace(/\s*\|\s*(Vibe Rant|Marvelous DeMystifiers|Astro Herbalism|Inner Whirled)[^|]*$/i, '')) : '';
+  const text = (m.text || '').trim();
+  const shown = terms.length ? noteSnippet(text, terms) : (text.length > 400 ? text.slice(0, 400).trim() + ' ...' : text);
+  const when = (m.fwd && m.fwd.created) || m.created;
+  return `<a class="librow msgrow" href="#/chat?room=saved">
+    <div class="msgfrom">${I.chat(14)}<span><b>${esc(m._from)}</b>${where}</span><span class="msgdate">${esc(fmtDate(localDay(when)))}</span></div>
+    ${shown ? `<div class="msgtext">${terms.length ? noteHtml(shown, terms).replace(/<button[^>]*class="ts"[^>]*>.*?<\/button>/g, x => x.replace(/<[^>]+>/g, '')) : esc(shown)}</div>` : ''}${m.image ? `<div class="msgphoto">Photo</div>` : ''}</a>`;
+}
 function libRows() {
   const all = savedList();
-  const counts = { all: all.length, saved: 0, notes: 0 };
+  const counts = { all: all.length, saved: 0, notes: 0, msgs: ((S.savedMsgs || {}).messages || []).length };
+  counts.all += counts.msgs;
   all.forEach(it => { const x = libGet(it); if (x.saved) counts.saved++; if ((x.note || '').trim()) counts.notes++; });
   let list = all;
   if (LIBF.f === 'saved') list = list.filter(it => libGet(it).saved);
   if (LIBF.f === 'notes') list = list.filter(it => (libGet(it).note || '').trim());
+  if (LIBF.f === 'msgs') list = [];
   const terms = norm(LIBF.q).split(' ').filter(Boolean);
   if (terms.length) {
     list = list.filter(it => {
@@ -917,7 +954,8 @@ function libRows() {
       return terms.every(t => hay.indexOf(' ' + t) >= 0 || hay.indexOf(t) >= 0);
     });
   }
-  return { list, counts, terms };
+  const msgs = LIBF.f === '' || LIBF.f === 'msgs' ? savedMsgRows(terms) : [];
+  return { list, counts, terms, msgs };
 }
 function libRow(it, terms) {
   const x = libGet(it), note = (x.note || '').trim();
@@ -926,14 +964,14 @@ function libRow(it, terms) {
   const when = Math.max(x.savedAt || 0, x.noteAt || 0);
   return `<div class="librow">${rowEp(it, inNote ? 'Found in your notes' : '')}
     ${note ? `<div class="libnote${terms.length ? ' hit' : ''}" data-href="${epHref(it)}" role="link" tabindex="0" aria-label="Open your notes on this episode">${noteHtml(shown, terms)}</div>` : ''}
-    <div class="libmeta">${x.saved ? `<span class="on">${I.heart(13, true)} Saved</span>` : ''}${note ? `<span>${I.pen(13)} Note</span>` : ''}${when ? `<span>${esc(fmtDate(new Date(when).toISOString().slice(0, 10)))}</span>` : ''}${note ? '' : `<a href="${epHref(it)}" data-note="1">Add a note</a>`}</div></div>`;
+    <div class="libmeta">${x.saved ? `<span class="on">${I.heart(13, true)} Saved</span>` : ''}${note ? `<span>${I.pen(13)} Note</span>` : ''}${when ? `<span>${esc(fmtDate(localDay(when)))}</span>` : ''}${note ? '' : `<a href="${epHref(it)}" data-note="1">Add a note</a>`}</div></div>`;
 }
 function renderLib(keepInput) {
   const v = $('#libv'); if (!v) return;
   if (!S.lib) { v.innerHTML = `<header class="hdr"><div class="row"><h1>My library</h1></div></header><div class="loading"><div class="spin"></div></div>`; return; }
   if (!keepInput || !$('#lq')) {
     v.innerHTML = `<header class="hdr"><div class="row"><h1>My library</h1></div>
-      <div class="row" style="display:block"><label class="searchbox">${I.search(20)}<input id="lq" type="search" enterkeyhint="search" autocomplete="off" placeholder="Search your notes and saved episodes" value="${esc(LIBF.q)}"><button class="iconbtn" id="lqx" aria-label="Clear" ${LIBF.q ? '' : 'hidden'}>${I.close(18)}</button></label>
+      <div class="row" style="display:block"><label class="searchbox">${I.search(20)}<input id="lq" type="search" enterkeyhint="search" autocomplete="off" placeholder="${S.member ? 'Search your library' : 'Search your notes and saved episodes'}" value="${esc(LIBF.q)}"><button class="iconbtn" id="lqx" aria-label="Clear" ${LIBF.q ? '' : 'hidden'}>${I.close(18)}</button></label>
       <div class="chips" id="libchips"></div></div></header>
       <div class="wrap"><div id="libhead"></div><div class="list" id="libres"></div><div class="more" id="libmore"></div><p class="note libfoot" id="libfoot"></p></div>`;
     const q = $('#lq'); let tmr;
@@ -946,18 +984,21 @@ function renderLib(keepInput) {
 }
 let libShown = 30;
 function renderLibResults() {
-  const { list, counts, terms } = libRows();
-  $('#libchips').innerHTML = [['', 'All', counts.all], ['saved', 'Saved', counts.saved], ['notes', 'With notes', counts.notes]]
+  const { list, counts, terms, msgs } = libRows();
+  $('#libchips').innerHTML = [['', 'All', counts.all], ['saved', 'Saved', counts.saved], ['notes', 'With notes', counts.notes]].concat(S.member ? [['msgs', 'Messages', counts.msgs]] : [])
     .map(c => `<button class="chip${LIBF.f === c[0] ? ' on' : ''}" data-f="${c[0]}">${c[1]}${c[2] ? ` <span class="cnt">${c[2]}</span>` : ''}</button>`).join('');
-  const n = list.length;
+  const n = list.length + msgs.length;
   $('#libhead').innerHTML = terms.length ? `<div class="reshead">${n ? `${n} ${n === 1 ? 'match' : 'matches'} for "${esc(LIBF.q.trim())}"` : ''}</div>` : '';
   let empty = '';
   if (!counts.all) empty = `<div class="libempty">${I.heart(34)}<h3>Your library is empty</h3><p>Tap the heart on any episode to save it here, or open My notes on an episode page to write private notes. Everything you save or write shows up on this page.</p><a class="btn line" href="#/search">Browse episodes</a></div>`;
   else if (terms.length) empty = `<div class="empty">Nothing in your library matches "${esc(LIBF.q.trim())}".</div>`;
   else if (LIBF.f === 'saved') empty = `<div class="empty">No saved episodes yet. Tap the heart on an episode to save it.</div>`;
   else if (LIBF.f === 'notes') empty = `<div class="empty">No notes yet. Open an episode and tap My notes to start one.</div>`;
-  $('#libres').innerHTML = n ? list.slice(0, libShown).map(it => libRow(it, terms)).join('') : empty;
-  $('#libmore').innerHTML = n > libShown ? `<button class="btn line" id="libMoreBtn">Show more</button>` : '';
+  else if (LIBF.f === 'msgs') empty = `<div class="empty">No saved messages yet. In the chat, press and hold a message and choose Save. Notes you write in Saved messages show here too.</div>`;
+  const epHtml = list.slice(0, libShown).map(it => libRow(it, terms)).join('');
+  const msgHtml = msgs.slice(0, libShown).map(m => msgRow(m, terms)).join('');
+  $('#libres').innerHTML = n ? epHtml + (msgHtml ? (LIBF.f === 'msgs' ? '' : `<div class="reshead libsec">${I.chat(15)} Saved messages</div>`) + msgHtml : '') : empty;
+  $('#libmore').innerHTML = Math.max(list.length, msgs.length) > libShown ? `<button class="btn line" id="libMoreBtn">Show more</button>` : '';
   const mb = $('#libMoreBtn'); if (mb) mb.addEventListener('click', () => { libShown += 30; renderLibResults(); });
   $('#libfoot').textContent = counts.all ? (S.member ? 'Private to you. Your library is kept on your account, so it is the same in the app and on the website.' : 'Private to you, and kept on this phone. With Plus+ it is kept on your account and shows on the website too.') : '';
 }

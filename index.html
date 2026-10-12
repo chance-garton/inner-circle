@@ -145,6 +145,16 @@ svg{display:block;flex:none}
 .ptop .rth{width:44px;height:28px;border-radius:6px;object-fit:cover;flex:none}
 .phead .rth{width:64px;height:36px;border-radius:7px;object-fit:cover;flex:none}
 .roomintro{margin:8px auto 18px;max-width:460px;text-align:center;color:var(--muted);font-size:14px;line-height:1.55}
+/* Saved messages and forwarded copies (2026-10-11) */
+.rsaved{display:inline-grid;place-items:center;flex:none;border-radius:50%;background:rgba(216,170,60,0.16);color:var(--gold)}
+.ritem .rsaved{width:64px!important;height:36px!important;border-radius:7px}
+.roomintro .rsaved{margin:0 auto}
+.fwd{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin:2px 0 6px;padding-left:9px;border-left:3px solid var(--gold);line-height:1.4}
+.fwd svg{flex:none;color:var(--gold)}
+.fwd .ft{flex:1 1 170px;min-width:0}
+.fwd .ft button{color:var(--gold);font-weight:700;font:inherit;font-weight:700;padding:0;background:none;border:0;cursor:pointer}
+.fwd .fgo{font-size:12px;font-weight:700;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:transparent;cursor:pointer;flex:none}
+.fwd .fgo:hover{border-color:var(--gold)}
 .roomintro .unfurl{margin:0 auto 10px;text-align:left}
 .roomnote{align-self:center;display:flex;flex-direction:column;align-items:center;gap:8px;margin:12px 0;padding:12px 14px;border-radius:16px;background:rgba(216,170,60,0.08);border:1px solid rgba(216,170,60,0.3);max-width:440px;width:100%}
 .roomnote .rk{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold)}
@@ -552,6 +562,8 @@ const I = {
   back: s => P('<path d="M15 5l-7 7 7 7"/>',{s,w:2.2}),
   reply: s => P('<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v4"/>',{s}),
   more: s => `<svg viewBox="0 0 24 24" width="${s||18}" height="${s||18}" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>`,
+  bookmark: s => P('<path d="M7 3.5h10a1 1 0 0 1 1 1V21l-6-4-6 4V4.5a1 1 0 0 1 1-1z"/>',{s}),
+  forward: s => P('<path d="M14 5l7 7-7 7"/><path d="M21 12H10a6 6 0 0 0-6 6v1"/>',{s}),
   copy: s => P('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',{s}),
   user: s => P('<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>',{s}),
   flag: s => P('<path d="M5 21V4h11l-1.5 4L16 12H5"/>',{s}),
@@ -1890,6 +1902,11 @@ function onEvent(m) {
       return;
     }
     case 'notice': toast(m.text); return;
+    case 'saved': {
+      if (m.already) { toast('Already in your Saved messages.'); return; }
+      toast(isSaved(m.to) ? 'Saved. Find it in Saved messages.' : `Forwarded to ${shortRoom(m.title || 'the room')}.`);
+      return;
+    }
     case 'error': {
       if (m.cid) { const i = S.pending.findIndex(p => p.cid === m.cid); if (i >= 0) { clearTimeout(S.pending[i].ackT); clearTimeout(S.pending[i].failT); S.pending.splice(i, 1); savePending(); renderPending(false); } }
       toast(m.text); return;
@@ -1947,7 +1964,11 @@ function switchRoom(key, after) {
   if (S.view === 'chat') renderChat();
   if (!sendWs({ t: 'room', r: key })) { S.room = prev; S.loadingRoom = false; }
 }
-function allRooms() { return S.rooms ? [S.rooms.main].concat(S.rooms.live || [], S.rooms.newest, S.rooms.mine).filter(Boolean) : []; }
+function allRooms() { return S.rooms ? [S.rooms.main, S.rooms.saved].concat(S.rooms.live || [], S.rooms.newest, S.rooms.mine).filter(Boolean) : []; }
+// Saved messages (2026-10-11): each member's own private room, 'saved:<uid>' on the server
+const isSaved = k => typeof k === 'string' && k.indexOf('saved:') === 0;
+const savedRoom = () => (S.rooms && S.rooms.saved) || { key: S.me ? 'saved:' + S.me.uid : 'saved', title: 'Saved messages', saved: true };
+const savedIcon = n => `<span class="rsaved" style="width:${n}px;height:${n}px">${I.bookmark(Math.round(n * 0.5))}</span>`;
 function roomUnreadTotal() { return allRooms().filter(r => r.key !== S.room && r.opened).reduce((n, r) => n + (r.unread || 0), 0); }
 function renderRoomBadge() {
   const n = roomUnreadTotal();
@@ -1970,10 +1991,13 @@ function otherRoomMsg(m) {
 }
 function roomIntro(empty) {
   const ri = S.roomInfo;
+  if (ri.saved || isSaved(ri.key)) return `<div class="roomintro">${savedIcon(56)}<b style="color:var(--ink);font-size:16px;display:block;margin-top:10px">Saved messages</b>Only you can see this room. Write notes to yourself here, or save anything someone shares: press and hold a message (right-click on a computer) and choose Save. ${empty ? '' : ''}</div>`;
   if (ri.live) return `<div class="roomintro"><b style="color:var(--ink);font-size:16px">${esc(ri.title)}</b><br>${empty ? 'The live chat starts here. Say hello.' : 'The beginning of this live room.'}</div>`;
   return `<div class="roomintro"><div data-unfurl="${ri.plus ? 'plus:' + esc(ri.plus) : 'episodes:' + esc(ri.slug || '')}"></div>${empty ? `No one has talked about this episode yet. Start the conversation.` : 'The beginning of the conversation about this episode.'}</div>`;
 }
 function lastLine(r) {
+  if (r.saved && !r.last) return 'Notes to yourself and messages you save. Only you can see this.';
+  if (r.saved) return r.last.image && !r.last.text ? 'Photo' : esc(r.last.text);
   if (!r.last) return r.key ? 'No messages yet. Start the conversation.' : '';
   if (r.last.kind === 'room') return 'New episode room';
   if (r.last.kind === 'live') return 'Live room opened';
@@ -1981,13 +2005,13 @@ function lastLine(r) {
   return `${esc(person(r.last.uid).name || 'Member')}: ${r.last.image && !r.last.text ? 'Photo' : esc(r.last.text)}`;
 }
 function sideRooms() {
-  const row = r => `<button class="roomrow${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}"${r.key === S.room ? ' aria-current="page"' : ''} title="${esc(r.title)}">${r.live ? '<span style="width:40px;display:flex;justify-content:center"><span class="livedot"></span></span>' : r.key ? (r.thumb ? `<img class="rth" src="${esc(thumbAt(r.thumb, 100))}" alt="">` : I.play()) : I.chat()}<span class="rn">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : ''}</button>`;
+  const row = r => `<button class="roomrow${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}"${r.key === S.room ? ' aria-current="page"' : ''} title="${esc(r.title)}">${r.saved ? savedIcon(40) : r.live ? '<span style="width:40px;display:flex;justify-content:center"><span class="livedot"></span></span>' : r.key ? (r.thumb ? `<img class="rth" src="${esc(thumbAt(r.thumb, 100))}" alt="">` : I.play()) : I.chat()}<span class="rn">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : ''}</button>`;
   const R = S.rooms;
   if (!R) return row({ key: '', title: 'Inner Circle Chat' }) + (S.room ? row(S.roomInfo) : '');
-  let out = row(R.main);
+  let out = row(R.main) + row(R.saved || savedRoom());
   if ((R.live || []).length) out += `<div class="rsec" style="color:#F2998A">Live now</div>` + R.live.map(row).join('');
   if (R.newest.length) out += `<div class="rsec">New episodes</div>` + R.newest.map(row).join('');
-  const cur = S.room && !allRooms().some(r => r.key === S.room) ? [S.roomInfo] : [];
+  const cur = S.room && !isSaved(S.room) && !allRooms().some(r => r.key === S.room) ? [S.roomInfo] : [];
   if (R.mine.length || cur.length) out += `<div class="rsec">Your rooms</div>` + cur.concat(R.mine).map(row).join('');
   out += `<button class="btn2 sm" id="findRoom" style="align-self:flex-start;margin:10px 0 0 6px">${I.search(16)}Find an episode room</button>`;
   return out;
@@ -2005,12 +2029,12 @@ function openRooms(focusSearch) {
 function drawRooms() {
   const box = $('#rbody'); if (!box) return;
   const q = ($('#rq') && $('#rq').value.trim()) || '';
-  const item = r => `<button class="ritem${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}">${r.live ? `<span class="livebadge"><span class="livedot"></span>LIVE</span>` : r.key ? `<img class="rimg" src="${esc(thumbAt(r.thumb, 300))}" alt="" loading="lazy">` : `<span class="rlogo"><img src="${PLUS_LOGO}" alt=""></span>`}<span style="flex:1;min-width:0"><span class="rt">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span><span class="rl">${lastLine(r)}</span></span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : (r.key && r.total ? `<span class="rcount">${r.total}</span>` : '')}</button>`;
+  const item = r => `<button class="ritem${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}">${r.saved ? savedIcon(56) : r.live ? `<span class="livebadge"><span class="livedot"></span>LIVE</span>` : r.key ? `<img class="rimg" src="${esc(thumbAt(r.thumb, 300))}" alt="" loading="lazy">` : `<span class="rlogo"><img src="${PLUS_LOGO}" alt=""></span>`}<span style="flex:1;min-width:0"><span class="rt">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span><span class="rl">${lastLine(r)}</span></span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : (r.key && !r.saved && r.total ? `<span class="rcount">${r.total}</span>` : '')}</button>`;
   if (!q) {
     const R = S.rooms;
     if (!R) { box.innerHTML = `<div style="padding:20px">${loaderHtml()}</div>`; return; }
     const host = S.me && S.me.role === 'host';
-    box.innerHTML = item(R.main)
+    box.innerHTML = item(R.main) + item(R.saved || savedRoom())
       + ((R.live || []).length ? `<div class="rhead" style="color:#F2998A">Live now</div>` + R.live.map(item).join('') : '')
       + (host ? `<div class="liveform"><input id="liveName" class="finput" maxlength="80" placeholder="Open a live room, e.g. Dawn Lester recording" aria-label="Live room name"><button class="btn2 sm" id="liveGo">Open</button></div>` : '')
       + (R.newest.length ? `<div class="rhead">New episodes</div>` + R.newest.map(item).join('') : '')
@@ -2228,7 +2252,7 @@ function renderChat() {
     <aside class="side" id="side"></aside>
     <main class="panel" aria-label="Inner Circle Chat">
       <div class="ptop">
-        ${S.room ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button><button id="roomThumb" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 100))}" alt="">` : `<img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}</button>`
+        ${isSaved(S.room) ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button>${savedIcon(30)}` : S.room ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button><button id="roomThumb" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 100))}" alt="">` : `<img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}</button>`
           : `<a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a><img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}
         <button id="ptitle" aria-label="Who is here" style="flex:1;min-width:0;margin-left:4px;text-align:left;color:inherit"><h1 class="room${S.room ? ' ep' : ''}">${esc(S.room ? shortRoom(S.roomInfo.title) : 'Inner Circle Chat')}</h1><div class="sub" id="cnt2"></div></button>
         <span id="plHost2" style="display:contents"></span><button class="ibtn rbtn" id="roomsBtn2" aria-label="Rooms" title="Rooms">${ROOMS_ICON(21)}<span class="rdot"></span></button>
@@ -2236,7 +2260,7 @@ function renderChat() {
         <button class="ibtn" id="searchBtn2" aria-label="Search">${I.search(21)}</button>
       </div>
       <div class="phead desk">
-        ${S.room ? `<button id="roomThumbD" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 300))}" alt="">` : ''}</button>` : ''}
+        ${isSaved(S.room) ? savedIcon(44) : S.room ? `<button id="roomThumbD" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 300))}" alt="">` : ''}</button>` : ''}
         <div style="flex:1;min-width:0"><h2 class="room" style="${S.room ? 'font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' : ''}">${esc(S.room ? S.roomInfo.title : 'Inner Circle Chat')}</h2><div class="sub" id="cnt"></div></div>
         <span id="plHost" style="display:contents"></span><button class="ibtn rbtn" id="roomsBtn" aria-label="Rooms" title="Rooms">${ROOMS_ICON()}<span class="rdot"></span></button>
         <button class="ibtn mbtn" id="mentBtn" aria-label="Settings" title="Settings">${I.gear()}<span class="mbadge" style="display:none"></span></button>
@@ -2257,8 +2281,8 @@ function renderChat() {
         <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
         <button class="ibtn" id="emoBtn" aria-label="Emoji">${P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',{s:21})}</button>
         <button class="ibtn" id="epBtn" aria-label="Link an episode" title="Link an episode">${P('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',{s:21})}</button>
-        <label class="sr" for="field">${S.room ? 'Talk about this episode' : 'Message the Inner Circle'}</label>
-        <textarea id="field" class="field" rows="1" maxlength="2000" placeholder="${S.room ? 'Talk about this episode' : 'Message the Inner Circle'}"></textarea>
+        <label class="sr" for="field">${isSaved(S.room) ? 'Write a note to yourself' : S.roomInfo.live ? 'Message the live room' : S.room ? 'Talk about this episode' : 'Message the Inner Circle'}</label>
+        <textarea id="field" class="field" rows="1" maxlength="2000" placeholder="${isSaved(S.room) ? 'Note to yourself' : S.roomInfo.live ? 'Message the live room' : S.room ? 'Talk about this episode' : 'Message the Inner Circle'}"></textarea>
         <button class="send" id="sendBtn" aria-label="Send">${I.up(21)}</button>
       </div>
       <button class="jump" id="jump" aria-label="Jump to the latest message" title="Jump to the latest message">${I.down()}</button>
@@ -2288,6 +2312,7 @@ function renderChat() {
   if ($('#roomBack')) $('#roomBack').onclick = () => switchRoom('');
   if ($('#liveTie')) $('#liveTie').onclick = () => pickEpisode(url => { const mm = String(url).match(/\/(?:episodes|plus)\/([a-z0-9-]+)/); if (mm && confirm('Move this live room into that episode\'s room? The whole conversation goes with it.')) sendWs({ t: 'livetie', key: S.room, slug: mm[1] }); });
   if ($('#liveEnd')) $('#liveEnd').onclick = () => { if (confirm('End the live room? It stays readable, and you can still tie it to the episode later.')) sendWs({ t: 'liveclose', key: S.room }); };
+  if (isSaved(S.room)) $('#ptitle').onclick = null;
   const openEpPage = () => { const ri = S.roomInfo; const a = document.createElement('a'); a.href = ri.plus && S.me ? SITE + '/plus/' + ri.plus : SITE + '/episodes/' + ri.slug; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); };
   if ($('#roomThumb')) $('#roomThumb').onclick = openEpPage;
   if ($('#roomThumbD')) $('#roomThumbD').onclick = openEpPage;
@@ -2312,7 +2337,7 @@ function renderConn() {
 function hereNow() { return S.online.filter(u => (S.where[u] === undefined ? '' : S.where[u]) === S.room); }
 function renderHeadCounts() {
   const n = hereNow().length;
-  const t = `<span class="dot"></span>${n} here now`;
+  const t = isSaved(S.room) ? `<span style="display:inline-flex;align-items:center;gap:5px">${I.lock(12)}Private to you</span>` : `<span class="dot"></span>${n} here now`;
   if ($('#cnt')) $('#cnt').innerHTML = t;
   if ($('#cnt2')) $('#cnt2').innerHTML = t;
 }
@@ -2426,6 +2451,12 @@ function msgHtml(m, i, list) {
   let out = newDay ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '';
   let body = '';
   {
+    if (m.fwd) {
+      const fp = person(m.fwd.uid), inSaved = isSaved(m.room != null ? m.room : S.room);
+      const where = m.fwd.title ? ` in ${esc(shortRoom(m.fwd.title))}` : '';
+      const when = m.fwd.created ? ` · ${esc(dayLabel(m.fwd.created))} ${fmtTime(m.fwd.created)}` : '';
+      body += `<div class="fwd">${inSaved ? I.bookmark(14) : I.forward(14)}<span class="ft">${inSaved ? 'From' : 'Forwarded from'} <button data-who="${esc(m.fwd.uid)}">${esc(fp.name || 'a member')}</button>${where}${when}</span>${m.fwd.id ? `<button class="fgo" data-orig="${m.fwd.id}" title="Open the original">Open original</button>` : ''}</div>`;
+    }
     if (m.reply && !m.reply.deleted) {
       const rp = person(m.reply.uid);
       const rk = m.reply.kind || ((findMsg(m.reply.id) || {}).kind);
@@ -2484,7 +2515,7 @@ function clientLink(text) {
 }
 const EYE_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 // your own posts always show the eye (even at 0); others' once someone has seen them
-const viewsHtml = m => `<span class="vw" data-vw="${m.id}"${m.views || (S.me && m.uid === S.me.uid) ? '' : ' hidden'} title="Seen by ${m.views || 0} other member${m.views === 1 ? '' : 's'}">${EYE_ICON}<span>${m.views || 0}</span></span>`;
+const viewsHtml = m => isSaved(m.room != null ? m.room : S.room) ? '' : `<span class="vw" data-vw="${m.id}"${m.views || (S.me && m.uid === S.me.uid) ? '' : ' hidden'} title="Seen by ${m.views || 0} other member${m.views === 1 ? '' : 's'}">${EYE_ICON}<span>${m.views || 0}</span></span>`;
 const PLAY_ICON = '<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
 function lpHtml(p, id, draft) {
   const v = p.video;
@@ -2573,6 +2604,8 @@ function morphKeep(o, n, live) {
 document.addEventListener('click', e => {
   const pl = e.target.closest('[data-play]');
   if (pl && pl.closest('#msgs,#thread')) { e.preventDefault(); playInline(pl); return; }
+  const og = e.target.closest('[data-orig]');
+  if (og && og.closest('#msgs,#thread')) { e.preventDefault(); sendWs({ t: 'thread', id: Number(og.dataset.orig) }); return; }
   const t = e.target.closest('[data-react],[data-replyto],[data-who],[data-goto],[data-zoom],[data-thread]');
   if (!t || !t.closest('#msgs,#thread')) return;
   if (t.dataset.react && Date.now() - (S.reactHeld || 0) < 700) return; // that tap was a press and hold
@@ -2915,6 +2948,8 @@ function openActions(id, x, y) {
   const m = findMsg(id); if (!m || m.deleted) return;
   const isJoin = m.kind === 'join';
   const mine = m.uid === S.me.uid;
+  const here = m.room != null ? m.room : S.room, inSaved = isSaved(here);
+  const savable = !m.kind && (m.text || m.image);
   const mod = S.me.role === 'host' || S.me.role === 'mod';
   const p = person(m.uid);
   const canModTarget = mod && !mine && p.role !== 'host' && !(p.role === 'mod' && S.me.role !== 'host');
@@ -2925,11 +2960,13 @@ function openActions(id, x, y) {
   const reactHtml = `<div class="reactbar" role="toolbar" aria-label="React">${QUICK.map(k => `<button class="${picked(k) ? 'pick' : ''}" data-k="${esc(k)}" aria-label="React ${esc(k)}">${aeHtml(k)}</button>`).join('')}<button class="more" data-allemoji="1" aria-label="All emojis">${I.down(20)}</button></div>`;
   const menuHtml = `<div id="actmenu">
     <button class="mi" data-a="reply">${I.reply()}Reply</button>
-    ${mine && !isJoin && S.messages.some(x => x.id === id) ? `<button class="mi" data-a="edit">${I.edit()}Edit</button>` : ''}
+    ${savable && !inSaved ? `<button class="mi" data-a="save">${I.bookmark()}Save</button>` : ''}
+    ${savable ? `<button class="mi" data-a="forward">${I.forward()}Forward</button>` : ''}
+    ${mine && !isJoin && !m.fwd && S.messages.some(x => x.id === id) ? `<button class="mi" data-a="edit">${I.edit()}Edit</button>` : ''}
     ${m.text ? `<button class="mi" data-a="copy">${I.copy()}Copy</button>` : ''}
     ${!isJoin || m.replies ? `<button class="mi" data-a="thread">${threadIcon}View thread</button>` : ''}
-    ${mod && !isJoin ? `<button class="mi" data-a="pin">${I.pin()}${m.pinned ? 'Unpin' : 'Pin'}</button>` : ''}
-    ${!isJoin ? `<button class="mi" data-a="link">${linkIcon}Copy link</button>` : ''}
+    ${(mod || inSaved) && !isJoin ? `<button class="mi" data-a="pin">${I.pin()}${m.pinned ? 'Unpin' : 'Pin'}</button>` : ''}
+    ${!isJoin && !inSaved ? `<button class="mi" data-a="link">${linkIcon}Copy link</button>` : ''}
     ${!mine ? `<button class="mi" data-a="profile">${I.user()}View ${esc(p.name)}'s profile</button>${isJoin ? '' : `<button class="mi" data-a="report">${I.flag()}Report</button>`}` : ''}
     ${(mine && !isJoin) || mod ? `<button class="mi danger" data-a="delete">${I.trash()}Delete</button>` : ''}
     ${canModTarget && !isJoin ? `<div class="mhead">Host tools</div>
@@ -2956,11 +2993,49 @@ function openActions(id, x, y) {
     if (a === 'link') navigator.clipboard && navigator.clipboard.writeText(location.origin + '/#m=' + id).then(() => toast('Link copied. Only members can open it.'));
     if (a === 'profile') askProfile(m.uid);
     if (a === 'report') { const reason = prompt('What is wrong with this message? (optional)'); if (reason !== null) sendWs({ t: 'report', id, reason }); }
-    if (a === 'delete' && confirm('Delete this message for everyone?')) sendWs({ t: 'delete', id });
+    if (a === 'save') sendWs({ t: 'save', id, to: 'saved' });
+    if (a === 'forward') forwardPicker(id);
+    if (a === 'delete' && confirm(inSaved ? 'Remove this from your Saved messages?' : 'Delete this message for everyone?')) sendWs({ t: 'delete', id });
     if (a === 'pin') sendWs({ t: 'pin', id, on: !m.pinned });
     if (a === 'mute') sendWs({ t: 'mute', uid: m.uid, hours: p.muted ? 0 : 24 });
     if (a === 'remove' && confirm(`Remove ${p.name} from the Inner Circle? They will lose access to the chat.`)) sendWs({ t: 'remove', uid: m.uid });
   });
+}
+
+// Forward: pick a room (Saved messages first), or find any episode's room
+function forwardPicker(id) {
+  const o = overlay(`<div id="fwdSheet"><div style="padding:16px 12px 8px 18px;display:flex;align-items:center;gap:10px"><h2 class="h1" style="font-size:22px;flex:1">Forward to</h2><button class="ibtn" id="fclose" aria-label="Close">${I.close()}</button></div>
+    <div style="padding:0 16px 8px"><input id="fq" class="finput" type="search" placeholder="Find a room or an episode" aria-label="Find a room or an episode" autocomplete="off" enterkeyhint="search" style="height:46px;font-size:15px"></div>
+    <div id="fbody" class="rlist"></div></div>`, false, 'Forward');
+  o.firstElementChild.style.width = 'min(560px, 100%)';
+  $('#fclose').onclick = () => closeOverlay();
+  const item = r => `<button class="ritem" data-fwdto="${esc(r.key)}">${r.saved || isSaved(r.key) ? savedIcon(56) : r.live ? `<span class="livebadge"><span class="livedot"></span>LIVE</span>` : r.key ? `<img class="rimg" src="${esc(thumbAt(r.thumb, 300))}" alt="" loading="lazy">` : `<span class="rlogo"><img src="${PLUS_LOGO}" alt=""></span>`}<span style="flex:1;min-width:0"><span class="rt">${esc(r.saved || isSaved(r.key) ? 'Saved messages' : r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span>${r.saved || isSaved(r.key) ? '<span class="rl">Only you can see this</span>' : ''}</span></button>`;
+  const wire = () => $('#fbody').querySelectorAll('[data-fwdto]').forEach(b => b.onclick = () => {
+    const to = b.dataset.fwdto; closeOverlay();
+    sendWs({ t: 'save', id, to: isSaved(to) ? 'saved' : to });
+  });
+  const draw = () => {
+    const q = ($('#fq') && $('#fq').value.trim().toLowerCase()) || '';
+    const R = S.rooms;
+    const base = [savedRoom()].concat(R ? [R.main].concat(R.live || [], R.newest, R.mine) : [{ key: '', title: 'Inner Circle Chat' }]).filter(Boolean);
+    const seen = new Set(); const list = base.filter(r => { if (seen.has(r.key)) return false; seen.add(r.key); return !q || String(r.saved || isSaved(r.key) ? 'saved messages' : r.key ? r.title : 'inner circle chat').toLowerCase().includes(q); });
+    $('#fbody').innerHTML = list.map(item).join('') || '';
+    wire();
+    if (q.length < 2) return;
+    loadIndexes().then(ix => {
+      if ((($('#fq') && $('#fq').value.trim().toLowerCase()) || '') !== q) return;
+      const hits = [];
+      for (const x of rankEpisodes(episodeList(ix), q)) {
+        const slug = x.kind === 'plus' ? (x.e.freeSlug || x.slug) : x.slug;
+        if (seen.has('ep:' + slug)) continue; seen.add('ep:' + slug);
+        hits.push({ key: 'ep:' + slug, title: epTitle(x.e), thumb: x.e.thumb });
+        if (hits.length >= 25) break;
+      }
+      if (hits.length) { $('#fbody').insertAdjacentHTML('beforeend', `<div class="rhead">Episode rooms</div>` + hits.map(item).join('')); wire(); }
+    });
+  };
+  let t; $('#fq').addEventListener('input', () => { clearTimeout(t); t = setTimeout(draw, 120); });
+  draw(); sendQuiet({ t: 'rooms' });
 }
 
 function openSearch(scope) {
