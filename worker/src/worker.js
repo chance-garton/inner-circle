@@ -474,6 +474,15 @@ export class Room {
       if (a && a.uid && a.ready && !a.away && (a.room || '') === key) this.markRead(a.uid, key);
     }
   }
+  // a room's message total is only a display count, so it is kept a minute instead of recounted on every refresh
+  roomTotal(key) {
+    this.totals = this.totals || new Map();
+    const c = this.totals.get(key);
+    if (c && Date.now() - c.at < 60000) return c.n;
+    const n = this.one("SELECT COUNT(*) AS n FROM messages WHERE room = ? AND deleted = 0 AND COALESCE(kind, '') = ''", key).n;
+    this.totals.set(key, { n, at: Date.now() });
+    return n;
+  }
   async roomsFor(uid) {
     const x = await this.eps();
     const st = new Map(this.all('SELECT room, engaged, last_read FROM room_state WHERE uid = ?', uid).map(r => [r.room, r]));
@@ -485,7 +494,7 @@ export class Room {
       if (last && last.uid) ids.add(last.uid);
       return { ...this.roomInfo(key, x), opened: !!s, engaged: !!(s && s.engaged),
         unread: s ? this.one("SELECT COUNT(*) AS n FROM messages WHERE room = ? AND deleted = 0 AND id > ? AND uid != ? AND COALESCE(kind, '') != 'join'", key, s.last_read, uid).n : 0,
-        total: this.one("SELECT COUNT(*) AS n FROM messages WHERE room = ? AND deleted = 0 AND COALESCE(kind, '') = ''", key).n,
+        total: this.roomTotal(key),
         last: last ? { id: last.id, uid: last.uid, text: (last.text || '').replace(/\s+/g, ' ').slice(0, 140), image: !!last.image, kind: last.kind || '', created: last.created } : null };
     };
     const mine = [...st.values()].filter(r => r.engaged && r.room && !isPrivate(r.room) && !newest.includes(r.room)).map(r => one(r.room))
@@ -628,7 +637,7 @@ export class Room {
       }
       const items = this.all('SELECT * FROM library WHERE uid = ?', uid).map(r => ({ key: r.ekey, saved: !!r.saved, savedAt: r.saved_at, note: r.note, noteAt: r.note_at }));
       // Saved messages, newest first, for the app's Library tab (2026-10-11)
-      const msgs = this.all("SELECT * FROM messages WHERE room = ? AND deleted = 0 AND COALESCE(kind, '') = '' ORDER BY id DESC LIMIT 500", savedKey(uid)).map(r => this.shape(r));
+      const msgs = this.shapeAll(this.all("SELECT * FROM messages WHERE room = ? AND deleted = 0 AND COALESCE(kind, '') = '' ORDER BY id DESC LIMIT 500", savedKey(uid)));
       const people = {};
       for (const m of msgs) for (const id of [m.uid, m.fwd && m.fwd.uid]) if (id && !people[id]) { const p = this.member(id); if (p) people[id] = { name: p.name || 'Member', avatar: p.avatar || '' }; }
       return json({ items, messages: msgs.map(m => ({ id: m.id, uid: m.uid, text: m.text, image: m.image, created: m.created, fwd: m.fwd, preview: m.preview })), people, room: savedKey(uid) });
@@ -708,31 +717,54 @@ export class Room {
 
   presence(skip) { const w = this.where(); if (skip) { const a = skip.deserializeAttachment(); if (a && a.uid && !this.online(skip).includes(a.uid)) delete w[a.uid]; } this.broadcast({ t: 'presence', online: this.online(skip), where: w }); }
 
-  shape(row) {
+  // shape() for many rows at once: the reactions, quoted messages, reply counts and seen counts
+  // are fetched in a few batched reads instead of several reads per message
+  shapeAll(rows) {
+    rows = (rows || []).filter(Boolean);
+    const ctx = { reacts: new Map(), parents: new Map(), replies: new Map(), views: new Map() };
+    const ids = rows.map(r => r.id), parentIds = [...new Set(rows.map(r => r.reply_to).filter(Boolean))];
+    const inList = n => new Array(n).fill('?').join(',');
+    for (let i = 0; i < ids.length; i += 80) {
+      const c = ids.slice(i, i + 80), q = inList(c.length);
+      for (const r of this.all(`SELECT msg_id, uid, kind FROM reactions WHERE msg_id IN (${q})`, ...c)) {
+        const o = ctx.reacts.get(r.msg_id) || {}; (o[r.kind] = o[r.kind] || []).push(r.uid); ctx.reacts.set(r.msg_id, o);
+      }
+      for (const r of this.all(`SELECT reply_to, COUNT(*) AS n FROM messages WHERE reply_to IN (${q}) AND deleted = 0 GROUP BY reply_to`, ...c)) ctx.replies.set(r.reply_to, r.n);
+      for (const r of this.all(`SELECT msg_id, COUNT(*) AS n FROM views WHERE msg_id IN (${q}) GROUP BY msg_id`, ...c)) ctx.views.set(r.msg_id, r.n);
+    }
+    for (let i = 0; i < parentIds.length; i += 80) {
+      const c = parentIds.slice(i, i + 80);
+      for (const p of this.all(`SELECT id, uid, text, image, deleted, kind FROM messages WHERE id IN (${inList(c.length)})`, ...c)) ctx.parents.set(p.id, p);
+    }
+    return rows.map(r => this.shape(r, ctx));
+  }
+
+  shape(row, ctx) {
     if (!row) return null;
-    const reacts = {};
-    for (const r of this.all('SELECT uid, kind FROM reactions WHERE msg_id = ?', row.id)) {
+    let reacts = {};
+    if (ctx) reacts = ctx.reacts.get(row.id) || {};
+    else for (const r of this.all('SELECT uid, kind FROM reactions WHERE msg_id = ?', row.id)) {
       (reacts[r.kind] = reacts[r.kind] || []).push(r.uid);
     }
     let reply = null;
     if (row.reply_to) {
-      const p = this.one('SELECT id, uid, text, image, deleted, kind FROM messages WHERE id = ?', row.reply_to);
+      const p = ctx ? ctx.parents.get(row.reply_to) : this.one('SELECT id, uid, text, image, deleted, kind FROM messages WHERE id = ?', row.reply_to);
       if (p) reply = { id: p.id, uid: p.uid, text: p.deleted ? '' : (p.text || '').slice(0, 200), image: !p.deleted && !!p.image, deleted: !!p.deleted, kind: p.kind || '' };
     }
     return {
       id: row.id, uid: row.uid, text: row.deleted ? '' : row.text, image: row.deleted ? '' : row.image,
       reply, created: row.created, edited: !!row.edited, deleted: !!row.deleted, pinned: !!row.pinned, reacts,
-      replies: this.one('SELECT COUNT(*) AS n FROM messages WHERE reply_to = ? AND deleted = 0', row.id).n,
+      replies: ctx ? (ctx.replies.get(row.id) || 0) : this.one('SELECT COUNT(*) AS n FROM messages WHERE reply_to = ? AND deleted = 0', row.id).n,
       kind: row.kind || '', mentions: safeArr(row.mentions),
       preview: row.deleted ? null : safeObj(row.preview),
-      views: this.viewCount(row.id),
+      views: ctx ? (ctx.views.get(row.id) || 0) : this.viewCount(row.id),
       room: row.room || '',
       fwd: row.fwd ? safeObj(row.fwd) : null,
       info: (row.kind === 'room' && this.epx) || row.kind === 'live' ? this.roomInfo(row.text, this.epx || { free: new Map(), plus: new Map(), plusByFree: new Map(), list: [] }) : undefined,
     };
   }
 
-  // a room opened at the reader's place: up to 300 unseen messages after last_read plus 20 before it
+  // a room opened at the reader's place: up to 100 unseen messages after last_read plus 20 before it
   // (a room opened for the first time counts as read up to now). Returns the place it opened at.
   openAt(uid, room) {
     room = room || '';
@@ -741,13 +773,13 @@ export class Room {
     let lr = st.last_read || 0;
     const n = this.one('SELECT COUNT(*) AS n FROM messages WHERE room = ? AND deleted = 0 AND id > ?', room, lr).n;
     if (!n) { const msgs = this.page(room); return { messages: msgs, lastRead: lr, done: msgs.length < PAGE }; }
-    if (n > 300) {
-      const cut = this.one('SELECT id FROM messages WHERE room = ? AND deleted = 0 ORDER BY id DESC LIMIT 1 OFFSET 300', room);
+    if (n > 100) {
+      const cut = this.one('SELECT id FROM messages WHERE room = ? AND deleted = 0 ORDER BY id DESC LIMIT 1 OFFSET 100', room);
       if (cut) { lr = Math.max(lr, cut.id); this.sql.exec('UPDATE room_state SET last_read = MAX(last_read, ?) WHERE uid = ? AND room = ?', lr, uid, room); }
     }
-    const after = this.all('SELECT * FROM messages WHERE room = ? AND deleted = 0 AND id > ? ORDER BY id LIMIT 300', room, lr);
+    const after = this.all('SELECT * FROM messages WHERE room = ? AND deleted = 0 AND id > ? ORDER BY id LIMIT 100', room, lr);
     const before = this.all('SELECT * FROM messages WHERE room = ? AND deleted = 0 AND id <= ? ORDER BY id DESC LIMIT 20', room, lr).reverse();
-    return { messages: before.concat(after).map(r => this.shape(r)), lastRead: lr, done: before.length < 20 };
+    return { messages: this.shapeAll(before.concat(after)), lastRead: lr, done: before.length < 20 };
   }
 
   page(room, before) {
@@ -755,11 +787,11 @@ export class Room {
     const rows = before
       ? this.all('SELECT * FROM messages WHERE room = ? AND id < ? AND deleted = 0 ORDER BY id DESC LIMIT ?', room, before, PAGE)
       : this.all('SELECT * FROM messages WHERE room = ? AND deleted = 0 ORDER BY id DESC LIMIT ?', room, PAGE);
-    return rows.reverse().map(r => this.shape(r));
+    return this.shapeAll(rows.reverse());
   }
 
   pins(room) {
-    return this.all('SELECT * FROM messages WHERE room = ? AND pinned = 1 AND deleted = 0 ORDER BY id DESC LIMIT 10', room || '').map(r => this.shape(r));
+    return this.shapeAll(this.all('SELECT * FROM messages WHERE room = ? AND pinned = 1 AND deleted = 0 ORDER BY id DESC LIMIT 10', room || ''));
   }
 
   peopleFor(msgs, extra) {
@@ -1051,7 +1083,7 @@ export class Room {
         const like = '%' + q.replace(/[\\%_]/g, c => '\\' + c) + '%';
         const here = msg.scope !== 'all';
         const rows = this.all("SELECT m.* FROM messages m LEFT JOIN members p ON p.uid = m.uid WHERE m.deleted = 0 AND COALESCE(m.kind, '') = '' AND (m.room NOT LIKE 'saved:%' OR m.room = ?) AND (? = 0 OR m.room = ?) AND (m.text LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\') ORDER BY m.id DESC LIMIT 60", savedKey(me.uid), here ? 1 : 0, att.room || '', like, like);
-        const msgs = rows.map(r => this.shape(r));
+        const msgs = this.shapeAll(rows);
         const x = await this.eps(); const rooms = {};
         for (const m of msgs) if (!(m.room in rooms)) rooms[m.room] = this.roomInfo(m.room, x).title;
         return this.send(ws, { t: 'results', q, scope: msg.scope, room: rooms[att.room || ''] || this.roomInfo(att.room || '', x).title, rooms, messages: msgs, people: this.peopleFor(msgs) });
@@ -1059,7 +1091,7 @@ export class Room {
 
       case 'mentions': {
         const rows = this.all("SELECT * FROM messages WHERE deleted = 0 AND room NOT LIKE 'saved:%' AND mentions LIKE ? ORDER BY id DESC LIMIT 50", '%"' + me.uid + '"%');
-        const msgs = rows.map(r => this.shape(r));
+        const msgs = this.shapeAll(rows);
         const x = await this.eps(); const rooms = {};
         for (const m of msgs) if (!(m.room in rooms)) rooms[m.room] = this.roomInfo(m.room, x).title;
         return this.send(ws, { t: 'mentionlist', messages: msgs, rooms, people: this.peopleFor(msgs) });
@@ -1089,7 +1121,7 @@ export class Room {
           }
           frontier = next;
         }
-        const msgs = [...seen.values()].filter(r => !r.deleted).sort((a, b) => a.id - b.id).map(r => this.shape(r));
+        const msgs = this.shapeAll([...seen.values()].filter(r => !r.deleted).sort((a, b) => a.id - b.id));
         if (!msgs.length) return this.send(ws, { t: 'notice', text: 'That message is no longer here.' });
         return this.send(ws, { t: 'thread', id: start.id, room: start.room || '', roomTitle: this.roomInfo(start.room || '', await this.eps()).title, messages: msgs, people: this.peopleFor(msgs) });
       }
