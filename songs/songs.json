@@ -1,0 +1,13 @@
+{
+  "about": "Original songs made for InnerVerse episodes. One entry per song, newest first. slug is the episode's FREE slug (the /episodes/<slug> address); file sits in this folder.",
+  "songs": [
+    {
+      "slug": "dawn-lester-terrain-parenting",
+      "episode": "What Really Makes Kids Sick? Dawn Lester on Terrain Parenting",
+      "title": "Listen To Them",
+      "file": "dawn-lester-terrain-parenting.mp3",
+      "seconds": 197,
+      "added": "2026-10-18"
+    }
+  ]
+}

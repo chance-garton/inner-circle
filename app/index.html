@@ -315,7 +315,34 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 .libempty h3{font-family:var(--display);font-weight:600;font-size:22px;color:var(--ink);margin:10px 0 6px}
 .libempty p{margin:0 auto 18px;max-width:420px;line-height:1.5}
 .libfoot{text-align:center;margin:18px 0 8px}
-@media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .artc{width:176px}}
+/* episode songs */
+.songcard{display:flex;align-items:center;gap:14px;margin:4px 0 6px;padding:14px;border-radius:16px;background:radial-gradient(120% 140% at 0% 0%,rgba(143,181,240,0.16),rgba(143,181,240,0) 60%),var(--card);border:1px solid var(--line)}
+html.member .songcard{background:radial-gradient(120% 140% at 0% 0%,rgba(216,170,60,0.16),rgba(216,170,60,0) 60%),var(--card)}
+.songcard .songpp{width:56px;height:56px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--lapis);color:#fff}
+html.member .songcard .songpp{background:var(--gold);color:var(--on-gold)}
+.songcard .st{min-width:0;flex:1}
+.songcard .st b{display:block;font-family:var(--display);font-weight:600;font-size:19px;line-height:1.25;margin:2px 0 1px}
+.songcard .st span{display:block;font-size:13px;color:var(--muted)}
+.songcard .st a.sall{display:inline-block;margin-top:4px;font-size:13px;color:var(--accent);font-weight:700}
+.songtile{display:block;text-align:left}
+.artw{position:relative;display:block}
+.artw .spp{position:absolute;right:8px;bottom:8px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--lapis);color:#fff;box-shadow:0 6px 16px rgba(0,0,0,0.45)}
+html.member .artw .spp{background:var(--gold);color:var(--on-gold)}
+.artw .sbadge{position:absolute;left:8px;top:8px;height:24px;padding:0 9px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;background:rgba(10,15,28,0.78);color:var(--ink);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.songrow{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.songrow .songhit{flex:none;width:128px}
+.songrow .art{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:var(--card2)}
+.songrow .artw .spp{width:32px;height:32px;right:6px;bottom:6px}
+.songrow .artw .sbadge{display:none}
+.songrow .info{min-width:0;flex:1}
+.songrow .stitle{display:block;text-align:left;font-family:var(--display);font-weight:600;font-size:18px;line-height:1.25}
+.songrow .l{display:-webkit-box;font-size:13px;color:var(--muted);line-height:1.35;margin-top:2px;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.songrow .d{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.songrow .eplink{display:inline-flex;align-items:center;gap:3px;margin-top:6px;font-size:13px;font-weight:700;color:var(--accent)}
+@media (max-width:359px){.songrow .songhit{width:104px}}
+[data-song].on .spp,[data-song].on.songpp{box-shadow:0 0 0 4px rgba(143,181,240,0.25)}
+html.member [data-song].on .spp,html.member [data-song].on.songpp{box-shadow:0 0 0 4px rgba(216,170,60,0.25)}
+@media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .artc{width:176px}.songrow .songhit{width:176px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -343,11 +370,12 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-11d';
+const VERSION = '2026-10-18a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
 const SITE = 'https://www.innerversepodcast.com';
+const SONGS = location.origin + '/songs/'; // the episode songs: songs.json plus one mp3 per song, public, in this repo
 const TOKEN_KEY = 'ivc_token'; // shared with the Inner Circle page on this address
 const LOGO = 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-Electric-Logo-2026.png?format=300w';
 const PLUS_LOGO = 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/c3607ade-e087-4b27-af0f-e0913f4dc3d0/plus+asset.png?format=300w';
@@ -412,6 +440,7 @@ const I = {
   fwd: s => P('<path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M21 4v4.5h-4.5"/>', s),
   prev: s => P('<path d="M18 6 9 12l9 6zM6 6v12"/>', s),
   next: s => P('<path d="m6 6 9 6-9 6zM18 6v12"/>', s),
+  music: s => P('<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>', s),
 };
 
 // ------------------------------------------------------------ state
@@ -549,6 +578,7 @@ async function loadLibrary() {
     cacheFetch(DATA + 'episodes-index.json'),
     cacheFetch(DATA + 'plus-index.json'),
     cacheFetch(DATA + 'episodes/_corpus.json').catch(() => null),
+    loadSongs(),
   ]);
   const lines = {};
   if (corpus && corpus.records) for (const r of corpus.records) { const f = r.fields || {}; if (f.Slug) lines[f.Slug] = f['Topic Line'] || ''; }
@@ -591,10 +621,100 @@ async function episodeFile(name) {
   S.files[name] = j; return j;
 }
 
+// ------------------------------------------------------------ episode songs
+// songs/songs.json lists one original song per episode, keyed by the episode's free slug; free for everyone
+let SONGLIST = [];
+async function loadSongs() {
+  try {
+    const j = await cacheFetch(SONGS + 'songs.json');
+    SONGLIST = (j.songs || []).filter(s => s && s.slug && s.file && s.title)
+      .sort((a, b) => String(b.added || '').localeCompare(String(a.added || '')));
+  } catch (e) { SONGLIST = []; }
+}
+function songFor(slug) { return slug ? SONGLIST.find(s => s.slug === slug) || null : null; }
+function songEp(s) { return S.lib ? pick(S.lib.bySlug['e:' + s.slug] || null) : null; }
+function songPlaying(s) { return !!(cur && cur.key === 's:' + s.slug && !aud.paused && !isSilent()); }
+function playSong(s) {
+  if (!s) return;
+  if (cur && cur.key === 's:' + s.slug && aud.src && !isSilent()) { togglePlay(); return; }
+  const ep = songEp(s);
+  unlockAudio();
+  playEpisode({ key: 's:' + s.slug, kind: 's', slug: s.slug, title: s.title, show: 'Song from ' + (ep ? ep.title : (s.episode || 'InnerVerse')),
+    thumb: ep ? ep.thumb : LOGO, chapters: [], plus: false, offset: 0, audio: { url: SONGS + s.file } }, 0);
+}
+// one song ends: the next one on the list starts, like a playlist
+function nextSong(dir) {
+  const i = cur ? SONGLIST.findIndex(s => 's:' + s.slug === cur.key) : -1;
+  const n = SONGLIST[i + dir];
+  if (i >= 0 && n) playSong(n);
+}
+function updateSongUI() {
+  $$('[data-song]').forEach(b => {
+    const s = songFor(b.dataset.song); if (!s) return;
+    const on = songPlaying(s);
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-label', (on ? 'Pause ' : 'Play ') + s.title);
+    const ic = $('.sic', b) || (b.classList.contains('sic') ? b : null);
+    if (ic) ic.innerHTML = on ? I.pause(ic.dataset.sz || 20) : I.play(ic.dataset.sz || 20);
+  });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-song]'); if (!b) return;
+  e.preventDefault();
+  playSong(songFor(b.dataset.song));
+});
+function songCard(slug) {
+  const s = songFor(slug); if (!s) return '';
+  return `<div class="songcard"><button class="songpp sic" data-song="${esc(s.slug)}" data-sz="28" aria-label="Play ${esc(s.title)}">${I.play(28)}</button>
+    <div class="st"><div class="eyebrow">${I.music(13)} Song for this episode</div><b>${esc(s.title)}</b><span>${s.seconds ? clock(s.seconds) + ' · ' : ''}An original InnerVerse song</span><a class="sall" href="#/songs">All episode songs</a></div></div>`;
+}
+function songArt(s, sz) {
+  const ep = songEp(s);
+  return `<span class="artw"><img class="art" loading="lazy" src="${esc(img(ep ? ep.thumb : LOGO, sz || 500))}" alt=""><span class="sbadge">${I.music(12)} Song</span><span class="spp sic" data-sz="18">${I.play(18)}</span></span>`;
+}
+function songTile(s) {
+  const ep = songEp(s);
+  return `<button class="tile songtile" data-song="${esc(s.slug)}" aria-label="Play ${esc(s.title)}">${songArt(s, 500)}<div class="t">${esc(s.title)}</div><div class="m">${esc(ep ? ep.title : (s.episode || ''))}</div></button>`;
+}
+function songsRow() {
+  if (!SONGLIST.length) return '';
+  return `<div class="sec"><div class="sechead"><h2 class="h2">Episode songs</h2><a href="#/songs">See all</a></div><div class="hscroll">${SONGLIST.slice(0, 10).map(songTile).join('')}</div></div>`;
+}
+function openSongs() {
+  const v = $('#ep');
+  v.hidden = false;
+  if (epShown !== 'songs') {
+    const h = leaveVideo();
+    epReq++; destroyVideo(); EPV = null;
+    resumeAfterVideo(h);
+    v.scrollTop = 0;
+    epShown = 'songs';
+  }
+  renderSongs();
+  syncMini();
+}
+function renderSongs() {
+  const v = $('#ep');
+  const rows = SONGLIST.map(s => {
+    const ep = songEp(s);
+    return `<div class="songrow"><button class="songhit" data-song="${esc(s.slug)}" aria-label="Play ${esc(s.title)}">${songArt(s, 300)}</button><div class="info"><button class="stitle" data-song="${esc(s.slug)}">${esc(s.title)}</button><span class="l">From ${esc(ep ? ep.title : (s.episode || 'an InnerVerse episode'))}</span><span class="d">${[s.seconds ? clock(s.seconds) : '', s.added ? fmtDate(s.added) : ''].filter(Boolean).join(' · ')}</span>${ep ? `<a class="eplink" href="${epHref(ep)}">Open the episode ${I.right(14)}</a>` : ''}</div></div>`;
+  }).join('');
+  v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button><span class="eptitle-mini">Episode songs</span></div></header>
+  <div class="wrap">
+    <div class="eyebrow" style="margin-top:8px">${I.music(13)} Original music</div>
+    <h1 class="title">Episode songs</h1>
+    <p class="muted" style="margin:0 0 8px">Original songs made for InnerVerse episodes. Press play, then follow any song into the conversation behind it.</p>
+    ${SONGLIST.length ? `<div class="list">${rows}</div>` : `<div class="empty">The songs could not load. Check your connection.</div>`}
+  </div>`;
+  bindBack();
+  updateSongUI();
+}
+
 // ------------------------------------------------------------ progress
 let PROG = load('iva_prog', true) || {};
 function saveProg(key, t, d) {
   if (!key || !d) return;
+  if (key.indexOf('s:') === 0) return; // a song always starts from the top
   if (t > d - 45) delete PROG[key]; else PROG[key] = { t: Math.round(t), d: Math.round(d), at: Date.now() };
   store('iva_prog', PROG);
 }
@@ -682,6 +802,7 @@ function route() {
     openEpisode(m[1], decodeURIComponent(m[2]));
     return;
   }
+  if (h.indexOf('#/songs') === 0) { openSongs(); return; }
   closeEpisode();
   // the website's "Open My library" link, and older links, used the Episodes tab's filter
   if (/^#\/search\?(?:.*&)?show=__saved/.test(h)) { location.replace('#/library'); return; }
@@ -802,6 +923,7 @@ function renderHome() {
     ${cont.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Continue listening</h2></div><div class="hscroll">${cont.map(tile).join('')}</div></div>` : ''}
     ${(() => { const sv = savedList(); return sv.length ? `<div class="sec"><div class="sechead"><h2 class="h2">My library</h2><a href="#/library">See all</a></div><div class="hscroll">${sv.slice(0, 12).map(tile).join('')}</div></div>` : ''; })()}
     ${S.member ? '' : `<div class="sec">${plusPitch(true)}</div>`}
+    ${songsRow()}
     ${firsts.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Good first episodes</h2></div><div class="hscroll">${firsts.map(tile).join('')}</div></div>` : ''}
     ${['Inner Whirled', 'InnerVerse', 'Vibe Rant', 'Astro-Herbalism'].map(showRow).join('')}
   </div>`;
@@ -1341,6 +1463,7 @@ function renderEpisode() {
     <div class="crumb">${crumb.join(' / ')}${tail ? ' · ' + tail : ''}</div>
     <h1 class="title">${esc(E.title)}</h1>
     <div class="desc">${E.intro.map(p => `<p>${esc(p)}</p>`).join('')}</div>
+    ${songCard(E.freeSlug || E.slug)}
     <div class="acc${(libGet(E.it) || {}).note ? ' open' : ''}" id="noteAcc"><button>My notes ${I.down(22)}</button><div class="in">
       <textarea class="notebox" id="myNote" maxlength="10000" placeholder="Private notes on this episode. Only you can see them.">${esc((libGet(E.it) || {}).note || '')}</textarea>
       <div class="notebar"><span id="noteMsg">${S.member ? 'Private. Saved to your account, in the app and on the website.' : 'Private. Saved on this phone.'}</span><button type="button" id="noteTime">${I.clock ? I.clock(15) : ''}Add the time</button></div>
@@ -1370,7 +1493,7 @@ function renderEpisode() {
     const na = $('#noteAcc'); na.classList.add('open');
     setTimeout(() => na.scrollIntoView({ behavior: 'smooth', block: 'center' }), 250);
   }
-  syncMini();
+  syncMini(); updateSongUI();
   $('#chapters') && $('#chapters').addEventListener('click', e => { const c = e.target.closest('.chap[data-seek]'); if (c) seekChapter(Number(c.dataset.seek)); });
   setMode(mode, false);
 }
@@ -1656,7 +1779,8 @@ aud.addEventListener('error', async () => {
   // a members' link lasts six hours; get a fresh one and carry on
   if (cur && cur.plusKey && !retried) { retried = true; const t = aud.currentTime || (PROG[cur.key] || {}).t || 0; if (await setSource()) { pendingSeek = t; aud.play().catch(() => {}); } setTimeout(() => { retried = false; }, 10000); }
 });
-function refreshLB() { if (EPV && cur && EPV.key === cur.key && EPV.mode === 'listen') renderListenBox(); if (npOpen) renderNP(); }
+function refreshLB() { if (EPV && cur && EPV.key === cur.key && EPV.mode === 'listen') renderListenBox(); if (npOpen) renderNP(); updateSongUI(); }
+aud.addEventListener('ended', () => { if (!isSilent() && cur && cur.kind === 's') nextSong(1); });
 function togglePlay() {
   if (!cur) return;
   unlockAudio();
@@ -1750,6 +1874,7 @@ function updateMediaSession() {
   } catch (e) {}
 }
 function jumpChapter(dir) {
+  if (cur && cur.kind === 's') { if (dir < 0 && aud.currentTime > 4) aud.currentTime = 0; else nextSong(dir); return; }
   if (!cur || !cur.chapters || !cur.chapters.length) { aud.currentTime += dir * 30; return; }
   const i = currentChapterIndex();
   if (dir < 0) { const c = cur.chapters[i]; if (c && aud.currentTime - c.seek > 4) aud.currentTime = c.seek; else if (i > 0) aud.currentTime = cur.chapters[i - 1].seek; else aud.currentTime = 0; }
