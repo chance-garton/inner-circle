@@ -384,7 +384,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-18b';
+const VERSION = '2026-10-18c';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -650,7 +650,7 @@ function songsFor(epSlug) { return epSlug ? SONGLIST.filter(s => s.episode === e
 function songEp(s) { return S.lib ? pick(S.lib.bySlug['e:' + s.episode] || null) : null; }
 function songEpTitle(s) { const ep = songEp(s); return ep ? ep.title : (s.episodeTitle || 'an InnerVerse episode'); }
 // square art; until Chance sends a song's art, the episode's thumbnail stands in (cropped square)
-function songArtUrl(s, w) { if (s.art) return SONGS + s.art; const ep = songEp(s); return ep ? img(ep.thumb, w || 500) : LOGO; }
+function songArtUrl(s, w) { if (s.art) return /^https?:\/\//.test(s.art) ? img(s.art, w || 500) : SONGS + s.art; const ep = songEp(s); return ep ? img(ep.thumb, w || 500) : LOGO; }
 function songUrl(s) { return location.origin + '/songs/' + s.id + '/'; }
 function songPlaying(s) { return !!(cur && cur.key === 's:' + s.id && !aud.paused && !isSilent()); }
 function playSong(s) {

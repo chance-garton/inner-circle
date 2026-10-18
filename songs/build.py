@@ -23,6 +23,13 @@ def thumbs():
         return {}
 
 
+def full_art(art, w):
+    """A song's art as a full address: a Squarespace CDN link (sized with ?format=) or a file in this folder."""
+    if art.startswith('http'):
+        return art.split('?')[0] + f'?format={w}w' if 'squarespace-cdn.com' in art else art
+    return BASE + art
+
+
 def clock(sec):
     sec = int(sec or 0)
     return f'{sec // 60}:{sec % 60:02d}'
@@ -107,11 +114,11 @@ def main():
         ep = eps.get(s['episode'], {})
         ep_title = s.get('episodeTitle') or ep.get('title') or 'an InnerVerse episode'
         thumb = (ep.get('thumb') or '').split('?')[0]
-        art = BASE + s['art'] if s.get('art') else (thumb + '?format=750w' if thumb else 'https://circle.innerversepodcast.com/app/icons/icon-512.png')
+        art = full_art(s.get('art'), 750) if s.get('art') else (thumb + '?format=750w' if thumb else 'https://circle.innerversepodcast.com/app/icons/icon-512.png')
         siblings = [x for x in songs if x['episode'] == s['episode'] and x['id'] != sid]
 
         def sib(x):
-            a = BASE + x['art'] if x.get('art') else (thumb + '?format=300w' if thumb else '')
+            a = full_art(x.get('art'), 300) if x.get('art') else (thumb + '?format=300w' if thumb else '')
             return (f'<a href="{BASE}{html.escape(x["id"])}/"><img src="{html.escape(a)}" alt="">'
                     f'<span>{html.escape(x["title"])}<small>{clock(x.get("seconds"))}</small></span></a>')
         more = (f'<div class="more"><h2>More songs from this episode</h2>{"".join(sib(x) for x in siblings)}</div>'
