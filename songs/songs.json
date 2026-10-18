@@ -2,6 +2,36 @@
   "about": "Original songs made for InnerVerse episodes. The list order is the order the app shows: newest batch first, and within one episode in track order. id names the song (and its files and share page, songs/<id>/); episode is the episode's FREE slug (the /episodes/<slug> address); art is the square cover's Squarespace CDN address (Chance sends one per batch), a square image in this folder, or empty to fall back to the episode's thumbnail. After any change here, run: python3 songs/build.py",
   "songs": [
     {
+      "id": "inner-whirled-30-tartar-cartographer",
+      "episode": "inner-whirled-30",
+      "episodeTitle": "Why Was Tartaria Erased From The Map? Grand Tartary Explained",
+      "title": "Tartar Cartographer",
+      "file": "inner-whirled-30-tartar-cartographer.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/6d0ceafc-67d0-4fc0-b31f-c1be90697edd/IW-30.jpg",
+      "seconds": 178,
+      "added": "2026-10-18"
+    },
+    {
+      "id": "inner-whirled-30-tartaros-empire",
+      "episode": "inner-whirled-30",
+      "episodeTitle": "Why Was Tartaria Erased From The Map? Grand Tartary Explained",
+      "title": "Tartaros Empire",
+      "file": "inner-whirled-30-tartaros-empire.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/6d0ceafc-67d0-4fc0-b31f-c1be90697edd/IW-30.jpg",
+      "seconds": 198,
+      "added": "2026-10-18"
+    },
+    {
+      "id": "inner-whirled-30-tartaria-marginalia",
+      "episode": "inner-whirled-30",
+      "episodeTitle": "Why Was Tartaria Erased From The Map? Grand Tartary Explained",
+      "title": "Tartaria Marginalia",
+      "file": "inner-whirled-30-tartaria-marginalia.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/6d0ceafc-67d0-4fc0-b31f-c1be90697edd/IW-30.jpg",
+      "seconds": 170,
+      "added": "2026-10-18"
+    },
+    {
       "id": "dawn-lester-terrain-parenting-listen-to-them",
       "episode": "dawn-lester-terrain-parenting",
       "episodeTitle": "What Really Makes Kids Sick? Dawn Lester on Terrain Parenting",
