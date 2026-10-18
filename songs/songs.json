@@ -1,12 +1,24 @@
 {
-  "about": "Original songs made for InnerVerse episodes. One entry per song, newest first. slug is the episode's FREE slug (the /episodes/<slug> address); file sits in this folder.",
+  "about": "Original songs made for InnerVerse episodes. The list order is the order the app shows: newest batch first, and within one episode in track order. id names the song (and its files and share page, songs/<id>/); episode is the episode's FREE slug (the /episodes/<slug> address); art is a square image in this folder, or empty to fall back to the episode's thumbnail. After any change here, run: python3 songs/build.py",
   "songs": [
     {
-      "slug": "dawn-lester-terrain-parenting",
-      "episode": "What Really Makes Kids Sick? Dawn Lester on Terrain Parenting",
+      "id": "dawn-lester-terrain-parenting-listen-to-them",
+      "episode": "dawn-lester-terrain-parenting",
+      "episodeTitle": "What Really Makes Kids Sick? Dawn Lester on Terrain Parenting",
       "title": "Listen To Them",
-      "file": "dawn-lester-terrain-parenting.mp3",
+      "file": "dawn-lester-terrain-parenting-listen-to-them.mp3",
+      "art": "dawn-lester-terrain-parenting-listen-to-them.jpg",
       "seconds": 197,
+      "added": "2026-10-18"
+    },
+    {
+      "id": "dawn-lester-terrain-parenting-database-of-names-and-addresses",
+      "episode": "dawn-lester-terrain-parenting",
+      "episodeTitle": "What Really Makes Kids Sick? Dawn Lester on Terrain Parenting",
+      "title": "Database of Names and Addresses",
+      "file": "dawn-lester-terrain-parenting-database-of-names-and-addresses.mp3",
+      "art": "",
+      "seconds": 193,
       "added": "2026-10-18"
     }
   ]

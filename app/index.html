@@ -315,34 +315,48 @@ html.kb #chatv iframe{height:calc(100% - var(--st))}
 .libempty h3{font-family:var(--display);font-weight:600;font-size:22px;color:var(--ink);margin:10px 0 6px}
 .libempty p{margin:0 auto 18px;max-width:420px;line-height:1.5}
 .libfoot{text-align:center;margin:18px 0 8px}
-/* episode songs */
-.songcard{display:flex;align-items:center;gap:14px;margin:4px 0 6px;padding:14px;border-radius:16px;background:radial-gradient(120% 140% at 0% 0%,rgba(143,181,240,0.16),rgba(143,181,240,0) 60%),var(--card);border:1px solid var(--line)}
+/* episode songs: square art, one to three per episode */
+.songcard{margin:4px 0 6px;padding:14px 14px 10px;border-radius:16px;background:radial-gradient(120% 140% at 0% 0%,rgba(143,181,240,0.16),rgba(143,181,240,0) 60%),var(--card);border:1px solid var(--line)}
 html.member .songcard{background:radial-gradient(120% 140% at 0% 0%,rgba(216,170,60,0.16),rgba(216,170,60,0) 60%),var(--card)}
-.songcard .songpp{width:56px;height:56px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--lapis);color:#fff}
-html.member .songcard .songpp{background:var(--gold);color:var(--on-gold)}
-.songcard .st{min-width:0;flex:1}
-.songcard .st b{display:block;font-family:var(--display);font-weight:600;font-size:19px;line-height:1.25;margin:2px 0 1px}
-.songcard .st span{display:block;font-size:13px;color:var(--muted)}
-.songcard .st a.sall{display:inline-block;margin-top:4px;font-size:13px;color:var(--accent);font-weight:700}
-.songtile{display:block;text-align:left}
+.songcard>.eyebrow{margin-bottom:6px}
+.songline{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.songline:first-of-type{border-top:0}
+.songline .songhit{flex:none;width:72px}
+.songline .st{min-width:0;flex:1}
+.songline .st b{display:block;font-family:var(--display);font-weight:600;font-size:18px;line-height:1.25}
+.songline .st span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.sacts,.rowacts{display:flex;align-items:center;gap:2px;flex:none}
+.sact{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--muted)}
+.sact:active{background:rgba(233,238,246,0.08)}
+.sact.on{color:var(--gold)}
+.sact.pill{width:auto;height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--line);color:var(--ink)}
+.sact.pill.on{color:var(--gold);border-color:rgba(216,170,60,0.55)}
+.sall{display:inline-flex;align-items:center;gap:3px;margin-top:6px;font-size:13px;font-weight:700;color:var(--accent)}
+.songtile{display:block;text-align:left;width:min(42vw,170px)}
+.songtile .art{aspect-ratio:1/1}
+.songtile .m{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .artw{position:relative;display:block}
+.artw .art{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;background:var(--card2)}
 .artw .spp{position:absolute;right:8px;bottom:8px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--lapis);color:#fff;box-shadow:0 6px 16px rgba(0,0,0,0.45)}
 html.member .artw .spp{background:var(--gold);color:var(--on-gold)}
 .artw .sbadge{position:absolute;left:8px;top:8px;height:24px;padding:0 9px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;background:rgba(10,15,28,0.78);color:var(--ink);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-.songrow{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
-.songrow .songhit{flex:none;width:128px}
-.songrow .art{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:var(--card2)}
-.songrow .artw .spp{width:32px;height:32px;right:6px;bottom:6px}
-.songrow .artw .sbadge{display:none}
+.songline .artw .art,.songrow .artw .art{border-radius:10px}
+.songline .artw .spp,.songrow .artw .spp{width:30px;height:30px;right:5px;bottom:5px}
+.songrow{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);transition:background .4s}
+.songrow.hl{background:rgba(143,181,240,0.1)}
+html.member .songrow.hl{background:rgba(216,170,60,0.1)}
+.songrow .songhit{flex:none;width:96px}
 .songrow .info{min-width:0;flex:1}
 .songrow .stitle{display:block;text-align:left;font-family:var(--display);font-weight:600;font-size:18px;line-height:1.25}
 .songrow .l{display:-webkit-box;font-size:13px;color:var(--muted);line-height:1.35;margin-top:2px;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .songrow .d{display:block;font-size:12px;color:var(--muted);margin-top:3px}
-.songrow .eplink{display:inline-flex;align-items:center;gap:3px;margin-top:6px;font-size:13px;font-weight:700;color:var(--accent)}
-@media (max-width:359px){.songrow .songhit{width:104px}}
-[data-song].on .spp,[data-song].on.songpp{box-shadow:0 0 0 4px rgba(143,181,240,0.25)}
-html.member [data-song].on .spp,html.member [data-song].on.songpp{box-shadow:0 0 0 4px rgba(216,170,60,0.25)}
-@media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .artc{width:176px}.songrow .songhit{width:176px}}
+.songrow .rowacts{margin:2px 0 0 -10px;flex-wrap:wrap}
+.songrow .eplink{display:inline-flex;align-items:center;gap:3px;margin-left:6px;font-size:13px;font-weight:700;color:var(--accent)}
+.np .art.sq{aspect-ratio:1/1;max-width:min(76vw,420px)}
+[data-song].on .spp{box-shadow:0 0 0 4px rgba(143,181,240,0.3)}
+html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
+@media (max-width:359px){.songrow .songhit{width:80px}.songline .songhit{width:60px}}
+@media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .artc{width:176px}.songrow .songhit{width:120px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -370,7 +384,7 @@ html.member [data-song].on .spp,html.member [data-song].on.songpp{box-shadow:0 0
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-18a';
+const VERSION = '2026-10-18b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -622,65 +636,119 @@ async function episodeFile(name) {
 }
 
 // ------------------------------------------------------------ episode songs
-// songs/songs.json lists one original song per episode, keyed by the episode's free slug; free for everyone
+// songs/songs.json lists the original songs (one to three per episode), in the order shown; free for everyone.
+// A song is keyed by its own id; s.episode is the episode's free slug. Hearts are kept as 's:<id>' in My library.
 let SONGLIST = [];
 async function loadSongs() {
   try {
     const j = await cacheFetch(SONGS + 'songs.json');
-    SONGLIST = (j.songs || []).filter(s => s && s.slug && s.file && s.title)
-      .sort((a, b) => String(b.added || '').localeCompare(String(a.added || '')));
+    SONGLIST = (j.songs || []).filter(s => s && s.id && s.episode && s.file && s.title);
   } catch (e) { SONGLIST = []; }
 }
-function songFor(slug) { return slug ? SONGLIST.find(s => s.slug === slug) || null : null; }
-function songEp(s) { return S.lib ? pick(S.lib.bySlug['e:' + s.slug] || null) : null; }
-function songPlaying(s) { return !!(cur && cur.key === 's:' + s.slug && !aud.paused && !isSilent()); }
+function songById(id) { return id ? SONGLIST.find(s => s.id === id) || null : null; }
+function songsFor(epSlug) { return epSlug ? SONGLIST.filter(s => s.episode === epSlug) : []; }
+function songEp(s) { return S.lib ? pick(S.lib.bySlug['e:' + s.episode] || null) : null; }
+function songEpTitle(s) { const ep = songEp(s); return ep ? ep.title : (s.episodeTitle || 'an InnerVerse episode'); }
+// square art; until Chance sends a song's art, the episode's thumbnail stands in (cropped square)
+function songArtUrl(s, w) { if (s.art) return SONGS + s.art; const ep = songEp(s); return ep ? img(ep.thumb, w || 500) : LOGO; }
+function songUrl(s) { return location.origin + '/songs/' + s.id + '/'; }
+function songPlaying(s) { return !!(cur && cur.key === 's:' + s.id && !aud.paused && !isSilent()); }
 function playSong(s) {
   if (!s) return;
-  if (cur && cur.key === 's:' + s.slug && aud.src && !isSilent()) { togglePlay(); return; }
-  const ep = songEp(s);
+  if (cur && cur.key === 's:' + s.id && aud.src && !isSilent()) { togglePlay(); return; }
   unlockAudio();
-  playEpisode({ key: 's:' + s.slug, kind: 's', slug: s.slug, title: s.title, show: 'Song from ' + (ep ? ep.title : (s.episode || 'InnerVerse')),
-    thumb: ep ? ep.thumb : LOGO, chapters: [], plus: false, offset: 0, audio: { url: SONGS + s.file } }, 0);
+  playEpisode({ key: 's:' + s.id, kind: 's', slug: s.episode, title: s.title, show: 'Song from ' + songEpTitle(s),
+    thumb: songArtUrl(s, 500), chapters: [], plus: false, offset: 0, audio: { url: SONGS + s.file } }, 0);
 }
 // one song ends: the next one on the list starts, like a playlist
 function nextSong(dir) {
-  const i = cur ? SONGLIST.findIndex(s => 's:' + s.slug === cur.key) : -1;
+  const i = cur ? SONGLIST.findIndex(s => 's:' + s.id === cur.key) : -1;
   const n = SONGLIST[i + dir];
   if (i >= 0 && n) playSong(n);
 }
+// hearts: kept in My library under 's:<id>'; a member's heart the account could not take yet waits on this phone
+function songPending() { return load('iva_songs_pending', true) || {}; }
+function songSaved(s) { const p = songPending(); if (s.id in p) return !!p[s.id]; const x = LIB.get('s:' + s.id); return !!(x && x.saved); }
+function savedSongs() {
+  const at = s => { const x = LIB.get('s:' + s.id); return (x && x.savedAt) || Date.now(); };
+  return SONGLIST.filter(songSaved).sort((a, b) => at(b) - at(a));
+}
+async function toggleSongHeart(s) {
+  const on = !songSaved(s);
+  const p = songPending(); p[s.id] = on; store('iva_songs_pending', p);
+  updateSongUI(); toast(on ? 'Saved to your library.' : 'Removed from your library.');
+  const ok = await libPut('s:' + s.id, { saved: on }, true);
+  const q = songPending(); if (ok && q[s.id] === on) { delete q[s.id]; store('iva_songs_pending', Object.keys(q).length ? q : null); }
+  refreshLibViews();
+}
+async function flushSongPending() {
+  const p = songPending(); let changed = false;
+  for (const id of Object.keys(p)) if (await libPut('s:' + id, { saved: !!p[id] }, true)) { delete p[id]; changed = true; }
+  if (changed) store('iva_songs_pending', Object.keys(p).length ? p : null);
+}
+function shareSong(s) {
+  const url = songUrl(s);
+  const text = s.title + ', an original InnerVerse song from ' + songEpTitle(s);
+  if (navigator.share) navigator.share({ title: s.title, text, url }).catch(() => {});
+  else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => toast('Link copied.'), () => toast(url));
+  else toast(url);
+}
 function updateSongUI() {
   $$('[data-song]').forEach(b => {
-    const s = songFor(b.dataset.song); if (!s) return;
+    const s = songById(b.dataset.song); if (!s) return;
     const on = songPlaying(s);
     b.classList.toggle('on', on);
     b.setAttribute('aria-label', (on ? 'Pause ' : 'Play ') + s.title);
-    const ic = $('.sic', b) || (b.classList.contains('sic') ? b : null);
+    const ic = $('.sic', b);
     if (ic) ic.innerHTML = on ? I.pause(ic.dataset.sz || 20) : I.play(ic.dataset.sz || 20);
+  });
+  $$('[data-song-heart]').forEach(b => {
+    const s = songById(b.dataset.songHeart); if (!s) return;
+    const on = songSaved(s);
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+    b.setAttribute('aria-label', (on ? 'Remove ' : 'Save ') + s.title + (on ? ' from' : ' to') + ' your library');
+    b.innerHTML = I.heart(b.dataset.sz || 20, on);
   });
 }
 document.addEventListener('click', e => {
+  const h = e.target.closest('[data-song-heart]');
+  if (h) { e.preventDefault(); toggleSongHeart(songById(h.dataset.songHeart)); return; }
+  const sh = e.target.closest('[data-song-share]');
+  if (sh) { e.preventDefault(); const s = songById(sh.dataset.songShare); if (s) shareSong(s); return; }
   const b = e.target.closest('[data-song]'); if (!b) return;
   e.preventDefault();
-  playSong(songFor(b.dataset.song));
+  playSong(songById(b.dataset.song));
 });
-function songCard(slug) {
-  const s = songFor(slug); if (!s) return '';
-  return `<div class="songcard"><button class="songpp sic" data-song="${esc(s.slug)}" data-sz="28" aria-label="Play ${esc(s.title)}">${I.play(28)}</button>
-    <div class="st"><div class="eyebrow">${I.music(13)} Song for this episode</div><b>${esc(s.title)}</b><span>${s.seconds ? clock(s.seconds) + ' · ' : ''}An original InnerVerse song</span><a class="sall" href="#/songs">All episode songs</a></div></div>`;
+function songActs(s, sz) {
+  return `<button class="sact" data-song-heart="${esc(s.id)}" data-sz="${sz || 20}" aria-pressed="false" aria-label="Save ${esc(s.title)}">${I.heart(sz || 20)}</button><button class="sact" data-song-share="${esc(s.id)}" aria-label="Share ${esc(s.title)}">${I.share(sz || 20)}</button>`;
 }
-function songArt(s, sz) {
-  const ep = songEp(s);
-  return `<span class="artw"><img class="art" loading="lazy" src="${esc(img(ep ? ep.thumb : LOGO, sz || 500))}" alt=""><span class="sbadge">${I.music(12)} Song</span><span class="spp sic" data-sz="18">${I.play(18)}</span></span>`;
+function songArt(s, w, badge) {
+  return `<span class="artw"><img class="art" loading="lazy" src="${esc(songArtUrl(s, w))}" alt="">${badge ? `<span class="sbadge">${I.music(12)} Song</span>` : ''}<span class="spp sic" data-sz="18">${I.play(18)}</span></span>`;
+}
+// on an episode's page: every song made for it
+function songCard(epSlug) {
+  const list = songsFor(epSlug); if (!list.length) return '';
+  return `<div class="songcard"><div class="eyebrow">${I.music(13)} ${list.length > 1 ? 'Songs for this episode' : 'Song for this episode'}</div>
+    ${list.map(s => `<div class="songline"><button class="songhit" data-song="${esc(s.id)}" aria-label="Play ${esc(s.title)}">${songArt(s, 300)}</button>
+      <div class="st"><b>${esc(s.title)}</b><span>${s.seconds ? clock(s.seconds) + ' · ' : ''}An original InnerVerse song</span></div>
+      <div class="sacts">${songActs(s, 20)}</div></div>`).join('')}
+    <a class="sall" href="#/songs">All episode songs ${I.right(14)}</a></div>`;
 }
 function songTile(s) {
+  return `<button class="tile songtile" data-song="${esc(s.id)}" aria-label="Play ${esc(s.title)}">${songArt(s, 500, true)}<div class="t">${esc(s.title)}</div><div class="m">${esc(songEpTitle(s))}</div></button>`;
+}
+function songRow(s, extra) {
   const ep = songEp(s);
-  return `<button class="tile songtile" data-song="${esc(s.slug)}" aria-label="Play ${esc(s.title)}">${songArt(s, 500)}<div class="t">${esc(s.title)}</div><div class="m">${esc(ep ? ep.title : (s.episode || ''))}</div></button>`;
+  return `<div class="songrow" data-row="${esc(s.id)}"><button class="songhit" data-song="${esc(s.id)}" aria-label="Play ${esc(s.title)}">${songArt(s, 300)}</button>
+    <div class="info"><button class="stitle" data-song="${esc(s.id)}">${esc(s.title)}</button><span class="l">From ${esc(songEpTitle(s))}</span><span class="d">${[s.seconds ? clock(s.seconds) : '', extra || ''].filter(Boolean).join(' · ')}</span>
+    <div class="rowacts">${songActs(s, 19)}${ep ? `<a class="eplink" href="${epHref(ep)}">Open the episode ${I.right(14)}</a>` : ''}</div></div></div>`;
 }
 function songsRow() {
   if (!SONGLIST.length) return '';
-  return `<div class="sec"><div class="sechead"><h2 class="h2">Episode songs</h2><a href="#/songs">See all</a></div><div class="hscroll">${SONGLIST.slice(0, 10).map(songTile).join('')}</div></div>`;
+  return `<div class="sec"><div class="sechead"><h2 class="h2">Episode songs</h2><a href="#/songs">See all</a></div><div class="hscroll">${SONGLIST.slice(0, 12).map(songTile).join('')}</div></div>`;
 }
-function openSongs() {
+// the Episode songs page (#/songs, or #/songs/<id> from a shared link: that song is shown first)
+function openSongs(id) {
   const v = $('#ep');
   v.hidden = false;
   if (epShown !== 'songs') {
@@ -692,19 +760,17 @@ function openSongs() {
   }
   renderSongs();
   syncMini();
+  const row = id && $('.songrow[data-row="' + CSS.escape(id) + '"]', v);
+  if (row) { row.classList.add('hl'); setTimeout(() => row.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120); setTimeout(() => row.classList.remove('hl'), 2600); }
 }
 function renderSongs() {
   const v = $('#ep');
-  const rows = SONGLIST.map(s => {
-    const ep = songEp(s);
-    return `<div class="songrow"><button class="songhit" data-song="${esc(s.slug)}" aria-label="Play ${esc(s.title)}">${songArt(s, 300)}</button><div class="info"><button class="stitle" data-song="${esc(s.slug)}">${esc(s.title)}</button><span class="l">From ${esc(ep ? ep.title : (s.episode || 'an InnerVerse episode'))}</span><span class="d">${[s.seconds ? clock(s.seconds) : '', s.added ? fmtDate(s.added) : ''].filter(Boolean).join(' · ')}</span>${ep ? `<a class="eplink" href="${epHref(ep)}">Open the episode ${I.right(14)}</a>` : ''}</div></div>`;
-  }).join('');
   v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button><span class="eptitle-mini">Episode songs</span></div></header>
   <div class="wrap">
     <div class="eyebrow" style="margin-top:8px">${I.music(13)} Original music</div>
     <h1 class="title">Episode songs</h1>
     <p class="muted" style="margin:0 0 8px">Original songs made for InnerVerse episodes. Press play, then follow any song into the conversation behind it.</p>
-    ${SONGLIST.length ? `<div class="list">${rows}</div>` : `<div class="empty">The songs could not load. Check your connection.</div>`}
+    ${SONGLIST.length ? `<div class="list">${SONGLIST.map(s => songRow(s, s.added ? fmtDate(s.added) : '')).join('')}</div>` : `<div class="empty">The songs could not load. Check your connection.</div>`}
   </div>`;
   bindBack();
   updateSongUI();
@@ -740,6 +806,7 @@ async function loadMyLib() {
     items.forEach(x => next.set(x.key, x));
     if (my !== libReq) return;
     LIB.clear(); next.forEach((v, k) => LIB.set(k, v));
+    await flushSongPending();
     // carry over anything saved on this phone before they joined
     const local = load('iva_mylib', true);
     if (local && Object.keys(local).length && S.lib) {
@@ -748,9 +815,11 @@ async function loadMyLib() {
         const change = {};
         if (x.saved && !(have && have.saved)) change.saved = true;
         if (x.note && !(have && have.note)) change.note = x.note;
+        if (key.indexOf('s:') === 0) { if (change.saved) { const p = songPending(); p[key.slice(2)] = true; store('iva_songs_pending', p); } continue; } // a song heart: sent with the others waiting
         if (Object.keys(change).length && !(await libPut(key, change, true))) return; // offline: try again later
       }
       store('iva_mylib', null);
+      await flushSongPending();
     }
   } else {
     S.savedMsgs = { messages: [], people: {} };
@@ -802,7 +871,7 @@ function route() {
     openEpisode(m[1], decodeURIComponent(m[2]));
     return;
   }
-  if (h.indexOf('#/songs') === 0) { openSongs(); return; }
+  if (h.indexOf('#/songs') === 0) { const sm = h.match(/^#\/songs\/([^/?#]+)/); openSongs(sm ? decodeURIComponent(sm[1]) : ''); return; }
   closeEpisode();
   // the website's "Open My library" link, and older links, used the Episodes tab's filter
   if (/^#\/search\?(?:.*&)?show=__saved/.test(h)) { location.replace('#/library'); return; }
@@ -1062,13 +1131,14 @@ function msgRow(m, terms) {
 }
 function libRows() {
   const all = savedList();
-  const counts = { all: all.length, saved: 0, notes: 0, msgs: ((S.savedMsgs || {}).messages || []).length };
-  counts.all += counts.msgs;
+  const songsAll = savedSongs();
+  const counts = { all: all.length, saved: 0, notes: 0, songs: songsAll.length, msgs: ((S.savedMsgs || {}).messages || []).length };
+  counts.all += counts.msgs + counts.songs;
   all.forEach(it => { const x = libGet(it); if (x.saved) counts.saved++; if ((x.note || '').trim()) counts.notes++; });
   let list = all;
   if (LIBF.f === 'saved') list = list.filter(it => libGet(it).saved);
   if (LIBF.f === 'notes') list = list.filter(it => (libGet(it).note || '').trim());
-  if (LIBF.f === 'msgs') list = [];
+  if (LIBF.f === 'msgs' || LIBF.f === 'songs') list = [];
   const terms = norm(LIBF.q).split(' ').filter(Boolean);
   if (terms.length) {
     list = list.filter(it => {
@@ -1077,7 +1147,9 @@ function libRows() {
     });
   }
   const msgs = LIBF.f === '' || LIBF.f === 'msgs' ? savedMsgRows(terms) : [];
-  return { list, counts, terms, msgs };
+  let songs = LIBF.f === '' || LIBF.f === 'songs' ? songsAll : [];
+  if (terms.length) songs = songs.filter(x => { const hay = ' ' + norm(x.title + ' ' + songEpTitle(x)); return terms.every(t => hay.indexOf(' ' + t) >= 0 || hay.indexOf(t) >= 0); });
+  return { list, counts, terms, msgs, songs };
 }
 function libRow(it, terms) {
   const x = libGet(it), note = (x.note || '').trim();
@@ -1093,7 +1165,7 @@ function renderLib(keepInput) {
   if (!S.lib) { v.innerHTML = `<header class="hdr"><div class="row"><h1>My library</h1></div></header><div class="loading"><div class="spin"></div></div>`; return; }
   if (!keepInput || !$('#lq')) {
     v.innerHTML = `<header class="hdr"><div class="row"><h1>My library</h1></div>
-      <div class="row" style="display:block"><label class="searchbox">${I.search(20)}<input id="lq" type="search" enterkeyhint="search" autocomplete="off" placeholder="${S.member ? 'Search your library' : 'Search your notes and saved episodes'}" value="${esc(LIBF.q)}"><button class="iconbtn" id="lqx" aria-label="Clear" ${LIBF.q ? '' : 'hidden'}>${I.close(18)}</button></label>
+      <div class="row" style="display:block"><label class="searchbox">${I.search(20)}<input id="lq" type="search" enterkeyhint="search" autocomplete="off" placeholder="Search your library" value="${esc(LIBF.q)}"><button class="iconbtn" id="lqx" aria-label="Clear" ${LIBF.q ? '' : 'hidden'}>${I.close(18)}</button></label>
       <div class="chips" id="libchips"></div></div></header>
       <div class="wrap"><div id="libhead"></div><div class="list" id="libres"></div><div class="more" id="libmore"></div><p class="note libfoot" id="libfoot"></p></div>`;
     const q = $('#lq'); let tmr;
@@ -1106,21 +1178,26 @@ function renderLib(keepInput) {
 }
 let libShown = 30;
 function renderLibResults() {
-  const { list, counts, terms, msgs } = libRows();
-  $('#libchips').innerHTML = [['', 'All', counts.all], ['saved', 'Saved', counts.saved], ['notes', 'With notes', counts.notes]].concat(S.member ? [['msgs', 'Messages', counts.msgs]] : [])
+  const { list, counts, terms, msgs, songs } = libRows();
+  $('#libchips').innerHTML = [['', 'All', counts.all], ['saved', 'Saved', counts.saved], ['songs', 'Songs', counts.songs], ['notes', 'With notes', counts.notes]].concat(S.member ? [['msgs', 'Messages', counts.msgs]] : [])
     .map(c => `<button class="chip${LIBF.f === c[0] ? ' on' : ''}" data-f="${c[0]}">${c[1]}${c[2] ? ` <span class="cnt">${c[2]}</span>` : ''}</button>`).join('');
-  const n = list.length + msgs.length;
+  const n = list.length + msgs.length + songs.length;
   $('#libhead').innerHTML = terms.length ? `<div class="reshead">${n ? `${n} ${n === 1 ? 'match' : 'matches'} for "${esc(LIBF.q.trim())}"` : ''}</div>` : '';
   let empty = '';
-  if (!counts.all) empty = `<div class="libempty">${I.heart(34)}<h3>Your library is empty</h3><p>Tap the heart on any episode to save it here, or open My notes on an episode page to write private notes. Everything you save or write shows up on this page.</p><a class="btn line" href="#/search">Browse episodes</a></div>`;
+  if (!counts.all) empty = `<div class="libempty">${I.heart(34)}<h3>Your library is empty</h3><p>Tap the heart on any episode or song to save it here, or open My notes on an episode page to write private notes. Everything you save or write shows up on this page.</p><a class="btn line" href="#/search">Browse episodes</a> <a class="btn line" href="#/songs" style="margin-top:10px">Browse songs</a></div>`;
   else if (terms.length) empty = `<div class="empty">Nothing in your library matches "${esc(LIBF.q.trim())}".</div>`;
   else if (LIBF.f === 'saved') empty = `<div class="empty">No saved episodes yet. Tap the heart on an episode to save it.</div>`;
+  else if (LIBF.f === 'songs') empty = `<div class="empty">No saved songs yet. Tap the heart on a song to keep it here.<br><br><a class="btn line" href="#/songs">Browse episode songs</a></div>`;
   else if (LIBF.f === 'notes') empty = `<div class="empty">No notes yet. Open an episode and tap My notes to start one.</div>`;
   else if (LIBF.f === 'msgs') empty = `<div class="empty">No saved messages yet. In the chat, press and hold a message and choose Save. Notes you write in Saved messages show here too.</div>`;
   const epHtml = list.slice(0, libShown).map(it => libRow(it, terms)).join('');
   const msgHtml = msgs.slice(0, libShown).map(m => msgRow(m, terms)).join('');
-  $('#libres').innerHTML = n ? epHtml + (msgHtml ? (LIBF.f === 'msgs' ? '' : `<div class="reshead libsec">${I.chat(15)} Saved messages</div>`) + msgHtml : '') : empty;
-  $('#libmore').innerHTML = Math.max(list.length, msgs.length) > libShown ? `<button class="btn line" id="libMoreBtn">Show more</button>` : '';
+  const songHtml = songs.slice(0, libShown).map(x => songRow(x)).join('');
+  $('#libres').innerHTML = n ? epHtml
+    + (songHtml ? (LIBF.f === 'songs' ? '' : `<div class="reshead libsec">${I.music(15)} Saved songs</div>`) + songHtml : '')
+    + (msgHtml ? (LIBF.f === 'msgs' ? '' : `<div class="reshead libsec">${I.chat(15)} Saved messages</div>`) + msgHtml : '') : empty;
+  updateSongUI();
+  $('#libmore').innerHTML = Math.max(list.length, msgs.length, songs.length) > libShown ? `<button class="btn line" id="libMoreBtn">Show more</button>` : '';
   const mb = $('#libMoreBtn'); if (mb) mb.addEventListener('click', () => { libShown += 30; renderLibResults(); });
   $('#libfoot').textContent = counts.all ? (S.member ? 'Private to you. Your library is kept on your account, so it is the same in the app and on the website.' : 'Private to you, and kept on this phone. With Plus+ it is kept on your account and shows on the website too.') : '';
 }
@@ -1743,7 +1820,7 @@ async function playEpisode(E, at) {
     if (!ok) return;
   }
   if (at != null) { if (aud.readyState >= 1) aud.currentTime = at; else pendingSeek = at; }
-  aud.playbackRate = speed;
+  aud.playbackRate = E.kind === 's' ? 1 : speed;
   try { await aud.play(); } catch (e) { /* needs a tap on some browsers */ }
   showMini(); updateMediaSession();
   if (EPV && EPV.key === E.key) { if (EPV.mode !== 'listen') setMode('listen', false); else renderListenBox(); }
@@ -1761,7 +1838,7 @@ async function setSource() {
   aud.load();
   return true;
 }
-aud.addEventListener('loadedmetadata', () => { if (isSilent()) return; if (pendingSeek != null) { try { aud.currentTime = pendingSeek; } catch (e) {} pendingSeek = null; } if (cur) { cur.dur = aud.duration; store('iva_cur', cur); } aud.playbackRate = speed; });
+aud.addEventListener('loadedmetadata', () => { if (isSilent()) return; if (pendingSeek != null) { try { aud.currentTime = pendingSeek; } catch (e) {} pendingSeek = null; } if (cur) { cur.dur = aud.duration; store('iva_cur', cur); } aud.playbackRate = cur && cur.kind === 's' ? 1 : speed; });
 aud.addEventListener('timeupdate', () => {
   if (!cur || isSilent()) return;
   const now = Date.now();
@@ -1863,7 +1940,7 @@ function updateMediaSession() {
   if (!('mediaSession' in navigator) || !cur) return;
   try {
     navigator.mediaSession.metadata = new MediaMetadata({ title: cur.title, artist: 'InnerVerse' + (cur.kind === 'p' ? ' Plus+' : ''), album: cur.show || 'InnerVerse',
-      artwork: [{ src: img(cur.thumb, 500), sizes: '500x281', type: 'image/jpeg' }, { src: location.origin + location.pathname.replace(/[^/]*$/, '') + 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }] });
+      artwork: [{ src: img(cur.thumb, 500), sizes: cur.kind === 's' ? '800x800' : '500x281', type: 'image/jpeg' }, { src: location.origin + location.pathname.replace(/[^/]*$/, '') + 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }] });
     const ms = navigator.mediaSession;
     ms.setActionHandler('play', () => aud.play());
     ms.setActionHandler('pause', () => aud.pause());
@@ -1889,7 +1966,7 @@ function renderNP() {
   const n = $('#np'); if (!cur) return;
   const d = aud.duration || cur.dur || 0;
   n.innerHTML = `<div class="grab"><button class="iconbtn" id="npClose" aria-label="Close the player">${I.down(28)}</button></div>
-    <img class="art" src="${esc(img(cur.thumb, 750))}" alt="">
+    <img class="art${cur.kind === 's' ? ' sq' : ''}" src="${esc(img(cur.thumb, 750))}" alt="">
     <div style="max-width:620px;margin:0 auto;width:100%">
       <div class="nt">${esc(cur.title)}</div><div class="nc" id="npC">${esc(currentChapterTitle())}</div>
       <input type="range" id="npR" min="0" max="${Math.max(1, Math.floor(d))}" step="1" value="${Math.floor(aud.currentTime)}" aria-label="Position">
@@ -1901,7 +1978,7 @@ function renderNP() {
         <button class="sk" id="npFwd" aria-label="Forward 30 seconds">${I.fwd(34)}<small>30</small></button>
         <button class="sk" id="npNext" aria-label="Next chapter">${I.next(24)}</button>
       </div>
-      <div class="opts"><button id="npSpeed">${speed}x speed</button><button id="npEp">Episode page</button></div>
+      <div class="opts">${cur.kind === 's' && songById(cur.key.slice(2)) ? songActs(songById(cur.key.slice(2)), 18).replace(/class="sact"/g, 'class="sact pill"') + '<button id="npEp">Open the episode</button>' : `<button id="npSpeed">${speed}x speed</button><button id="npEp">Episode page</button>`}</div>
     </div>
     ${cur.chapters && cur.chapters.length ? `<div class="chlist"><div class="eyebrow" style="margin:6px 8px 6px">Chapters</div><div id="npChaps">${cur.chapters.map((c, i) => `<button class="chap" data-i="${i}"><span class="tm">${clock(c.seek)}</span><span class="ct">${esc(c.title)}</span></button>`).join('')}</div></div>` : ''}`;
   $('#npClose').addEventListener('click', closeNP);
@@ -1910,14 +1987,14 @@ function renderNP() {
   $('#npFwd').addEventListener('click', () => { aud.currentTime = Math.min(aud.duration || 1e9, aud.currentTime + 30); });
   $('#npPrev').addEventListener('click', () => jumpChapter(-1));
   $('#npNext').addEventListener('click', () => jumpChapter(1));
-  $('#npSpeed').addEventListener('click', e => { const s = [1, 1.25, 1.5, 1.75, 2, 0.8]; speed = s[(s.indexOf(speed) + 1) % s.length]; aud.playbackRate = speed; store('iva_speed', String(speed)); e.target.textContent = speed + 'x speed'; });
+  if ($('#npSpeed')) $('#npSpeed').addEventListener('click', e => { const s = [1, 1.25, 1.5, 1.75, 2, 0.8]; speed = s[(s.indexOf(speed) + 1) % s.length]; aud.playbackRate = speed; store('iva_speed', String(speed)); e.target.textContent = speed + 'x speed'; });
   $('#npEp').addEventListener('click', () => { closeNP(); go('#/' + (cur.kind === 'p' ? 'p' : 'e') + '/' + cur.slug); });
   const r = $('#npR'); let drag = false;
   r.addEventListener('input', () => { drag = true; $('#npT').textContent = clock(r.value); });
   r.addEventListener('change', () => { aud.currentTime = Number(r.value); drag = false; });
   r._drag = () => drag;
   const nc = $('#npChaps'); if (nc) nc.addEventListener('click', e => { const b = e.target.closest('.chap'); if (!b) return; aud.currentTime = cur.chapters[+b.dataset.i].seek; if (aud.paused) togglePlay(); });
-  updateNP();
+  updateNP(); updateSongUI();
 }
 function updateNP() {
   const r = $('#npR'); if (!r || !cur) return;

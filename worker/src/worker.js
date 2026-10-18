@@ -624,7 +624,7 @@ export class Room {
       const { uid, body } = await req.json(); const now = Date.now();
       if (path === '/lib-set') {
         const k = String(body && body.key || '');
-        if (!/^[ep]:[a-z0-9-]{1,140}$/.test(k)) return json({ error: 'bad episode' }, 400);
+        if (!/^[eps]:[a-z0-9-]{1,140}$/.test(k)) return json({ error: 'bad episode' }, 400); // e: free episode, p: Plus+ episode, s: episode song (2026-10-18)
         const cur = this.one('SELECT * FROM library WHERE uid = ? AND ekey = ?', uid, k);
         if (!cur && this.one('SELECT COUNT(*) AS n FROM library WHERE uid = ?', uid).n >= 3000) return json({ error: 'library full' }, 400);
         const saved = 'saved' in body ? (body.saved ? 1 : 0) : (cur ? cur.saved : 0);
