@@ -185,7 +185,7 @@
       "id": "inner-whirled-28-old-jacks-tall-tales",
       "episode": "inner-whirled-28",
       "episodeTitle": "This Guy Claimed He Found a Tartaria Witness. Is it Real?",
-      "title": "Old Jack's Tall Tales",
+      "title": "Ol' Jack's Tall Tales",
       "file": "inner-whirled-28-old-jacks-tall-tales.mp3",
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/36e68080-20d5-44ef-86ea-930b7f1812ef/council-grove.jpg",
       "seconds": 153,
@@ -199,6 +199,16 @@
       "file": "inner-whirled-28-council-grove.mp3",
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/36e68080-20d5-44ef-86ea-930b7f1812ef/council-grove.jpg",
       "seconds": 163,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "leo-astroherbalism-leo-electro",
+      "episode": "leo-astroherbalism",
+      "episodeTitle": "Leo Herbs: St John's Wort, Motherwort, Angelica, Sunflower, Hawthorn | Astro Herbalism",
+      "title": "Leo Electro",
+      "file": "leo-astroherbalism-leo-electro.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/7c7632c1-39f5-41b9-9ea3-bcb240e9d284/Leo-Astro-herbs.jpg",
+      "seconds": 93,
       "added": "2026-10-19"
     }
   ]
