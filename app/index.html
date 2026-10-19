@@ -390,7 +390,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-19b';
+const VERSION = '2026-10-19c';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -509,7 +509,12 @@ function login() {
   const h = newCode();
   store('iva_handoff', { h, at: Date.now() });
   showHandoffBar(); pollHandoff();
-  location.href = loginUrl(h);
+  // The login opens in its own browser window and the app stays where it is, waiting (2026-10-19). Sending the
+  // app itself off to the login pages left it stuck on Home when the login needed an emailed code, so a member
+  // had to force close it. The window hands the sign-in back through the handoff above.
+  const url = loginUrl(h);
+  let w = null; try { w = window.open(url, '_blank'); } catch (e) {}
+  if (!w) location.href = url;
 }
 let hoTimer = null;
 function showHandoffBar() {
@@ -517,7 +522,7 @@ function showHandoffBar() {
   if (!handoffPending() || S.member) { if (b) b.remove(); clearInterval(hoTimer); hoTimer = null; return; }
   if (!b) {
     b = document.createElement('div'); b.id = 'hobar'; b.className = 'hobar'; b.setAttribute('role', 'status');
-    b.innerHTML = '<div class="spin"></div><div style="flex:1;min-width:0"><b>Finishing your login</b>If it opened Safari or the Patreon app, log in there, then come back here.</div><button type="button" id="hoCancel">Cancel</button>';
+    b.innerHTML = '<div class="spin"></div><div style="flex:1;min-width:0"><b>Finishing your login</b>Log in in the window that just opened, then come back here. This finishes by itself.</div><button type="button" id="hoCancel">Cancel</button>';
     document.body.appendChild(b);
     b.querySelector('#hoCancel').onclick = () => { store('iva_handoff', null); showHandoffBar(); };
   }
