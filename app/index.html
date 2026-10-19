@@ -390,7 +390,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-19c';
+const VERSION = '2026-10-19d';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -571,6 +571,8 @@ async function checkStatus() {
     const r = await fetch(AUTH + '/auth/status', { headers: { Authorization: 'Bearer ' + S.token }, cache: 'no-store' });
     const j = await r.json();
     if (!j.signedIn) { store(TOKEN_KEY, null); store('iva_status', null); S.token = null; }
+    // logins no longer run out (2026-10-19): an older sign-in is swapped for a lasting one; membership is checked live each time
+    if (j.signedIn && j.renew && typeof j.renew === 'string') { store(TOKEN_KEY, j.renew); S.token = j.renew; }
     const was = S.member;
     S.signedIn = !!j.signedIn; S.member = !!(j.signedIn && j.entitled);
     S.name = j.name || ''; S.email = j.email || ''; S.source = j.source || '';

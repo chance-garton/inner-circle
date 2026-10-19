@@ -1808,6 +1808,9 @@ function mergePeople(p) { if (p) Object.assign(S.people, p); }
 // the chat tries again in a minute.
 async function confirmSignedOut() {
   const tok = S.token; if (!tok) return;
+  // the app may have swapped in a newer sign-in since this page loaded: use that one
+  const stored = load('ivc_token');
+  if (stored && stored !== tok) { S.token = stored; S.denied = null; S.retry = 0; connect(); return; }
   try {
     const r = await fetch(AUTH + '/auth/status', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' });
     if (r.ok) { const j = await r.json(); if (!j.signedIn) { if (load('ivc_token') === tok) store('ivc_token', null); if (S.token === tok) S.token = null; return; } }
