@@ -334,7 +334,13 @@ html.member .songcard{background:radial-gradient(120% 140% at 0% 0%,rgba(216,170
 .sall{display:inline-flex;align-items:center;gap:3px;margin-top:6px;font-size:13px;font-weight:700;color:var(--accent)}
 .songtile{display:block;text-align:left;width:min(42vw,170px)}
 .songtile .art{aspect-ratio:1/1}
-.songtile .m{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.shead{display:inline-flex;align-items:center;gap:12px}
+.shufbtn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:999px;border:1px solid var(--line);color:var(--accent)}
+.songbtns{display:flex;gap:10px;margin:14px 0 6px}
+.songbtns .btn{flex:1;min-height:42px;padding:0 14px}
+.np .opts{flex-wrap:wrap}
+.shufpill{display:inline-flex;align-items:center;gap:6px}
+.shufpill.on{background:var(--accent);border-color:var(--accent)!important;color:#0b1220}
 .artw{position:relative;display:block}
 .artw .art{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;background:var(--card2)}
 .artw .spp{position:absolute;right:8px;bottom:8px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--lapis);color:#fff;box-shadow:0 6px 16px rgba(0,0,0,0.45)}
@@ -384,7 +390,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-19a';
+const VERSION = '2026-10-19b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -455,6 +461,7 @@ const I = {
   prev: s => P('<path d="M18 6 9 12l9 6zM6 6v12"/>', s),
   next: s => P('<path d="m6 6 9 6-9 6zM18 6v12"/>', s),
   music: s => P('<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>', s),
+  shuffle: s => P('<path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/>', s),
 };
 
 // ------------------------------------------------------------ state
@@ -663,13 +670,36 @@ function playSong(s) {
   if (!s) return;
   if (cur && cur.key === 's:' + s.id && aud.src && !isSilent()) { togglePlay(); return; }
   unlockAudio();
-  playEpisode({ key: 's:' + s.id, kind: 's', slug: s.episode, title: s.title, show: 'Song from ' + songEpTitle(s),
+  playEpisode({ key: 's:' + s.id, kind: 's', slug: s.episode, title: s.title, show: songEpTitle(s),
     thumb: songArtUrl(s, 500), chapters: [], plus: false, offset: 0, audio: { url: SONGS + s.file } }, 0);
 }
 // one song ends: the next one on the list starts, like a playlist
+// Shuffle (Chance, 2026-10-19): a shuffled order of every song, kept until shuffle is turned off;
+// the song playing when it is turned on stays first, and next and previous follow that order
+let shuffleOn = load('iva_shuffle') === '1', shuffleQ = null;
+function makeShuffle(firstId) {
+  const ids = SONGLIST.map(s => s.id).filter(id => id !== firstId);
+  for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+  shuffleQ = firstId ? [firstId].concat(ids) : ids;
+}
+function songOrder() {
+  if (!shuffleOn) return SONGLIST.map(s => s.id);
+  const curId = cur && cur.kind === 's' ? cur.key.slice(2) : null;
+  if (!shuffleQ || shuffleQ.length !== SONGLIST.length || (curId && shuffleQ.indexOf(curId) < 0)) makeShuffle(curId);
+  return shuffleQ;
+}
+function setShuffle(on) {
+  shuffleOn = !!on; store('iva_shuffle', shuffleOn ? '1' : null);
+  if (shuffleOn) makeShuffle(cur && cur.kind === 's' ? cur.key.slice(2) : null); else shuffleQ = null;
+  updateSongUI();
+}
+// Shuffle buttons start a fresh shuffled run from the top; Play all plays the list in order
+function shufflePlay() { setShuffle(true); makeShuffle(null); playSong(songById(shuffleQ[0])); toast('Shuffle is on.'); }
+function playAll() { setShuffle(false); if (SONGLIST[0]) playSong(SONGLIST[0]); }
 function nextSong(dir) {
-  const i = cur ? SONGLIST.findIndex(s => 's:' + s.id === cur.key) : -1;
-  const n = SONGLIST[i + dir];
+  const order = songOrder();
+  const i = cur ? order.indexOf(cur.key.slice(2)) : -1;
+  const n = songById(order[i + dir]);
   if (i >= 0 && n) playSong(n);
 }
 // hearts: kept in My library under 's:<id>'; a member's heart the account could not take yet waits on this phone
@@ -708,6 +738,7 @@ function updateSongUI() {
     const ic = $('.sic', b);
     if (ic) ic.innerHTML = on ? I.pause(ic.dataset.sz || 20) : I.play(ic.dataset.sz || 20);
   });
+  $$('[data-shuf-toggle]').forEach(b => { b.classList.toggle('on', shuffleOn); b.setAttribute('aria-pressed', shuffleOn); });
   $$('[data-song-heart]').forEach(b => {
     const s = songById(b.dataset.songHeart); if (!s) return;
     const on = songSaved(s);
@@ -719,6 +750,9 @@ function updateSongUI() {
 document.addEventListener('click', e => {
   const h = e.target.closest('[data-song-heart]');
   if (h) { e.preventDefault(); toggleSongHeart(songById(h.dataset.songHeart)); return; }
+  if (e.target.closest('[data-shuffle]')) { e.preventDefault(); shufflePlay(); return; }
+  if (e.target.closest('[data-playall]')) { e.preventDefault(); playAll(); return; }
+  if (e.target.closest('[data-shuf-toggle]')) { e.preventDefault(); setShuffle(!shuffleOn); toast(shuffleOn ? 'Shuffle is on.' : 'Shuffle is off.'); return; }
   const sh = e.target.closest('[data-song-share]');
   if (sh) { e.preventDefault(); const s = songById(sh.dataset.songShare); if (s) shareSong(s); return; }
   const b = e.target.closest('[data-song]'); if (!b) return;
@@ -738,20 +772,20 @@ function songCard(epSlug) {
     ${list.map(s => `<div class="songline"><button class="songhit" data-song="${esc(s.id)}" aria-label="Play ${esc(s.title)}">${songArt(s, 300)}</button>
       <div class="st"><b>${esc(s.title)}</b><span>${s.seconds ? clock(s.seconds) + ' · ' : ''}An original InnerVerse song</span></div>
       <div class="sacts">${songActs(s, 20)}</div></div>`).join('')}
-    <a class="sall" href="#/songs">All episode songs ${I.right(14)}</a></div>`;
+    <a class="sall" href="#/songs">All InnerVerse Music ${I.right(14)}</a></div>`;
 }
 function songTile(s) {
-  return `<button class="tile songtile" data-song="${esc(s.id)}" aria-label="Play ${esc(s.title)}">${songArt(s, 500, true)}<div class="t">${esc(s.title)}</div><div class="m">${esc(songEpTitle(s))}</div></button>`;
+  return `<button class="tile songtile" data-song="${esc(s.id)}" aria-label="Play ${esc(s.title)}">${songArt(s, 500, true)}<div class="t">${esc(s.title)}</div></button>`;
 }
 function songRow(s, extra) {
   const ep = songEp(s);
   return `<div class="songrow" data-row="${esc(s.id)}"><button class="songhit" data-song="${esc(s.id)}" aria-label="Play ${esc(s.title)}">${songArt(s, 300)}</button>
-    <div class="info"><button class="stitle" data-song="${esc(s.id)}">${esc(s.title)}</button><span class="l">From ${esc(songEpTitle(s))}</span><span class="d">${[s.seconds ? clock(s.seconds) : '', extra || ''].filter(Boolean).join(' · ')}</span>
+    <div class="info"><button class="stitle" data-song="${esc(s.id)}">${esc(s.title)}</button><span class="l">${esc(songEpTitle(s))}</span><span class="d">${[s.seconds ? clock(s.seconds) : '', extra || ''].filter(Boolean).join(' · ')}</span>
     <div class="rowacts">${songActs(s, 19)}${ep ? `<a class="eplink" href="${epHref(ep)}">Open the episode ${I.right(14)}</a>` : ''}</div></div></div>`;
 }
 function songsRow() {
   if (!SONGLIST.length) return '';
-  return `<div class="sec"><div class="sechead"><h2 class="h2">Episode songs</h2><a href="#/songs">See all</a></div><div class="hscroll">${SONGLIST.slice(0, 12).map(songTile).join('')}</div></div>`;
+  return `<div class="sec"><div class="sechead"><h2 class="h2">InnerVerse Music</h2><span class="shead"><button type="button" class="shufbtn" data-shuffle aria-label="Shuffle all songs">${I.shuffle(17)}</button><a href="#/songs">See all</a></span></div><div class="hscroll">${SONGLIST.slice(0, 12).map(songTile).join('')}</div></div>`;
 }
 // the Episode songs page (#/songs, or #/songs/<id> from a shared link: that song is shown first)
 function openSongs(id) {
@@ -771,11 +805,12 @@ function openSongs(id) {
 }
 function renderSongs() {
   const v = $('#ep');
-  v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button><span class="eptitle-mini">Episode songs</span></div></header>
+  v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button><span class="eptitle-mini">InnerVerse Music</span></div></header>
   <div class="wrap">
     <div class="eyebrow" style="margin-top:8px">${I.music(13)} Original music</div>
-    <h1 class="title">Episode songs</h1>
+    <h1 class="title">InnerVerse Music</h1>
     <p class="muted" style="margin:0 0 8px">Original songs made for InnerVerse episodes. Press play, then follow any song into the conversation behind it.</p>
+    ${SONGLIST.length ? `<div class="songbtns"><button type="button" class="btn" data-playall>${I.play(18)} Play all</button><button type="button" class="btn line" data-shuffle>${I.shuffle(18)} Shuffle</button></div>` : ''}
     ${SONGLIST.length ? `<div class="list">${SONGLIST.map(s => songRow(s, s.added ? fmtDate(s.added) : '')).join('')}</div>` : `<div class="empty">The songs could not load. Check your connection.</div>`}
   </div>`;
   bindBack();
@@ -1978,13 +2013,13 @@ function renderNP() {
       <input type="range" id="npR" min="0" max="${Math.max(1, Math.floor(d))}" step="1" value="${Math.floor(aud.currentTime)}" aria-label="Position">
       <div class="times"><span id="npT">${clock(aud.currentTime)}</span><span id="npD">-${clock(Math.max(0, d - aud.currentTime))}</span></div>
       <div class="ctl">
-        <button class="sk" id="npPrev" aria-label="Previous chapter">${I.prev(24)}</button>
+        <button class="sk" id="npPrev" aria-label="${cur.kind === 's' ? 'Previous song' : 'Previous chapter'}">${I.prev(24)}</button>
         <button class="sk" id="npBack" aria-label="Back 15 seconds">${I.rew(34)}<small>15</small></button>
         <button class="big" id="npPP" aria-label="${aud.paused ? 'Play' : 'Pause'}">${aud.paused ? I.play(36) : I.pause(36)}</button>
         <button class="sk" id="npFwd" aria-label="Forward 30 seconds">${I.fwd(34)}<small>30</small></button>
-        <button class="sk" id="npNext" aria-label="Next chapter">${I.next(24)}</button>
+        <button class="sk" id="npNext" aria-label="${cur.kind === 's' ? 'Next song' : 'Next chapter'}">${I.next(24)}</button>
       </div>
-      <div class="opts">${cur.kind === 's' && songById(cur.key.slice(2)) ? songActs(songById(cur.key.slice(2)), 18).replace(/class="sact"/g, 'class="sact pill"') + '<button id="npEp">Open the episode</button>' : `<button id="npSpeed">${speed}x speed</button><button id="npEp">Episode page</button>`}</div>
+      <div class="opts">${cur.kind === 's' && songById(cur.key.slice(2)) ? `<button type="button" class="shufpill" data-shuf-toggle aria-pressed="${shuffleOn}">${I.shuffle(16)} Shuffle</button>` + songActs(songById(cur.key.slice(2)), 18).replace(/class="sact"/g, 'class="sact pill"') + '<button id="npEp">Open the episode</button>' : `<button id="npSpeed">${speed}x speed</button><button id="npEp">Episode page</button>`}</div>
     </div>
     ${cur.chapters && cur.chapters.length ? `<div class="chlist"><div class="eyebrow" style="margin:6px 8px 6px">Chapters</div><div id="npChaps">${cur.chapters.map((c, i) => `<button class="chap" data-i="${i}"><span class="tm">${clock(c.seek)}</span><span class="ct">${esc(c.title)}</span></button>`).join('')}</div></div>` : ''}`;
   $('#npClose').addEventListener('click', closeNP);

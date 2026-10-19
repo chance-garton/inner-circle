@@ -1802,11 +1802,23 @@ document.addEventListener('click', e => {
 });
 
 function mergePeople(p) { if (p) Object.assign(S.people, p); }
+// The chat server says "signed out" both when a login has really ended and when it simply could not check
+// the login just then. The login is shared with the home-screen app, so it is only cleared once the
+// login server itself says it has ended (2026-10-19, Chance was being logged out of the app); otherwise
+// the chat tries again in a minute.
+async function confirmSignedOut() {
+  const tok = S.token; if (!tok) return;
+  try {
+    const r = await fetch(AUTH + '/auth/status', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' });
+    if (r.ok) { const j = await r.json(); if (!j.signedIn) { if (load('ivc_token') === tok) store('ivc_token', null); if (S.token === tok) S.token = null; return; } }
+  } catch (e) {}
+  setTimeout(() => { if (S.token === tok && S.denied === 'signed-out') { S.denied = null; S.retry = 0; connect(); } }, 60000);
+}
 function onEvent(m) {
   switch (m.t) {
     case 'denied':
       S.denied = m.why;
-      if (m.why === 'signed-out') store('ivc_token', null), S.token = null;
+      if (m.why === 'signed-out') confirmSignedOut();
       S.view = 'door'; render(); return;
     case 'init':
       S.connected = true; S.retry = 0;

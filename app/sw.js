@@ -1,6 +1,6 @@
 /* InnerVerse app: keeps the app opening fast and offline, and always picks up new versions.
    The page itself is fetched fresh first on every launch, so a pushed update shows on the next open. */
-const VERSION = 'iva-2026-10-19a';
+const VERSION = 'iva-2026-10-19b';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -21,6 +21,7 @@ async function networkFirst(req, key, fresh) {
     throw e;
   }
 }
+let imgPuts = 0;
 async function cacheFirst(req) {
   const c = await caches.open(VERSION + '-img');
   const hit = await c.match(req);
@@ -28,8 +29,9 @@ async function cacheFirst(req) {
   const r = await fetch(req);
   if (r && (r.ok || r.type === 'opaque')) {
     await c.put(req, r.clone());
-    const keys = await c.keys();
-    if (keys.length > 400) for (const k of keys.slice(0, keys.length - 400)) await c.delete(k);
+    // keep the picture store small (iPhone counts each cross-site picture as far bigger than it is), and
+    // tidy it now and then rather than on every picture (2026-10-19)
+    if (++imgPuts % 25 === 0) { const keys = await c.keys(); if (keys.length > 150) for (const k of keys.slice(0, keys.length - 150)) await c.delete(k); }
   }
   return r;
 }
