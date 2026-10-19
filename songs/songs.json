@@ -180,6 +180,26 @@
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/150ea76a-ba82-461a-a1a6-768c0933f78a/Chicago-Fire.jpg",
       "seconds": 189,
       "added": "2026-10-19"
+    },
+    {
+      "id": "inner-whirled-28-old-jacks-tall-tales",
+      "episode": "inner-whirled-28",
+      "episodeTitle": "This Guy Claimed He Found a Tartaria Witness. Is it Real?",
+      "title": "Old Jack's Tall Tales",
+      "file": "inner-whirled-28-old-jacks-tall-tales.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/36e68080-20d5-44ef-86ea-930b7f1812ef/council-grove.jpg",
+      "seconds": 153,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "inner-whirled-28-council-grove",
+      "episode": "inner-whirled-28",
+      "episodeTitle": "This Guy Claimed He Found a Tartaria Witness. Is it Real?",
+      "title": "Council Grove",
+      "file": "inner-whirled-28-council-grove.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/36e68080-20d5-44ef-86ea-930b7f1812ef/council-grove.jpg",
+      "seconds": 163,
+      "added": "2026-10-19"
     }
   ]
 }
