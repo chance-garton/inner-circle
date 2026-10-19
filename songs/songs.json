@@ -130,6 +130,26 @@
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/c172fa23-d3e7-4570-a005-4bd1d26a2eb8/Keys-to-the-Tarot.jpg",
       "seconds": 152,
       "added": "2026-10-19"
+    },
+    {
+      "id": "inner-whirled-29-fleeced",
+      "episode": "inner-whirled-29",
+      "episodeTitle": "The Greek Myth That Wasn't Greek: Jason & the Argonauts",
+      "title": "Fleeced",
+      "file": "inner-whirled-29-fleeced.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/fb936153-d823-45a7-9ac4-7a3b1424e9c5/inner-whirled-29.jpg",
+      "seconds": 195,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "inner-whirled-29-argonautical",
+      "episode": "inner-whirled-29",
+      "episodeTitle": "The Greek Myth That Wasn't Greek: Jason & the Argonauts",
+      "title": "Argonautical",
+      "file": "inner-whirled-29-argonautical.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/fb936153-d823-45a7-9ac4-7a3b1424e9c5/inner-whirled-29.jpg",
+      "seconds": 150,
+      "added": "2026-10-19"
     }
   ]
 }
