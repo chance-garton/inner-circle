@@ -230,6 +230,36 @@
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/49bcfe76-c045-4c7c-a87d-249d83197479/tamara-globe.jpg",
       "seconds": 203,
       "added": "2026-10-19"
+    },
+    {
+      "id": "atoms-dont-exist-flux-head",
+      "episode": "atoms-dont-exist",
+      "episodeTitle": "You Can't Prove Atoms Exist, w/ PhD Steven Young (Hedflux) & Marty Leeds (Gnostic Academy)",
+      "title": "Flux Head",
+      "file": "atoms-dont-exist-flux-head.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/a2f0b3e0-ae14-4046-ad14-f1d5cde205ef/atoms.jpg",
+      "seconds": 306,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "atoms-dont-exist-atomism",
+      "episode": "atoms-dont-exist",
+      "episodeTitle": "You Can't Prove Atoms Exist, w/ PhD Steven Young (Hedflux) & Marty Leeds (Gnostic Academy)",
+      "title": "Atomism",
+      "file": "atoms-dont-exist-atomism.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/a2f0b3e0-ae14-4046-ad14-f1d5cde205ef/atoms.jpg",
+      "seconds": 312,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "atoms-dont-exist-particle-party",
+      "episode": "atoms-dont-exist",
+      "episodeTitle": "You Can't Prove Atoms Exist, w/ PhD Steven Young (Hedflux) & Marty Leeds (Gnostic Academy)",
+      "title": "Particle Party",
+      "file": "atoms-dont-exist-particle-party.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/a2f0b3e0-ae14-4046-ad14-f1d5cde205ef/atoms.jpg",
+      "seconds": 479,
+      "added": "2026-10-19"
     }
   ]
 }
