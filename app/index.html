@@ -384,7 +384,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-18c';
+const VERSION = '2026-10-19a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -618,6 +618,7 @@ async function loadLibrary() {
   const byDate = (a, b) => (b.date || '').localeCompare(a.date || '') || a.title.localeCompare(b.title);
   free.sort(byDate); plus.sort(byDate);
   S.lib = { free, plus, plusByFree, bySlug, byDate };
+  sortSongs();
 }
 // what this visitor browses: members see the full episodes, and the free copy of any episode that has one disappears
 function library() {
@@ -644,6 +645,11 @@ async function loadSongs() {
     const j = await cacheFetch(SONGS + 'songs.json');
     SONGLIST = (j.songs || []).filter(s => s && s.id && s.episode && s.file && s.title);
   } catch (e) { SONGLIST = []; }
+}
+// newest episode first, by the episode's release date (Chance, 2026-10-19); an episode's own songs keep their track order
+function sortSongs() {
+  const d = s => ((S.lib && S.lib.bySlug['e:' + s.episode]) || {}).date || s.added || '';
+  SONGLIST = SONGLIST.map((s, i) => [s, i]).sort((a, b) => d(b[0]).localeCompare(d(a[0])) || a[1] - b[1]).map(x => x[0]);
 }
 function songById(id) { return id ? SONGLIST.find(s => s.id === id) || null : null; }
 function songsFor(epSlug) { return epSlug ? SONGLIST.filter(s => s.episode === epSlug) : []; }
