@@ -160,6 +160,26 @@
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/fb936153-d823-45a7-9ac4-7a3b1424e9c5/inner-whirled-29.jpg",
       "seconds": 150,
       "added": "2026-10-19"
+    },
+    {
+      "id": "great-chicago-fire-grand-fire-trine",
+      "episode": "great-chicago-fire",
+      "episodeTitle": "Was Chicago Firebombed? Tartaria & the Great Fire Conspiracy",
+      "title": "Grand Fire Trine",
+      "file": "great-chicago-fire-grand-fire-trine.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/150ea76a-ba82-461a-a1a6-768c0933f78a/Chicago-Fire.jpg",
+      "seconds": 183,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "great-chicago-fire-the-great-fire",
+      "episode": "great-chicago-fire",
+      "episodeTitle": "Was Chicago Firebombed? Tartaria & the Great Fire Conspiracy",
+      "title": "The Great Fire",
+      "file": "great-chicago-fire-the-great-fire.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/150ea76a-ba82-461a-a1a6-768c0933f78a/Chicago-Fire.jpg",
+      "seconds": 189,
+      "added": "2026-10-19"
     }
   ]
 }
