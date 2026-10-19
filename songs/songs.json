@@ -90,6 +90,36 @@
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/49f810e8-767f-4c8a-bd85-250501d25559/Nathan-Oakley.jpg",
       "seconds": 199,
       "added": "2026-10-19"
+    },
+    {
+      "id": "astrotheology-101-astrotheology-101",
+      "episode": "astrotheology-101",
+      "episodeTitle": "What Connects Christianity, Tarot & the Stars? Astrotheology 101 with Chance Garton & Meg Moonbeam",
+      "title": "Astrotheology 101",
+      "file": "astrotheology-101-astrotheology-101.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/c172fa23-d3e7-4570-a005-4bd1d26a2eb8/Keys-to-the-Tarot.jpg",
+      "seconds": 208,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "astrotheology-101-tetramorph",
+      "episode": "astrotheology-101",
+      "episodeTitle": "What Connects Christianity, Tarot & the Stars? Astrotheology 101 with Chance Garton & Meg Moonbeam",
+      "title": "Tetramorph",
+      "file": "astrotheology-101-tetramorph.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/c172fa23-d3e7-4570-a005-4bd1d26a2eb8/Keys-to-the-Tarot.jpg",
+      "seconds": 196,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "keys-to-the-tarot-keys-to-the-tarot",
+      "episode": "keys-to-the-tarot",
+      "episodeTitle": "The Hidden Science of Tarot | Marty Leeds & Mario Garza",
+      "title": "Keys to the Tarot",
+      "file": "keys-to-the-tarot-keys-to-the-tarot.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/c172fa23-d3e7-4570-a005-4bd1d26a2eb8/Keys-to-the-Tarot.jpg",
+      "seconds": 152,
+      "added": "2026-10-19"
     }
   ]
 }
