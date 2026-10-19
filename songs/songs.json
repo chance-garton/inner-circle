@@ -210,6 +210,26 @@
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/7c7632c1-39f5-41b9-9ea3-bcb240e9d284/Leo-Astro-herbs.jpg",
       "seconds": 93,
       "added": "2026-10-19"
+    },
+    {
+      "id": "tamara-sheville-science-fiction",
+      "episode": "tamara-sheville",
+      "episodeTitle": "Can You Prove Earth Is Round? Tamara Sheville's Level Plane Poems",
+      "title": "Science Fiction",
+      "file": "tamara-sheville-science-fiction.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/49bcfe76-c045-4c7c-a87d-249d83197479/tamara-globe.jpg",
+      "seconds": 268,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "tamara-sheville-spaghettification",
+      "episode": "tamara-sheville",
+      "episodeTitle": "Can You Prove Earth Is Round? Tamara Sheville's Level Plane Poems",
+      "title": "Spaghettification",
+      "file": "tamara-sheville-spaghettification.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/49bcfe76-c045-4c7c-a87d-249d83197479/tamara-globe.jpg",
+      "seconds": 203,
+      "added": "2026-10-19"
     }
   ]
 }
