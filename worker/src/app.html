@@ -42,21 +42,126 @@ svg{display:block;flex:none}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .muted{color:var(--muted)}
 
-/* nav */
-.nav{height:76px;background:rgba(10,15,28,0.92);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 max(20px,calc((100vw - 1200px)/2));gap:24px;position:sticky;top:0;z-index:5;backdrop-filter:blur(8px)}
-.nav.member{border-top:3px solid var(--gold)}
-.brand{display:flex;align-items:center;gap:12px}
-.brand img{width:44px;height:44px;object-fit:contain}
-.nav.member .brand img{filter:drop-shadow(0 0 10px rgba(216,170,60,0.5))}
-.nav.visitor .brand img{filter:drop-shadow(0 0 10px rgba(59,116,204,0.55))}
-.word{font-family:var(--brand);font-weight:700;font-size:23px;letter-spacing:5px;text-transform:uppercase;line-height:1}
-.links{flex:1;display:flex;justify-content:center;gap:26px}
-.link{font-family:var(--brand);font-size:16px;letter-spacing:2px;text-transform:uppercase;padding:9px 0 6px;border-bottom:3px solid transparent;line-height:1}
-.link.on{border-bottom-color:var(--lapis)} .nav.member .link.on{border-bottom-color:var(--gold)}
-.acts{display:flex;align-items:center;gap:18px}
-.loginlink{font-family:var(--brand);font-size:16px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
-.join{height:34px;padding:0 16px;border-radius:10px;background:var(--gold);color:var(--on-gold);font-weight:700;font-size:13.5px;display:inline-flex;align-items:center}
-@media (max-width:1000px){.links{display:none}.nav{justify-content:space-between}}
+/* nav: the website's own nav (iv-site-nav), its live rules copied 2026-10-19 so the two look the same.
+   To refresh: pull every rule whose selector mentions iv-nav from a live /episodes page. */
+#iv-nav{--font-brand:'Fjalla One','Arial Narrow',Impact,sans-serif;--font-sans:'Manrope','Segoe UI',Helvetica,Arial,sans-serif;--ink-muted:#9AA6BA;--iv-gold:#E8B923;--iv-ink:#14161c;--nav:rgba(10,15,28,0.92);--radius-md:10px;--radius-pill:999px}
+#iv-nav { position: fixed; top: 0px; left: 0px; width: 100%; z-index: 9999; background: rgba(8, 9, 13, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.iv-nav-inner { max-width: 1400px; margin: 0px auto; display: flex; align-items: center; justify-content: space-between; padding: 22px 32px; transition: padding 0.3s; }
+#iv-nav.iv-nav-scrolled .iv-nav-inner { padding: 10px 32px; }
+.iv-nav-side { display: flex; align-items: center; gap: 30px; flex: 1 1 0%; min-width: 0px; }
+.iv-nav-link { position: relative; display: inline-flex; align-items: center; gap: 7px; font-family: "Fjalla One", sans-serif; font-weight: 400; letter-spacing: 2px; font-size: 17px; color: rgb(255, 255, 255); text-decoration: none; text-transform: uppercase; padding-bottom: 8px; transition: font-size 0.3s; white-space: nowrap; background: none; border: none; cursor: pointer; }
+.iv-nav-icon { flex-shrink: 0; }
+.iv-nav-link::after { content: ""; position: absolute; left: 0px; bottom: 0px; width: 100%; height: 3px; background: rgb(0, 137, 255); transform: scaleX(0); transform-origin: center center; transition: transform 0.25s; }
+.iv-nav-link:hover::after, .iv-nav-link.iv-nav-active::after { transform: scaleX(1); }
+#iv-nav.iv-nav-scrolled .iv-nav-link { font-size: 15px; }
+.iv-nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; padding: 0px 24px; }
+.iv-nav-word { font-family: "Fjalla One", sans-serif; font-weight: 700; letter-spacing: 5px; font-size: 25px; color: rgb(255, 255, 255); text-transform: uppercase; transition: font-size 0.3s; }
+#iv-nav.iv-nav-scrolled .iv-nav-word { font-size: 18px; }
+.iv-nav-logo { height: 64px; width: auto; display: block; animation: 2.6s ease-in-out 0s infinite normal none running iv-nav-logo-pulse; transition: height 0.3s, transform 0.3s, filter 0.3s; }
+#iv-nav.iv-nav-scrolled .iv-nav-logo { height: 34px; }
+.iv-nav-brand:hover .iv-nav-logo { animation: auto ease 0s 1 normal none running none; filter: drop-shadow(rgba(0, 137, 255, 0.95) 0px 0px 16px) drop-shadow(rgb(0, 137, 255) 0px 0px 5px); transform: scale(1.08); }
+@keyframes iv-nav-logo-pulse { 
+  0%, 100% { filter: drop-shadow(rgba(0, 137, 255, 0.3) 0px 0px 3px); }
+  50% { filter: drop-shadow(rgba(0, 137, 255, 0.6) 0px 0px 11px); }
+}
+.iv-nav-burger { display: none; flex-direction: column; justify-content: center; gap: 5px; width: 32px; height: 32px; background: none; border: none; cursor: pointer; padding: 0px; }
+.iv-nav-burger span { display: block; width: 100%; height: 2px; background: rgb(255, 255, 255); transition: transform 0.25s, opacity 0.25s; }
+#iv-nav.iv-nav-menu-open .iv-nav-burger span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+#iv-nav.iv-nav-menu-open .iv-nav-burger span:nth-child(2) { opacity: 0; }
+#iv-nav.iv-nav-menu-open .iv-nav-burger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.iv-nav-mobile-panel { display: none; flex-direction: column; padding: 6px 32px 22px; }
+.iv-nav-mobile-panel .iv-nav-link { padding: 12px 0px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); width: 100%; text-align: left; }
+#iv-nav.iv-nav-menu-open .iv-nav-mobile-panel { display: flex; }
+@media (max-width: 860px) { .iv-nav-side { display: none; } }
+@media (max-width: 860px) { .iv-nav-burger { display: flex; } }
+@media (max-width: 860px) { .iv-nav-brand { padding: 0px 12px; } }
+@media (max-width: 420px) { .iv-nav-word { display: none; } }
+.iv-nav-link.iv-nav-signedin span { max-width: 11ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.iv-plus-member .iv-nav-link::after { background: rgb(232, 185, 35); }
+html.iv-plus-member .iv-nav-brand:hover .iv-nav-logo { filter: drop-shadow(rgba(232, 185, 35, 0.95) 0px 0px 16px) drop-shadow(rgb(232, 185, 35) 0px 0px 5px); }
+html.iv-plus-member .iv-nav-logo { animation-name: iv-plus-logo-pulse; }
+html.iv-plus-member .iv-nav-link.iv-nav-signedin svg { color: rgb(232, 185, 35); }
+.iv-nav-account-wrap { position: relative; display: inline-flex; }
+.iv-nav-inner .iv-nav-account-wrap { padding-bottom: 6px; margin-bottom: -6px; }
+.iv-nav-avatar { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; display: block; object-fit: cover; border: 1px solid rgba(255, 255, 255, 0.3); }
+span.iv-nav-avatar { display: flex; align-items: center; justify-content: center; background: var(--iv-gold); color: var(--iv-ink); font-family: "Fjalla One", sans-serif; font-size: 13px; letter-spacing: 0px; border-color: var(--iv-gold); }
+.iv-nav-account-menu { position: absolute; top: 100%; right: 0px; margin-top: 0px; min-width: 168px; background: rgb(18, 20, 26); border: 1px solid rgba(232, 185, 35, 0.26); border-radius: 8px; box-shadow: rgba(0, 0, 0, 0.55) 0px 16px 38px; padding: 6px; z-index: 60; opacity: 0; visibility: hidden; transform: translateY(-5px); transition: opacity 0.18s, transform 0.18s; }
+.iv-nav-account-wrap:hover .iv-nav-account-menu, .iv-nav-account-wrap:focus-within .iv-nav-account-menu, .iv-nav-account-wrap.iv-nav-account-open .iv-nav-account-menu { opacity: 1; visibility: visible; transform: translateY(0px); }
+.iv-nav-account-item { display: block; width: 100%; box-sizing: border-box; text-align: left; padding: 9px 12px; border-radius: 5px; border: none; background: none; cursor: pointer; font-family: "Fjalla One", sans-serif; letter-spacing: 1.6px; text-transform: uppercase; font-size: 13px; color: rgb(255, 255, 255); text-decoration: none; transition: background 0.18s, color 0.18s; }
+.iv-nav-account-item:hover { background: rgba(232, 185, 35, 0.14); color: var(--iv-gold); }
+#iv-nav, #iv-nav .iv-nav-inner, #iv-nav .iv-nav-side { overflow: visible; }
+.iv-nav-mobile-panel .iv-nav-account-wrap { display: block; }
+.iv-nav-mobile-panel .iv-nav-account-wrap.iv-nav-signed .iv-nav-account-menu { display: block; opacity: 1; visibility: visible; transform: none; position: static; margin: 0px; padding: 0px; min-width: 0px; background: none; border: none; box-shadow: none; transition: none; }
+.iv-nav-mobile-panel .iv-nav-account-item[data-act="settings"] { display: none; }
+.iv-nav-mobile-panel .iv-nav-account-item { padding: 12px 0px; border-radius: 0px; font-size: 17px; letter-spacing: 2px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.iv-nav-mobile-panel .iv-nav-account-item:hover { background: none; color: var(--iv-gold); }
+.iv-nav-account-wrap:not(.iv-nav-signed) .iv-nav-account-menu { display: none !important; }
+.iv-nav-link.iv-nav-signedin .iv-nav-face { max-width: none; overflow: visible; }
+.iv-nav-face { display: inline-flex; align-items: center; flex-shrink: 0; line-height: 0; }
+@media (prefers-reduced-motion: reduce) { #iv-nav.iv-nav-v2 * { animation: auto ease 0s 1 normal none running none !important; transition: none !important; } }
+#iv-nav.iv-nav-v2 { background: var(--nav); border-bottom: 1px solid var(--line); backdrop-filter: none; }
+#iv-nav.iv-nav-v2 .iv-nav-logo { will-change: transform, filter; }
+html.iv-plus-member #iv-nav.iv-nav-v2 { border-top: 3px solid var(--gold); }
+#iv-nav.iv-nav-v2 .iv-nav-inner { max-width: 1440px; padding: 18px 120px; gap: 32px; justify-content: space-between; }
+#iv-nav.iv-nav-v2.iv-nav-scrolled .iv-nav-inner { padding: 10px 120px; }
+#iv-nav.iv-nav-v2 .iv-nav-brand { padding: 0px; gap: 14px; order: 0; flex: 0 0 auto; }
+#iv-nav.iv-nav-v2 .iv-nav-word { font-family: var(--font-brand); font-size: 25px; letter-spacing: 5px; color: var(--ink); }
+#iv-nav.iv-nav-v2.iv-nav-scrolled .iv-nav-word { font-size: 21px; }
+#iv-nav.iv-nav-v2 .iv-nav-logo { height: 48px; }
+#iv-nav.iv-nav-v2.iv-nav-scrolled .iv-nav-logo { height: 36px; }
+#iv-nav.iv-nav-v2 .iv-nav-center { flex: 0 1 auto; gap: 28px; justify-content: center; }
+#iv-nav.iv-nav-v2 .iv-nav-link { font-family: var(--font-brand); font-size: 17px; letter-spacing: 2px; color: var(--ink); padding: 6px 0px; }
+#iv-nav.iv-nav-v2.iv-nav-scrolled .iv-nav-link { font-size: 16px; }
+#iv-nav.iv-nav-v2 .iv-nav-link::after { transform: scaleX(0); bottom: -4px; height: 3px; background: var(--lapis) !important; }
+#iv-nav.iv-nav-v2 .iv-nav-link:hover::after { transform: scaleX(0); }
+#iv-nav.iv-nav-v2 .iv-nav-link.iv-nav-active::after { transform: scaleX(1); }
+html.iv-plus-member #iv-nav.iv-nav-v2 .iv-nav-link::after { background: var(--gold) !important; }
+#iv-nav.iv-nav-v2 .iv-nav-link:hover { color: var(--lapis-lit); }
+#iv-nav.iv-nav-v2 .iv-nav-actions { display: flex; align-items: center; gap: 20px; flex: 0 0 auto; }
+#iv-nav.iv-nav-v2 .iv-nav-search { display: inline-flex; color: var(--ink-muted); text-decoration: none; padding: 4px; }
+#iv-nav.iv-nav-v2 .iv-nav-search:hover { color: var(--ink); }
+#iv-nav.iv-nav-v2 .iv-nav-search svg { display: block; }
+#iv-nav.iv-nav-v2 .iv-nav-actions .iv-nav-login { font-size: 15px; letter-spacing: 1.5px; color: var(--ink-muted); padding: 4px 0px; }
+#iv-nav.iv-nav-v2 .iv-nav-actions .iv-nav-login::after { display: none; }
+#iv-nav.iv-nav-v2 .iv-nav-actions .iv-nav-login:not(.iv-nav-signedin) .iv-nav-face { display: none; }
+#iv-nav.iv-nav-v2 .iv-nav-actions .iv-nav-login.iv-nav-signedin { display: inline-flex; align-items: center; flex-direction: row-reverse; gap: 9px; padding: 5px 12px 5px 5px; border-radius: var(--radius-pill); border: 1px solid var(--line); color: var(--ink); font-family: var(--font-sans); font-weight: 700; font-size: 13px; letter-spacing: 0px; text-transform: none; }
+html.iv-plus-member #iv-nav.iv-nav-v2 .iv-nav-actions .iv-nav-login.iv-nav-signedin { border-color: var(--gold); }
+#iv-nav.iv-nav-v2 .iv-nav-login.iv-nav-signedin .iv-nav-avatar { width: 26px; height: 26px; border-radius: 50%; }
+#iv-nav.iv-nav-v2 a.iv-nav-join { display: inline-flex; align-items: center; justify-content: center; padding: 9px 16px; border-radius: var(--radius-md); background: var(--gold); color: var(--on-gold); font-family: var(--font-sans); font-weight: 700; font-size: 13px; line-height: 1; text-decoration: none; white-space: nowrap; border: 1px solid transparent; transition: transform 0.15s; }
+#iv-nav.iv-nav-v2 a.iv-nav-join:hover { transform: translateY(-1px); }
+html.iv-plus-member #iv-nav.iv-nav-v2 .iv-nav-join { display: none !important; }
+#iv-nav.iv-nav-v2 .iv-nav-burger span { background: var(--ink); }
+#iv-nav.iv-nav-v2 .iv-nav-mobile-panel { padding: 6px 20px 22px; }
+#iv-nav.iv-nav-v2 .iv-nav-mobile-panel .iv-nav-link { border-bottom-color: var(--line); }
+#iv-nav.iv-nav-v2 .iv-nav-mobile-panel a.iv-nav-join { margin-top: 16px; align-self: flex-start; }
+@media (max-width: 1280px) { #iv-nav.iv-nav-v2 .iv-nav-inner, #iv-nav.iv-nav-v2.iv-nav-scrolled .iv-nav-inner { padding-left: 48px; padding-right: 48px; } }
+@media (max-width: 1280px) { #iv-nav.iv-nav-v2 .iv-nav-center { gap: 22px; } }
+@media (max-width: 1100px) { #iv-nav.iv-nav-v2 .iv-nav-center { display: none; } }
+@media (max-width: 1100px) { #iv-nav.iv-nav-v2 .iv-nav-burger { display: flex; } }
+@media (max-width: 700px) { #iv-nav.iv-nav-v2 .iv-nav-inner, #iv-nav.iv-nav-v2.iv-nav-scrolled .iv-nav-inner { padding: 14px 20px; gap: 16px; } }
+@media (max-width: 700px) { #iv-nav.iv-nav-v2 .iv-nav-logo { height: 36px; } }
+@media (max-width: 700px) { #iv-nav.iv-nav-v2 .iv-nav-word { font-size: 20px; } }
+@media (max-width: 700px) { #iv-nav.iv-nav-v2 .iv-nav-actions { gap: 16px; } }
+@media (max-width: 700px) { #iv-nav.iv-nav-v2 .iv-nav-actions .iv-nav-account-wrap, #iv-nav.iv-nav-v2 .iv-nav-actions .iv-nav-join { display: none; } }
+@media (max-width: 420px) { #iv-nav.iv-nav-v2 .iv-nav-word { display: inline; font-size: 18px; letter-spacing: 4px; } }
+#iv-nav .iv-nav-link.iv-nav-tuned { text-shadow: 0 0 10px var(--iv-tuned-glow-soft,rgba(0,137,255,.45)); }
+#iv-nav .iv-nav-bolt { flex: 0 0 auto; display: block; width: 15px; height: 17px; color: var(--iv-tuned-bolt,#8FB5F0); filter: drop-shadow(0 0 4px var(--iv-tuned-glow,rgba(0,137,255,.9))) drop-shadow(0 0 10px var(--iv-tuned-glow-soft,rgba(0,137,255,.6))); animation: 5.5s linear 0s infinite normal none running iv-nav-bolt-flicker; }
+#iv-nav.iv-nav-scrolled .iv-nav-bolt { width: 14px; height: 16px; }
+@keyframes iv-nav-bolt-flicker { 
+  0%, 100% { opacity: 1; }
+  3% { opacity: 0.25; }
+  4.5% { opacity: 1; }
+  6% { opacity: 0.4; }
+  7% { opacity: 1; }
+  58% { opacity: 1; }
+  59.5% { opacity: 0.3; }
+  61% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { #iv-nav .iv-nav-bolt { animation: auto ease 0s 1 normal none running none !important; } }
+/* circle-only: in the page flow, under the chat overlays */
+#iv-nav{position:sticky;left:auto;width:auto;z-index:20}
+#iv-nav a,#iv-nav button{text-decoration:none}
+#iv-nav .iv-nav-face .av{width:26px!important;height:26px!important;font-size:12px!important;border:1px solid var(--gold)}
 
 /* type and buttons */
 .eyebrow{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);line-height:1.2}
@@ -96,7 +201,7 @@ svg{display:block;flex:none}
 @media (max-width:900px){.door{flex-direction:column;gap:32px;padding-top:34px}.door .glimpse{width:100%;height:340px;flex:none}.door .h1{font-size:44px!important}}
 
 /* onboarding */
-.onb{max-width:460px;margin:0 auto;padding:28px 22px 32px;min-height:calc(100dvh - 76px);display:flex;flex-direction:column}
+.onb{max-width:460px;margin:0 auto;padding:28px 22px 32px;min-height:calc(100dvh - var(--navh,85px));display:flex;flex-direction:column}
 .steps{display:flex;gap:6px}.steps span{width:22px;height:5px;border-radius:3px;background:rgba(233,238,246,0.2)}.steps span.on{background:var(--gold)}
 .rnum{width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(216,170,60,0.7);color:var(--gold);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex:none}
 .flabel{display:block;font-size:13px;font-weight:700;margin-bottom:8px}
@@ -116,7 +221,7 @@ svg{display:block;flex:none}
 .favrow{display:flex;gap:10px;align-items:center;padding:6px 0;font-size:13.5px;font-weight:600;line-height:1.35}
 
 /* chat shell */
-.shell{max-width:1200px;margin:0 auto;padding:20px 20px;display:flex;gap:28px;height:calc(100dvh - 76px)}
+.shell{max-width:1200px;margin:0 auto;padding:20px 20px;display:flex;gap:28px;height:calc(100dvh - var(--navh,85px))}
 .side{width:280px;flex:none;display:flex;flex-direction:column;gap:24px;overflow:auto;padding-top:4px}
 .roomrow{display:flex;align-items:center;gap:12px;min-height:46px;padding:0 14px;border-radius:10px;font-weight:600;font-size:15px}
 .roomrow.on{background:rgba(216,170,60,0.13)} .roomrow.on svg{color:var(--gold)}
@@ -412,7 +517,7 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 /* phone */
 .ptop{display:none}
 @media (max-width:860px){
-  .nav{display:none}
+  #iv-nav.ivc-inchat,html.ivc-inapp #iv-nav{display:none}
   .shell{padding:0;gap:0;height:100dvh}
   .side{display:none}
   .panel{border-radius:0;border:0}
@@ -2095,7 +2200,7 @@ window.addEventListener('hashchange', () => {
 // ------------------------------------------------------------ views
 function render() {
   document.body.className = '';
-  try { return render0(); } finally { if (PL.el) plPlace(); }
+  try { return render0(); } finally { wireNav(); if (PL.el) plPlace(); }
 }
 function render0() {
   if (S.view === 'loading') { app.innerHTML = `<div style="display:grid;place-items:center;min-height:100vh;min-height:100dvh">${loaderHtml()}</div>`; return; }
@@ -2105,14 +2210,44 @@ function render0() {
   return renderChat();
 }
 
-function navHtml(member) {
-  const L = (label, href, on) => `<a class="link${on ? ' on' : ''}" href="${href}">${label}</a>`;
-  return `<header class="nav ${member ? 'member' : 'visitor'}">
-    <a class="brand" href="${SITE}/"><img src="${member ? PLUS_LOGO : LOGO}" alt="InnerVerse"><span class="word">InnerVerse</span></a>
-    <nav class="links" aria-label="Main">${L('Episodes', SITE + '/episodes')}${L('Plus+', SITE + '/plus')}${L('Inner Circle', '/', true)}${L('About', SITE + '/about')}${L('Get Tuned', SITE + '/biofield-tuning')}</nav>
-    <div class="acts">${member ? '' : `<a class="loginlink" href="${loginUrl()}">Log in</a><a class="join" href="${SITE}/plus">Join Plus+</a>`}</div>
-  </header>`;
+const NAV_BOLT = '<svg class="iv-nav-bolt" viewBox="0 0 16 18" width="15" height="17" fill="currentColor" aria-hidden="true"><path d="M9.6 0 1 10.2h5.6L5.4 18 15 6.9H9.2z"></path></svg>';
+const NAV_SEARCH = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>';
+const NAV_PERSON = '<svg class="iv-nav-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path></svg>';
+// The website's nav (iv-site-nav), same markup and classes, so it looks the same here.
+function navHtml(member, inChat) {
+  document.documentElement.classList.toggle('iv-plus-member', !!member);
+  const links = [['Episodes', SITE + '/episodes'], ['Plus+', SITE + '/plus'], ['Inner Circle', '/', 1], ['About', SITE + '/about'], ['Get Tuned', SITE + '/biofield-tuning', 0, 1]]
+    .map(([l, h, on, tuned]) => `<a href="${h}" class="iv-nav-link${on ? ' iv-nav-active' : ''}${tuned ? ' iv-nav-tuned' : ''}">${tuned ? NAV_BOLT : ''}${l}</a>`).join('');
+  const face = member && S.me ? avatar(S.me.uid, 26) : NAV_PERSON;
+  const acct = `<div class="iv-nav-account-wrap${member ? ' iv-nav-signed' : ''}"><button type="button" class="iv-nav-link iv-nav-login${member ? ' iv-nav-signedin' : ''}" aria-label="${member ? 'Open your account' : 'Log in'}"><span class="iv-nav-login-label">${member ? 'Account' : 'Log in'}</span><span class="iv-nav-face">${face}</span></button>`
+    + `<div class="iv-nav-account-menu"><a class="iv-nav-account-item" href="https://innerverseplus.memberful.com/account">Settings</a><button type="button" class="iv-nav-account-item" data-act="logout">Logout</button></div></div>`;
+  const join = `<a href="${SITE}/plus" class="iv-nav-join">Join Plus+</a>`;
+  return `<div id="iv-nav" class="iv-nav-v2${inChat ? ' ivc-inchat' : ''}"><div class="iv-nav-inner">
+    <a href="${SITE}/" class="iv-nav-brand" aria-label="InnerVerse Podcast home"><img class="iv-nav-logo" src="${member ? PLUS_LOGO : LOGO}" alt="${member ? 'InnerVerse Plus' : 'InnerVerse Podcast'}"><span class="iv-nav-word">InnerVerse</span></a>
+    <nav class="iv-nav-side iv-nav-center" aria-label="Main">${links}</nav>
+    <div class="iv-nav-actions"><a href="${SITE}/episodes" class="iv-nav-search" aria-label="Search episodes">${NAV_SEARCH}</a>${acct}${join}<button class="iv-nav-burger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button></div>
+  </div><div class="iv-nav-mobile-panel">${links}${acct}${join}</div></div>`;
 }
+function wireNav() {
+  const nav = document.getElementById('iv-nav'); if (!nav) return;
+  if (IN_APP) document.documentElement.classList.add('ivc-inapp');
+  hydrateMedia(nav);
+  const setH = () => { if (nav.offsetHeight) document.documentElement.style.setProperty('--navh', nav.offsetHeight + 'px'); };
+  const burger = nav.querySelector('.iv-nav-burger');
+  if (burger) burger.onclick = () => { const o = nav.classList.toggle('iv-nav-menu-open'); burger.setAttribute('aria-expanded', o ? 'true' : 'false'); };
+  nav.querySelectorAll('.iv-nav-login').forEach(btn => btn.onclick = e => {
+    if (!btn.classList.contains('iv-nav-signedin')) { location.href = loginUrl(); return; }
+    const wrap = btn.closest('.iv-nav-account-wrap'), inPanel = !!btn.closest('.iv-nav-mobile-panel');
+    if (!inPanel && matchMedia('(hover: none)').matches && !wrap.classList.contains('iv-nav-account-open')) { wrap.classList.add('iv-nav-account-open'); e.preventDefault(); return; }
+    location.href = 'https://innerverseplus.memberful.com/account';
+  });
+  nav.querySelectorAll('[data-act="logout"]').forEach(b => b.onclick = e => { e.preventDefault(); logout(); });
+  const onScroll = () => { const on = window.scrollY > 40; if (nav.classList.contains('iv-nav-scrolled') !== on) { nav.classList.toggle('iv-nav-scrolled', on); setTimeout(setH, 320); } };
+  onScroll(); setH();
+}
+document.addEventListener('click', e => document.querySelectorAll('#iv-nav .iv-nav-account-open').forEach(w => { if (!w.contains(e.target)) w.classList.remove('iv-nav-account-open'); }));
+window.addEventListener('scroll', () => { const nav = document.getElementById('iv-nav'); if (!nav) return; const on = window.scrollY > 40; if (nav.classList.contains('iv-nav-scrolled') !== on) { nav.classList.toggle('iv-nav-scrolled', on); setTimeout(() => document.documentElement.style.setProperty('--navh', nav.offsetHeight + 'px'), 320); } }, { passive: true });
+window.addEventListener('resize', () => { const nav = document.getElementById('iv-nav'); if (nav && nav.offsetHeight) document.documentElement.style.setProperty('--navh', nav.offsetHeight + 'px'); }, { passive: true });
 
 function renderDoor() {
   const why = S.denied === 'not-member' ? 'You are signed in, but this login is not an active Plus+ membership. Start a trial below, or log in with the account you joined with.'
@@ -2271,7 +2406,7 @@ function logout() {
 
 function renderChat() {
   const hostish = S.me && (S.me.role === 'host' || S.me.role === 'mod');
-  app.innerHTML = navHtml(true) + `<div class="shell">
+  app.innerHTML = navHtml(true, true) + `<div class="shell">
     <aside class="side" id="side"></aside>
     <main class="panel" aria-label="Inner Circle Chat">
       <div class="ptop">
