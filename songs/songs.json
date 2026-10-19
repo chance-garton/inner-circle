@@ -2,6 +2,26 @@
   "about": "Original songs made for InnerVerse episodes. The list order is the order the app shows: newest batch first, and within one episode in track order. id names the song (and its files and share page, songs/<id>/); episode is the episode's FREE slug (the /episodes/<slug> address); art is the square cover's Squarespace CDN address (Chance sends one per batch), a square image in this folder, or empty to fall back to the episode's thumbnail. After any change here, run: python3 songs/build.py",
   "songs": [
     {
+      "id": "inner-whirled-31-astronomical-dating",
+      "episode": "inner-whirled-31",
+      "episodeTitle": "Is Fomenko Legit? | Checking the Receipts On New Chronology",
+      "title": "Astronomical Dating",
+      "file": "inner-whirled-31-astronomical-dating.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/ac9d861c-c999-4cab-8fa8-a082785b746c/IW-31.jpg",
+      "seconds": 187,
+      "added": "2026-10-19"
+    },
+    {
+      "id": "inner-whirled-31-eclipse-triad",
+      "episode": "inner-whirled-31",
+      "episodeTitle": "Is Fomenko Legit? | Checking the Receipts On New Chronology",
+      "title": "Eclipse Triad",
+      "file": "inner-whirled-31-eclipse-triad.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/ac9d861c-c999-4cab-8fa8-a082785b746c/IW-31.jpg",
+      "seconds": 208,
+      "added": "2026-10-19"
+    },
+    {
       "id": "inner-whirled-30-tartar-cartographer",
       "episode": "inner-whirled-30",
       "episodeTitle": "Why Was Tartaria Erased From The Map? Grand Tartary Explained",
