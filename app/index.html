@@ -282,7 +282,9 @@ html:not(.member) .np .ctl .big{background:var(--lapis);color:#fff}
 .rowep .mine{display:inline-flex;gap:4px;align-items:center;color:var(--gold)}
 .tile{position:relative}
 .tile .mine{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:999px;background:rgba(10,15,28,0.75);display:grid;place-items:center;color:var(--gold)}
-#chatv iframe{position:absolute;left:0;right:0;top:var(--st);width:100%;height:calc(100% - var(--st) - var(--tabh) - max(12px,calc(var(--sb) - 22px)) - var(--minih));border:0;background:var(--ground)}
+#chatv iframe{position:absolute;left:0;right:0;top:var(--st);width:100%;height:calc(100% - var(--st));border:0;background:var(--ground)}
+/* the chat runs to the bottom edge (build 2026-10-20b); only the pop-up player takes room under it */
+html.playing #chatv iframe{height:calc(100% - var(--st) - var(--minih) - max(12px,calc(var(--sb) - 22px)))}
 html.kb #chatv iframe{height:calc(100% - var(--st))}
 .loading{display:grid;place-items:center;padding:60px 0;color:var(--muted)}
 .spin{width:52px;height:52px;background:url('https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-Electric-Logo-2026.png?format=300w') center/contain no-repeat;animation:sp 1.6s linear infinite}
@@ -411,7 +413,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-20a';
+const VERSION = '2026-10-20b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1008,6 +1010,18 @@ document.addEventListener('click', e => {
 });
 function chatDocument() { const f = $('#chatv iframe'); try { return f && f.contentDocument; } catch (e) { return null; } }
 // the chat page draws its own top bar, so the menu button goes in there, and comes back whenever the chat redraws it
+// the chat's message box clears the iPhone home bar itself, since the chat now runs to the bottom edge (build 2026-10-20b)
+function chatPad() {
+  const d = chatDocument(); if (!d || !d.documentElement) return;
+  const h = document.documentElement; let px = 0;
+  if (!h.classList.contains('kb') && !h.classList.contains('playing')) {
+    const pr = document.createElement('div'); pr.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';
+    document.body.appendChild(pr); const sb = pr.offsetHeight; pr.remove();
+    px = Math.max(10, sb - 10);
+  }
+  d.documentElement.style.setProperty('--appsb', px + 'px');
+}
+new MutationObserver(chatPad).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 function addChatMenu(d) {
   const put = () => {
     d.querySelectorAll('.ptop, .phead.desk').forEach(bar => {
@@ -1511,9 +1525,9 @@ function mountChat() {
     const st = d.createElement('style');
     // inside the app: no site nav, no back arrow to the website
     try { noZoom(d); const vm = d.querySelector('meta[name=viewport]'); if (vm) vm.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'); } catch (e) {}
-    st.textContent = '*{touch-action:pan-x pan-y}.nav{display:none!important}.ptop>a.ibtn[aria-label="Back to InnerVerse"]{display:none!important}.ptop{padding-left:12px!important}.compose{padding-bottom:10px!important}';
+    st.textContent = '*{touch-action:pan-x pan-y}.nav{display:none!important}.ptop>a.ibtn[aria-label="Back to InnerVerse"]{display:none!important}.ptop{padding-left:12px!important}';
     d.head.appendChild(st);
-    addChatMenu(d);
+    addChatMenu(d); chatPad();
     // episode links in the chat open here in the app
     d.addEventListener('click', e => {
       const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;

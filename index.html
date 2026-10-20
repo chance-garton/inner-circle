@@ -538,6 +538,78 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
   .typing{padding-left:40px}
 }
 
+/* Telegram-style chat (2026-10-20, Chance: "premium, powerful, and spacious not cramped"):
+   the header and the message box float over the messages on glass, bubbles hug their words,
+   name inside the bubble, time and views tucked into the corner, reactions inside the bubble */
+.panel{--toph:0px;--both:0px;background:radial-gradient(900px 520px at 100% 0%,rgba(59,116,204,0.13),transparent 62%),radial-gradient(760px 620px at 0% 100%,rgba(216,170,60,0.07),transparent 62%),var(--ground)}
+.ctop{position:absolute;top:0;left:0;right:0;z-index:3;background:rgba(10,15,28,0.66);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);border-bottom:1px solid rgba(233,238,246,0.06)}
+.ctop .phead,.ctop .ptop,.ctop .livebar{border-bottom:0;background:transparent}
+.ctop #pinbar:not(:empty){padding:0 10px 8px}
+.ctop .pinbar{border:1px solid rgba(216,170,60,0.22);border-radius:14px;background:rgba(21,30,51,0.7);padding:8px 14px}
+.msgs{padding-top:calc(var(--toph) + 12px);padding-bottom:calc(var(--both) + 6px);gap:0;scroll-padding-top:var(--toph);scroll-padding-bottom:var(--both)}
+.cbot{position:absolute;left:0;right:0;bottom:0;z-index:3;background:linear-gradient(to bottom,rgba(10,15,28,0) 0,rgba(10,15,28,0.82) 22px,rgba(10,15,28,0.92) 100%);padding-top:4px}
+.cbot .typing{padding:2px 0 2px 58px;min-height:0}
+.cbot .typing:empty{display:none}
+.cbot .replybar,.cbot .attachbar,.cbot .linkbar{margin:0 10px}
+.compose{border-top:0;background:transparent;padding:6px 10px 10px;gap:8px;align-items:flex-end}
+.compose > .ibtn{width:44px;height:44px;border-radius:50%;background:rgba(21,30,51,0.85);border:1px solid rgba(233,238,246,0.10);color:var(--ink);flex:none;display:flex;align-items:center;justify-content:center}
+.fwrap{flex:1;min-width:0;position:relative;display:flex}
+.fwrap .field{width:100%;margin:0;min-height:44px;border-radius:22px;background:rgba(21,30,51,0.88);border:1px solid rgba(233,238,246,0.10);padding:11px 84px 11px 16px;font-size:16px;line-height:1.35}
+.fwrap .field:focus{border-color:rgba(216,170,60,0.45)}
+.fins{position:absolute;right:3px;bottom:2px;display:flex}
+.fins .ibtn{width:38px;height:40px;color:var(--muted)}
+.compose .send{width:44px;height:44px;box-shadow:0 6px 18px rgba(216,170,60,0.25)}
+.jump{bottom:calc(var(--both) + 12px)}
+.unseen{bottom:calc(var(--both) + 10px)}
+.jump.show ~ .unseen{bottom:calc(var(--both) + 60px)}
+.unmenu{bottom:calc(var(--both) + 112px)}
+.row{gap:8px;margin-top:2px}
+.row.first{margin-top:10px}
+.row .gap{width:36px}
+.bub{border:0;border-radius:18px;padding:6px 11px 7px 12px;line-height:1.42;background:#18223A;box-shadow:0 1px 1.5px rgba(0,0,0,0.3)}
+.row.me .bub{background:#1D3157;border:0}
+.row:not(.first) .bub{border-top-left-radius:6px}
+.row:not(.last) .bub{border-bottom-left-radius:6px}
+.row.last .bub{border-bottom-left-radius:4px}
+.row.last .bub::before{content:'';position:absolute;left:-7px;bottom:0;width:12px;height:16px;background:inherit;-webkit-mask:radial-gradient(14px 16px at 0 0,transparent 98%,#000 100%);mask:radial-gradient(14px 16px at 0 0,transparent 98%,#000 100%)}
+.row.flash .bub{box-shadow:0 0 0 2px var(--gold)}
+.bub.mentioned{border:0;box-shadow:inset 3px 0 0 var(--gold),0 1px 1.5px rgba(0,0,0,0.3);background:#2A2A2E}
+.bub .txt{font-size:15.5px}
+.who{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;gap:6px;font-size:14px;margin-bottom:1px}
+.who > button{min-width:0;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto}
+.who .badge,.who .fbolt{flex:none}
+.who .signs{flex:none;gap:7px;font-size:12px}
+.who .signs svg{width:11px;height:11px}
+.who .zg{font-size:13px}
+.mt{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:rgba(233,238,246,0.48);line-height:1;white-space:nowrap}
+.mt .vw{float:none;margin:0;font-size:11px;font-weight:500;color:inherit;gap:3px}
+.mt .vw svg{width:13px;height:13px}
+.mt.abs{position:absolute;right:11px;bottom:7px}
+.mtsp{display:inline-block;height:1px}
+.mtrow{display:flex;justify-content:flex-end;margin-top:4px}
+.bub .reacts{margin:6px 0 0;gap:5px;align-items:center}
+.bub .reacts .mt{margin-left:auto;padding-left:10px;align-self:flex-end;padding-bottom:1px}
+.bub .react{height:26px;border:0;background:rgba(233,238,246,0.09);padding:0 9px 0 7px}
+.bub .react.mine{background:rgba(216,170,60,0.22);box-shadow:inset 0 0 0 1px rgba(216,170,60,0.55)}
+.bub .rcount{height:26px;background:rgba(143,181,240,0.11)}
+.bub .quote{background:rgba(143,181,240,0.10);border-radius:6px;margin:3px 0 5px}
+.bub .mimg{margin-top:4px}
+.day{background:rgba(21,30,51,0.75);border:0;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+@media (min-width:861px){
+  .ctop{border-radius:16px 16px 0 0}
+  .panel{background:radial-gradient(900px 520px at 100% 0%,rgba(59,116,204,0.13),transparent 62%),radial-gradient(760px 620px at 0% 100%,rgba(216,170,60,0.07),transparent 62%),var(--surface)}
+}
+@media (max-width:860px){
+  .ptop{min-height:56px}
+  .msgs{padding-left:8px;padding-right:10px}
+  .stack{max-width:84%}
+  .compose{padding:6px 8px calc(8px + env(safe-area-inset-bottom)) 8px;gap:7px}
+  .compose > .ibtn{width:44px}
+  .cbot .typing{padding-left:52px}
+}
+html.ivc-inapp .compose{padding-bottom:calc(8px + var(--appsb,0px))}
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){.ctop{background:rgba(10,15,28,0.96)}}
+
 /* the episode player in an episode room (2026-10-11) */
 .plslot{flex:1.45 1 0;min-width:0}
 body.ivc-pl .side{display:none}
@@ -2418,11 +2490,30 @@ function logout() {
   location.href = SITE + '/';
 }
 
+// the top and bottom bars float over the messages (Telegram style); the message list pads itself to their heights
+function wireBars() {
+  const panel = $('.panel'), t = $('#ctop'), b = $('#cbot');
+  if (S.barRO) { S.barRO.disconnect(); S.barRO = null; }
+  if (!panel || !t || !b) return;
+  const set = () => {
+    const box = $('#msgs'), th = t.offsetHeight + 'px', bh = b.offsetHeight + 'px';
+    if (panel.style.getPropertyValue('--toph') === th && panel.style.getPropertyValue('--both') === bh) return;
+    const atEnd = box && box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    panel.style.setProperty('--toph', th); panel.style.setProperty('--both', bh);
+    if (atEnd || S.stick) stickDown();
+  };
+  set();
+  if (window.ResizeObserver) { S.barRO = new ResizeObserver(set); S.barRO.observe(t); S.barRO.observe(b); }
+}
+const NAME_COLORS = ['#8FB5F0','#8FB8A8','#A596F5','#D49A7C','#C9B6E4','#7FC8D6','#E79BB8'];
+function nameColor(uid) { let h = 0; for (const c of String(uid)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return NAME_COLORS[h % NAME_COLORS.length]; }
+
 function renderChat() {
   const hostish = S.me && (S.me.role === 'host' || S.me.role === 'mod');
   app.innerHTML = navHtml(true, true) + `<div class="shell">
     <aside class="side" id="side"></aside>
     <main class="panel" aria-label="Inner Circle Chat">
+      <div class="ctop" id="ctop">
       <div class="ptop">
         ${isSaved(S.room) ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button>${savedIcon(30)}` : S.room ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button><button id="roomThumb" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 100))}" alt="">` : `<img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}</button>`
           : `<a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a><img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}
@@ -2443,7 +2534,9 @@ function renderChat() {
       </div>
       ${S.roomInfo.live && S.me && S.me.role === 'host' ? `<div class="livebar"><b>${S.roomInfo.open ? '<span class="livedot"></span> Live' : 'Live room'}</b><span style="flex:1">When the episode is posted, tie this room to it.</span><button class="btn2 sm" id="liveTie">Tie to episode</button>${S.roomInfo.open ? '<button class="btn2 sm" id="liveEnd">End</button>' : ''}</div>` : ''}
       <div id="pinbar"></div>
+      </div>
       <div class="msgs" id="msgs" aria-live="polite"></div>
+      <div class="cbot" id="cbot">
       <div class="typing" id="typing"></div>
       <div id="replybar"></div>
       <div id="attachbar"></div>
@@ -2451,18 +2544,18 @@ function renderChat() {
       <div id="tsbar"></div>
       <div class="compose">
         <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
-        <button class="ibtn" id="emoBtn" aria-label="Emoji">${P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',{s:21})}</button>
-        <button class="ibtn" id="epBtn" aria-label="Link an episode" title="Link an episode">${P('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',{s:21})}</button>
         <label class="sr" for="field">${isSaved(S.room) ? 'Write a note to yourself' : S.roomInfo.live ? 'Message the live room' : S.room ? 'Talk about this episode' : 'Message the Inner Circle'}</label>
-        <textarea id="field" class="field" rows="1" maxlength="2000" placeholder="${isSaved(S.room) ? 'Note to yourself' : S.roomInfo.live ? 'Message the live room' : S.room ? 'Talk about this episode' : 'Message the Inner Circle'}"></textarea>
+        <div class="fwrap"><textarea id="field" class="field" rows="1" maxlength="2000" placeholder="${isSaved(S.room) ? 'Note to yourself' : S.roomInfo.live ? 'Message the live room' : S.room ? 'Talk about this episode' : 'Message'}"></textarea>
+          <div class="fins"><button class="ibtn" id="epBtn" aria-label="Link an episode" title="Link an episode">${P('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',{s:21})}</button><button class="ibtn" id="emoBtn" aria-label="Emoji" title="Emoji">${P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',{s:21})}</button></div></div>
         <button class="send" id="sendBtn" aria-label="Send">${I.up(21)}</button>
+      </div>
       </div>
       <button class="jump" id="jump" aria-label="Jump to the latest message" title="Jump to the latest message">${I.down()}</button>
       <button class="unseen" id="unseenBtn" aria-label="Unseen messages" title="Go to the oldest unseen message (right-click or hold to clear)">${I.down(18)}<span id="unseenN">0</span></button>
     </main>
   </div>`;
   renderSide(); renderHeadCounts(); plAfterRender(); renderPinbar(); renderMessages(true); renderReply(); renderConn();
-  wireComposer();
+  wireComposer(); wireBars();
   const box = $('#msgs');
   box.addEventListener('scroll', () => {
     if (box.scrollTop < 80 && !S.oldestDone && !S.loadingOlder && S.messages.length) {
@@ -2586,12 +2679,12 @@ function renderReply() {
 }
 
 // reaction chips and the reply count under a message (or a join notice)
-function reactsHtml(m) {
+function reactsHtml(m, meta) {
   const reacts = Object.keys(m.reacts || {}).filter(k => m.reacts[k] && m.reacts[k].length);
   const names = uids => uids.map(u => person(u).name).slice(0, 8).join(', ') + (uids.length > 8 ? ' and ' + (uids.length - 8) + ' more' : '');
   const chips = reacts.map(k => { const em = OLD_R[k] || k; const mineR = S.me && m.reacts[k].includes(S.me.uid); return `<button class="react${mineR ? ' mine' : ''}" data-react="${esc(em)}" data-id="${m.id}" title="${esc(names(m.reacts[k]))}" aria-label="${esc(em)} ${m.reacts[k].length}${mineR ? ', including you' : ''}"><span class="em">${esc(em)}</span>${m.reacts[k].length}</button>`; }).join('');
   const rc = m.replies && !m.deleted ? `<button class="rcount" data-thread="${m.id}" title="View thread">${I.reply(14)}${m.replies}</button>` : '';
-  return chips || rc ? `<div class="reacts">${chips}${rc}</div>` : '';
+  return chips || rc ? `<div class="reacts">${chips}${rc}${meta || ''}</div>` : '';
 }
 const joinLabel = name => `${name} joined the chat`;
 function msgHtml(m, i, list) {
@@ -2621,7 +2714,7 @@ function msgHtml(m, i, list) {
   const first = newDay || !prev || prev.uid !== m.uid || m.created - prev.created > gap || m.id === S.firstUnseen;
   const last = !next || next.uid !== m.uid || next.created - m.created > gap || new Date(next.created).toDateString() !== new Date(m.created).toDateString();
   let out = newDay ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '';
-  let body = '';
+  let body = '', textEnd = false;
   {
     if (m.fwd) {
       const fp = person(m.fwd.uid), inSaved = isSaved(m.room != null ? m.room : S.room);
@@ -2635,13 +2728,18 @@ function msgHtml(m, i, list) {
       body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b><span class="qt">${m.reply.deleted ? 'Message deleted' : rk === 'join' ? 'joined the chat' : esc((m.reply.text || (m.reply.image ? 'Photo' : '')).replace(/\s+/g, ' ').slice(0, 200))}</span></button>`;
     }
     if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
-    if (m.text) { const f = formatText(m.text, m.room != null ? m.room : S.room); body += `<div class="txt">${markMentions(f.html, m)}${m.edited ? ' <span class="time" title="Edited">(edited)</span>' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
+    if (m.text) { const f = formatText(m.text, m.room != null ? m.room : S.room); textEnd = !f.ep && !(m.preview && m.preview.url); body += `<div class="txt">${markMentions(f.html, m)}${textEnd ? '\u0001' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
     if (m.preview && m.preview.url) body += lpHtml(m.preview, m.id);
   }
-  const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile">${esc(p.name)}</button>${badges(p)}${signRow(p)}<span class="time">${fmtTime(m.created)}${m.pinned ? ' · pinned' : ''}</span></div>` : '';
-  const rx = reactsHtml(m);
+  const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile"${p.role === 'host' ? '' : ` style="color:${nameColor(m.uid)}"`}>${esc(p.name)}</button>${badges(p)}${signRow(p)}</div>` : '';
+  const vw = viewsHtml(m);
+  const metaIn = `${m.pinned ? `<span title="Pinned">${P('<path d="M9 4h6l-1 6 3 3H7l3-3z"/><path d="M12 13v7"/>',{s:12})}</span>` : ''}${m.edited ? '<span>edited</span>' : ''}${vw}<span class="mtime">${fmtTime(m.created)}</span>`;
+  const rx = reactsHtml(m, `<span class="mt">${metaIn}</span>`);
+  if (rx) body = body.replace('\u0001', '');
+  else if (textEnd) body = body.replace('\u0001', `<span class="mtsp" style="width:${(m.pinned ? 16 : 0) + (m.edited ? 44 : 0) + (vw ? 34 : 0) + 58}px"></span>`) + `<span class="mt abs">${metaIn}</span>`;
+  else body += `<div class="mtrow"><span class="mt">${metaIn}</span></div>`;
   const av = last ? `<button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile" title="${esc(p.name)}">${avatar(m.uid, 36)}</button>` : '<span class="gap"></span>';
-  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub${mentionedMe(m) ? ' mentioned' : ''}" data-press="${m.id}">${head}${body}${viewsHtml(m)}</div>${rx}</div></div>`;
+  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}${last ? ' last' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub${mentionedMe(m) ? ' mentioned' : ''}" data-press="${m.id}">${head}${body}${rx}</div></div></div>`;
   return out;
 }
 
