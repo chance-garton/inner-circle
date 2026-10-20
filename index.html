@@ -804,6 +804,20 @@ if (location.protocol === 'http:' && /innerversepodcast\.com$/.test(location.hos
     S.token = 'dev.' + id + '.' + encodeURIComponent(name) + '.' + (q.get('email') || id + '@example.com');
   } else S.token = load('ivc_token');
 })();
+// A sign-in made before 2026-10-19 lasts 7 days. The login server hands back a lasting one ("renew")
+// for it; keep that, the same way the home-screen app does, so the member is never logged out again.
+(async function renewToken(){
+  const tok = S.token; if (!tok || /^dev\./.test(tok)) return;
+  try {
+    const r = await fetch(AUTH + '/auth/status', { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store' });
+    if (!r.ok) return;
+    const j = await r.json();
+    if (j.signedIn && j.renew && typeof j.renew === 'string') {
+      if (load('ivc_token') === tok) store('ivc_token', j.renew);
+      if (S.token === tok) S.token = j.renew;
+    }
+  } catch (e) {}
+})();
 
 const loginUrl = () => AUTH + '/auth/choose?return_to=' + encodeURIComponent(location.origin + '/');
 
