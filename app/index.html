@@ -37,7 +37,7 @@
   --display:'Fraunces',Georgia,'Times New Roman',serif;
   --sans:'Manrope','Segoe UI',Helvetica,Arial,sans-serif;
   --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
-  --tabh:50px; --gap:0px; --minih:0px;
+  --tabh:0px; --gap:0px; --minih:0px;
 }
 html.member{--accent:var(--gold)}
 html.playing{--minih:66px}
@@ -198,6 +198,26 @@ html.member .chap.now{background:rgba(216,170,60,0.1)}
 .links a{font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;border:2px solid var(--accent)}
 
 /* tab bar + mini player */
+.tabs{display:none!important}
+/* nav: chat and menu buttons in every header, menu pops out from the top right (build 2026-10-20a) */
+.navbtns{display:flex;align-items:center;gap:2px;margin-left:auto;flex:none}
+.navbtns .iconbtn{position:relative}
+.navbtns .dot,.menu .dot{position:absolute;top:2px;right:0;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--gold);color:var(--on-gold);font-size:11px;font-weight:800;line-height:18px;text-align:center}
+.navbtns .dot:empty,.menu .dot:empty{display:none}
+.menuwrap{position:fixed;inset:0;z-index:65;display:none}
+html.menuopen .menuwrap{display:block}
+.menu{position:absolute;top:calc(var(--st) + 54px);right:10px;width:min(260px,calc(100% - 20px));background:var(--card2);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 44px rgba(0,0,0,0.6);padding:6px;animation:mdrop .18s ease-out;transform-origin:top right}
+@keyframes mdrop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.menu button{position:relative;display:flex;align-items:center;gap:14px;width:100%;min-height:48px;padding:0 14px;border-radius:11px;font-size:16px;font-weight:700;color:var(--ink);text-align:left}
+.menu button svg{color:var(--muted);flex:none}
+.menu button.on{background:rgba(143,181,240,0.12);color:var(--accent)}
+.menu button.on svg{color:var(--accent)}
+html.member .menu button.on{background:rgba(216,170,60,0.12);color:var(--gold)}
+html.member .menu button.on svg{color:var(--gold)}
+.menu button:active{background:rgba(233,238,246,0.08)}
+.menu .dot{position:static;margin-left:auto}
+.hdr .row .btn{white-space:nowrap}
+@media (max-width:359px){.hdr .row{gap:6px}.brandmark .word,.brandmark .plus{font-size:19px}.brandmark img{width:30px;height:30px}.navbtns .iconbtn{width:36px}}
 .tabs::after{content:'';position:absolute;left:0;right:0;top:100%;height:120px;background:#0A0F1C}
 .tabs{position:fixed;left:0;right:0;bottom:calc(-1 * var(--gap));z-index:10;--tb:max(12px,calc(var(--sb) - 22px));height:calc(var(--tabh) + var(--tb));padding-bottom:var(--tb);display:flex;background:#0A0F1C;border-top:1px solid var(--line)}
 .tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:2px;gap:3px;font-size:11px;font-weight:700;color:var(--muted);position:relative}
@@ -383,6 +403,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 </button>
 <button class="minitab" id="minitab" aria-label="Show the player"><img id="minitabArt" alt=""><span class="mtchev"></span></button>
 <nav class="tabs" id="tabs" aria-label="App"></nav>
+<div class="menuwrap" id="menuwrap"><div class="menu" id="menu" role="menu" aria-label="Menu"></div></div>
 <div class="np" id="np" aria-hidden="true"></div>
 <audio id="aud" preload="none" playsinline></audio>
 <div id="saprobe" aria-hidden="true" style="position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)"></div>
@@ -390,7 +411,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-19d';
+const VERSION = '2026-10-20a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -460,6 +481,7 @@ const I = {
   fwd: s => P('<path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M21 4v4.5h-4.5"/>', s),
   prev: s => P('<path d="M18 6 9 12l9 6zM6 6v12"/>', s),
   next: s => P('<path d="m6 6 9 6-9 6zM18 6v12"/>', s),
+  menu: s => P('<path d="M4 7h16M4 12h16M4 17h16"/>', s),
   music: s => P('<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>', s),
   shuffle: s => P('<path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/>', s),
 };
@@ -903,7 +925,7 @@ function go(h) { if (location.hash !== h) location.hash = h; else route(); }
 function setTab(tab) {
   S.tab = tab;
   for (const id of ['home', 'search', 'libv', 'chatv', 'me']) $('#' + id).hidden = (id !== viewId(tab));
-  $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  closeMenu();
   if (tab === 'chat') { if (!S.member) renderChatDoor(); else { mountChat(); setTimeout(maybeAskPush, 1200); try { navigator.clearAppBadge && navigator.clearAppBadge(); } catch (e) {} } }
   tellChat();
 }
@@ -942,17 +964,64 @@ window.addEventListener('hashchange', () => { setTimeout(tellChat, 50);
 
 // ------------------------------------------------------------ tabs
 function renderTabs() {
-  const t = [['home', 'Home', I.home(24)], ['search', 'Episodes', I.search(24)], ['lib', 'Library', I.books(24)]];
-  t.push(['chat', 'Chat', I.chat(24) + (S.member && S.chatUnread ? `<span class="dot">${S.chatUnread > 99 ? '99+' : S.chatUnread}</span>` : '')]);
-  t.push(['me', S.member ? 'Account' : 'Plus+', S.member ? I.user(24) : I.plus(24)]);
-  $('#tabs').innerHTML = t.map(x => `<button data-tab="${x[0]}" class="${S.tab === x[0] ? 'on' : ''}">${x[2]}<span>${x[1]}</span></button>`).join('');
+  // the bottom tab bar is gone (build 2026-10-20a); this keeps the header buttons and the menu up to date
+  const n = S.member && S.chatUnread ? (S.chatUnread > 99 ? '99+' : String(S.chatUnread)) : '';
+  $$('.navbtns .dot, .menu .dot, .ivanav .dot').forEach(d => { d.textContent = n; });
+  const chatDoc = chatDocument(); if (chatDoc) chatDoc.querySelectorAll('.ivanav .dot').forEach(d => { d.textContent = n; });
+  if (document.documentElement.classList.contains('menuopen')) renderMenu();
 }
-$('#tabs').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  const tab = b.dataset.tab;
+function menuItems() {
+  return [['home', 'Home', I.home(22)], ['search', 'Episodes', I.search(22)], ['songs', 'InnerVerse Music', I.music(22)], ['lib', 'Library', I.books(22)],
+    ['chat', 'Chat', I.chat(22)], ['me', S.member ? 'Account' : 'Plus+', S.member ? I.user(22) : I.plus(22)]];
+}
+function renderMenu() {
+  const n = S.member && S.chatUnread ? (S.chatUnread > 99 ? '99+' : String(S.chatUnread)) : '';
+  const cur = !$('#ep').hidden && (location.hash || '').indexOf('#/songs') === 0 ? 'songs' : S.tab;
+  $('#menu').innerHTML = menuItems().map(x => `<button role="menuitem" data-go="${x[0]}" class="${cur === x[0] ? 'on' : ''}">${x[2]}<span>${x[1]}</span>${x[0] === 'chat' ? `<span class="dot">${n}</span>` : ''}</button>`).join('');
+}
+function openMenu() { renderMenu(); document.documentElement.classList.add('menuopen'); }
+function closeMenu() { document.documentElement.classList.remove('menuopen'); }
+function goTab(tab) {
+  closeMenu();
+  if (tab === 'songs') { go('#/songs'); return; }
   if (tab === S.tab && $('#ep').hidden) { const v = $('#' + viewId(tab)); v.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   go(TAB_HASH[tab]);
+}
+$('#menuwrap').addEventListener('click', e => {
+  const b = e.target.closest('button[data-go]');
+  if (b) goTab(b.dataset.go); else closeMenu();
 });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+function navBtnsHtml() {
+  const n = S.member && S.chatUnread ? (S.chatUnread > 99 ? '99+' : String(S.chatUnread)) : '';
+  return `<span class="navbtns"><button class="iconbtn" data-nav="chat" aria-label="Chat">${I.chat(23)}<span class="dot">${n}</span></button><button class="iconbtn" data-nav="menu" aria-label="Menu" aria-haspopup="menu">${I.menu(24)}</button></span>`;
+}
+// every header gets the chat and menu buttons at its right end, whichever view drew it
+function addNavBtns() {
+  $$('.hdr .row').forEach(r => { if (!r.querySelector('.navbtns')) r.insertAdjacentHTML('beforeend', navBtnsHtml()); });
+}
+new MutationObserver(addNavBtns).observe(document.body, { childList: true, subtree: true });
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-nav]'); if (!b) return;
+  e.preventDefault();
+  if (b.dataset.nav === 'menu') openMenu(); else goTab('chat');
+});
+function chatDocument() { const f = $('#chatv iframe'); try { return f && f.contentDocument; } catch (e) { return null; } }
+// the chat page draws its own top bar, so the menu button goes in there, and comes back whenever the chat redraws it
+function addChatMenu(d) {
+  const put = () => {
+    d.querySelectorAll('.ptop, .phead.desk').forEach(bar => {
+      if (bar.querySelector('.ivanav')) return;
+      const b = d.createElement('button');
+      b.className = 'ibtn ivanav'; b.setAttribute('aria-label', 'Menu'); b.setAttribute('aria-haspopup', 'menu');
+      b.innerHTML = I.menu(23);
+      b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); openMenu(); });
+      bar.appendChild(b);
+    });
+  };
+  put();
+  new MutationObserver(put).observe(d.body, { childList: true, subtree: true });
+}
 
 // ------------------------------------------------------------ pieces
 function meta(it) {
@@ -1444,6 +1513,7 @@ function mountChat() {
     try { noZoom(d); const vm = d.querySelector('meta[name=viewport]'); if (vm) vm.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'); } catch (e) {}
     st.textContent = '*{touch-action:pan-x pan-y}.nav{display:none!important}.ptop>a.ibtn[aria-label="Back to InnerVerse"]{display:none!important}.ptop{padding-left:12px!important}.compose{padding-bottom:10px!important}';
     d.head.appendChild(st);
+    addChatMenu(d);
     // episode links in the chat open here in the app
     d.addEventListener('click', e => {
       const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
@@ -1767,7 +1837,7 @@ function resumeAfterVideo(h) {
 // a tap that leaves the page while the video plays: wake the audio player inside that tap, so the phone lets it play
 document.addEventListener('click', e => {
   if (!videoOwns || !VP || !videoPlaying()) return;
-  const a = e.target.closest('a[href^="#"], #epBack, .tabs button');
+  const a = e.target.closest('a[href^="#"], #epBack, [data-go], [data-nav]');
   if (!a) return;
   try { if (!aud.src || isSilent()) aud.src = SILENT; const pr = aud.play(); if (pr) pr.catch(() => {}); } catch (err) {}
 }, true);

@@ -2230,7 +2230,7 @@ const NAV_PERSON = '<svg class="iv-nav-icon" viewBox="0 0 24 24" width="15" heig
 // The website's nav (iv-site-nav), same markup and classes, so it looks the same here.
 function navHtml(member, inChat) {
   document.documentElement.classList.toggle('iv-plus-member', !!member);
-  const links = [['Episodes', SITE + '/episodes'], ['Plus+', SITE + '/plus'], ['Inner Circle', '/', 1], ['About', SITE + '/about'], ['Get Tuned', SITE + '/biofield-tuning', 0, 1]]
+  const links = [['Episodes', SITE + '/episodes'], ['Plus+', SITE + '/plus'], ['Inner Circle', '/', 1], ['App', '/app/'], ['About', SITE + '/about'], ['Get Tuned', SITE + '/biofield-tuning', 0, 1]]
     .map(([l, h, on, tuned]) => `<a href="${h}" class="iv-nav-link${on ? ' iv-nav-active' : ''}${tuned ? ' iv-nav-tuned' : ''}">${tuned ? NAV_BOLT : ''}${l}</a>`).join('');
   const face = member && S.me ? avatar(S.me.uid, 26) : NAV_PERSON;
   const acct = `<div class="iv-nav-account-wrap${member ? ' iv-nav-signed' : ''}"><button type="button" class="iv-nav-link iv-nav-login${member ? ' iv-nav-signedin' : ''}" aria-label="${member ? 'Open your account' : 'Log in'}"><span class="iv-nav-login-label">${member ? 'Account' : 'Log in'}</span><span class="iv-nav-face">${face}</span></button>`
