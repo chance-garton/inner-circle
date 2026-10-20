@@ -204,6 +204,13 @@ html.member .chap.now{background:rgba(216,170,60,0.1)}
 .navbtns .iconbtn{position:relative}
 .navbtns .dot,.menu .dot{position:absolute;top:2px;right:0;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--gold);color:var(--on-gold);font-size:11px;font-weight:800;line-height:18px;text-align:center}
 .navbtns .dot:empty,.menu .dot:empty{display:none}
+/* the Chat button is a gold pill so it catches the eye, and glows while messages are waiting (build 2026-10-20c) */
+.navbtns .chatpill{width:auto;height:36px;padding:0 14px 0 11px;margin-right:4px;border-radius:999px;background:var(--gold);color:var(--on-gold);display:flex;align-items:center;gap:6px;font-weight:800;font-size:14.5px;letter-spacing:.2px;box-shadow:0 4px 14px rgba(216,170,60,0.28)}
+.navbtns .chatpill:active{background:#C99A2E}
+.navbtns .chatpill .dot{top:-6px;right:-6px;background:#F4F6FA;color:#0A0F1C;box-shadow:0 0 0 2px var(--ground)}
+.navbtns .chatpill.has{animation:chatglow 2.6s ease-in-out infinite}
+@keyframes chatglow{0%,100%{box-shadow:0 4px 14px rgba(216,170,60,0.28)}50%{box-shadow:0 0 0 5px rgba(216,170,60,0.22),0 4px 22px rgba(216,170,60,0.55)}}
+@media (prefers-reduced-motion:reduce){.navbtns .chatpill.has{animation:none;box-shadow:0 0 0 3px rgba(216,170,60,0.3),0 4px 18px rgba(216,170,60,0.5)}}
 .menuwrap{position:fixed;inset:0;z-index:65;display:none}
 html.menuopen .menuwrap{display:block}
 .menu{position:absolute;top:calc(var(--st) + 54px);right:10px;width:min(260px,calc(100% - 20px));background:var(--card2);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 44px rgba(0,0,0,0.6);padding:6px;animation:mdrop .18s ease-out;transform-origin:top right}
@@ -217,7 +224,7 @@ html.member .menu button.on svg{color:var(--gold)}
 .menu button:active{background:rgba(233,238,246,0.08)}
 .menu .dot{position:static;margin-left:auto}
 .hdr .row .btn{white-space:nowrap}
-@media (max-width:359px){.hdr .row{gap:6px}.brandmark .word,.brandmark .plus{font-size:19px}.brandmark img{width:30px;height:30px}.navbtns .iconbtn{width:36px}}
+@media (max-width:359px){.hdr .row{gap:6px}.brandmark .word,.brandmark .plus{font-size:19px}.brandmark img{width:30px;height:30px}.navbtns .iconbtn{width:36px}.navbtns .chatpill{width:auto;padding:0 11px 0 9px;font-size:13.5px}}
 .tabs::after{content:'';position:absolute;left:0;right:0;top:100%;height:120px;background:#0A0F1C}
 .tabs{position:fixed;left:0;right:0;bottom:calc(-1 * var(--gap));z-index:10;--tb:max(12px,calc(var(--sb) - 22px));height:calc(var(--tabh) + var(--tb));padding-bottom:var(--tb);display:flex;background:#0A0F1C;border-top:1px solid var(--line)}
 .tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:2px;gap:3px;font-size:11px;font-weight:700;color:var(--muted);position:relative}
@@ -413,7 +420,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-20b';
+const VERSION = '2026-10-20c';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -509,6 +516,7 @@ const S = {
       fetch(CIRCLE_API + '/api/handoff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ h: hm[1], token: tok }) })
         .then(r => { S.handoff = r.ok ? 'sent' : 'failed'; showHandoffDone(); }, () => { S.handoff = 'failed'; showHandoffDone(); });
     }
+    S.fromLogin = true;
     const after = load('iva_after') || '#/';
     store('iva_after', null);
     history.replaceState(null, '', location.pathname + (after.indexOf('#/') === 0 ? after : '#/'));
@@ -519,6 +527,13 @@ const S = {
   document.documentElement.classList.toggle('member', S.member);
 })();
 
+// the app reopens on the screen it was left on (Chance, 2026-10-20: "open where I left off");
+// a login return, a notification or a shared link brings its own address and wins
+(function restorePlace() {
+  if (S.fromLogin || (location.hash && location.hash !== '#/') || /[?&]h=/.test(location.search)) return;
+  const l = load('iva_last');
+  if (l && l !== '#/' && /^#\/(e|p|songs|search|library|chat|me)\b/.test(l)) history.replaceState(null, '', location.pathname + location.search + l);
+})();
 function loginUrl(h) {
   store('iva_after', location.hash && location.hash.indexOf('#/') === 0 ? location.hash : '#/');
   return AUTH + '/auth/choose?return_to=' + encodeURIComponent(location.origin + location.pathname.replace(/[^/]*$/, '') + (h ? '?h=' + h : ''));
@@ -937,6 +952,7 @@ let lastTabHash = Object.assign({}, TAB_HASH);
 let NAV = [location.hash || '#/'];
 function route() {
   const h = location.hash || '#/';
+  if (!/iv_session=/.test(h)) store('iva_last', h);
   const m = h.match(/^#\/(e|p)\/([^/?#]+)/);
   if (m) {
     $('#ep').hidden = false;
@@ -969,6 +985,7 @@ function renderTabs() {
   // the bottom tab bar is gone (build 2026-10-20a); this keeps the header buttons and the menu up to date
   const n = S.member && S.chatUnread ? (S.chatUnread > 99 ? '99+' : String(S.chatUnread)) : '';
   $$('.navbtns .dot, .menu .dot, .ivanav .dot').forEach(d => { d.textContent = n; });
+  $$('.navbtns .chatpill').forEach(b => b.classList.toggle('has', !!n));
   const chatDoc = chatDocument(); if (chatDoc) chatDoc.querySelectorAll('.ivanav .dot').forEach(d => { d.textContent = n; });
   if (document.documentElement.classList.contains('menuopen')) renderMenu();
 }
@@ -996,7 +1013,7 @@ $('#menuwrap').addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 function navBtnsHtml() {
   const n = S.member && S.chatUnread ? (S.chatUnread > 99 ? '99+' : String(S.chatUnread)) : '';
-  return `<span class="navbtns"><button class="iconbtn" data-nav="chat" aria-label="Chat">${I.chat(23)}<span class="dot">${n}</span></button><button class="iconbtn" data-nav="menu" aria-label="Menu" aria-haspopup="menu">${I.menu(24)}</button></span>`;
+  return `<span class="navbtns"><button class="iconbtn chatpill${n ? ' has' : ''}" data-nav="chat" aria-label="Chat">${I.chat(19)}<span>Chat</span><span class="dot">${n}</span></button><button class="iconbtn" data-nav="menu" aria-label="Menu" aria-haspopup="menu">${I.menu(24)}</button></span>`;
 }
 // every header gets the chat and menu buttons at its right end, whichever view drew it
 function addNavBtns() {
