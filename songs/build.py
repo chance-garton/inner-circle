@@ -5,8 +5,15 @@ Run from the repo root after any change to songs/songs.json:  python3 songs/buil
 Each page carries the song's art, a player, the episode it came from, and the tags that
 make a shared link show the art and title in messages and social posts. It also removes
 share pages whose song is no longer listed.
+
+It also writes songs/<id>/cover.jpg: a 600x600 plain JPEG of the song's art that the app
+hands the phone for the lock screen, CarPlay, AirPlay and car screens. The phone ignores
+the Squarespace CDN copy (it can arrive as WebP), so this copy must be a real JPEG served
+from this site. It is remade only when the art changes (songs/<id>/cover.src keeps the
+source address). Needs Pillow (pip install pillow); without it the pages still build and
+the lock screen shows the InnerVerse logo for new songs.
 """
-import html, json, os, shutil, sys, urllib.request
+import html, io, json, os, shutil, sys, urllib.request
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 BASE = 'https://circle.innerversepodcast.com/songs/'
@@ -28,6 +35,35 @@ def full_art(art, w):
     if art.startswith('http'):
         return art.split('?')[0] + f'?format={w}w' if 'squarespace-cdn.com' in art else art
     return BASE + art
+
+
+def write_cover(sid, src):
+    """songs/<id>/cover.jpg, square, 600 px, baseline JPEG, from the song's art (or the episode thumbnail)."""
+    folder = os.path.join(ROOT, sid)
+    jpg, mark = os.path.join(folder, 'cover.jpg'), os.path.join(folder, 'cover.src')
+    if not src:
+        return
+    if os.path.exists(jpg) and os.path.exists(mark) and open(mark).read().strip() == src:
+        return
+    try:
+        from PIL import Image
+    except ImportError:
+        print('Pillow not installed: no lock screen cover for', sid, file=sys.stderr)
+        return
+    try:
+        req = urllib.request.Request(src, headers={'Accept': 'image/jpeg,image/png,image/*', 'User-Agent': 'innerverse-songs'})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            im = Image.open(io.BytesIO(r.read())).convert('RGB')
+        w, h = im.size
+        side = min(w, h)
+        im = im.crop(((w - side) // 2, (h - side) // 2, (w - side) // 2 + side, (h - side) // 2 + side))
+        im = im.resize((600, 600), Image.LANCZOS)
+        os.makedirs(folder, exist_ok=True)
+        im.save(jpg, 'JPEG', quality=86, progressive=False, optimize=True)
+        with open(mark, 'w') as f:
+            f.write(src + '\n')
+    except Exception as e:
+        print('cover not made for', sid, ':', e, file=sys.stderr)
 
 
 def clock(sec):
@@ -132,6 +168,7 @@ def main():
         os.makedirs(os.path.join(ROOT, sid), exist_ok=True)
         with open(os.path.join(ROOT, sid, 'index.html'), 'w') as f:
             f.write(page)
+        write_cover(sid, full_art(s['art'], 1000) if s.get('art') else (thumb + '?format=1000w' if thumb else ''))
         built.add(sid)
     for name in os.listdir(ROOT):
         p = os.path.join(ROOT, name)

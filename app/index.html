@@ -420,7 +420,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-20c';
+const VERSION = '2026-10-21a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -2085,11 +2085,19 @@ let miniSwiped = false;
 })();
 
 // media session (lock screen and headphones)
+// Lock screen, CarPlay, AirPlay and car screens art (build 2026-10-21a). The phone skips the Squarespace CDN
+// copy (it can arrive as WebP, and was labelled with the wrong type and size), so a song uses the plain
+// 600x600 JPEG songs/build.py writes beside its share page; the app icon is only the last resort.
+function lockArt() {
+  const icon = { src: location.origin + location.pathname.replace(/[^/]*$/, '') + 'icons/icon-512.png', sizes: '512x512', type: 'image/png' };
+  if (cur.kind === 's') return [{ src: SONGS + encodeURIComponent(cur.key.slice(2)) + '/cover.jpg', sizes: '600x600', type: 'image/jpeg' }, icon];
+  return cur.thumb ? [{ src: img(cur.thumb, 500), sizes: '500x281' }, icon] : [icon];
+}
 function updateMediaSession() {
   if (!('mediaSession' in navigator) || !cur) return;
   try {
     navigator.mediaSession.metadata = new MediaMetadata({ title: cur.title, artist: 'InnerVerse' + (cur.kind === 'p' ? ' Plus+' : ''), album: cur.show || 'InnerVerse',
-      artwork: [{ src: img(cur.thumb, 500), sizes: cur.kind === 's' ? '800x800' : '500x281', type: 'image/jpeg' }, { src: location.origin + location.pathname.replace(/[^/]*$/, '') + 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }] });
+      artwork: lockArt() });
     const ms = navigator.mediaSession;
     ms.setActionHandler('play', () => aud.play());
     ms.setActionHandler('pause', () => aud.pause());
