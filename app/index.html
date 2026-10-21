@@ -420,7 +420,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-21a';
+const VERSION = '2026-10-21b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -2090,8 +2090,9 @@ let miniSwiped = false;
 // 600x600 JPEG songs/build.py writes beside its share page; the app icon is only the last resort.
 function lockArt() {
   const icon = { src: location.origin + location.pathname.replace(/[^/]*$/, '') + 'icons/icon-512.png', sizes: '512x512', type: 'image/png' };
-  if (cur.kind === 's') return [{ src: SONGS + encodeURIComponent(cur.key.slice(2)) + '/cover.jpg', sizes: '600x600', type: 'image/jpeg' }, icon];
-  return cur.thumb ? [{ src: img(cur.thumb, 500), sizes: '500x281' }, icon] : [icon];
+  // only ONE image per song or episode: with the icon listed beside it, iPhone kept choosing the icon (build 2026-10-21b)
+  if (cur.kind === 's') return [{ src: SONGS + encodeURIComponent(cur.key.slice(2)) + '/cover.jpg', sizes: '600x600', type: 'image/jpeg' }];
+  return cur.thumb ? [{ src: img(cur.thumb, 500), sizes: '500x281' }] : [icon];
 }
 function updateMediaSession() {
   if (!('mediaSession' in navigator) || !cur) return;
