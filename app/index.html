@@ -420,7 +420,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-21b';
+const VERSION = '2026-10-21c';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1996,6 +1996,31 @@ aud.addEventListener('timeupdate', () => {
   if (npOpen) updateNP();
   if (EPV && EPV.key === cur.key) { const s = $('#lbSub'); if (s) s.textContent = currentChapterTitle() || clock(aud.currentTime); markChapter(); }
 });
+// After a call or another app interrupts (build 2026-10-21c, an experiment, Chance: a spam call stopped a song in the car and Audible
+// took over afterwards). Any pause this app did not ask for counts as an interruption: the app keeps its lock screen card and
+// keeps trying to start again for 90 seconds, and if it is opened within 15 minutes of the interruption it carries on by itself.
+// iPhone may freeze a home-screen web app before the call ends, so this cannot be promised; a true App Store app is the real fix.
+let ivOwnPause = false, ivInterruptedAt = 0, ivResumeTimer = null;
+(function () {
+  const realPause = HTMLMediaElement.prototype.pause;
+  aud.pause = function () { ivOwnPause = true; ivStopResume(); return realPause.call(aud); };
+})();
+function ivStopResume() { ivInterruptedAt = 0; if (ivResumeTimer) { clearInterval(ivResumeTimer); ivResumeTimer = null; } }
+function ivTryResume() {
+  if (!ivInterruptedAt || !cur || isSilent() || !aud.paused) { if (!aud.paused) ivStopResume(); return; }
+  aud.play().then(ivStopResume).catch(() => {});
+}
+aud.addEventListener('pause', () => {
+  const mine = ivOwnPause; ivOwnPause = false;
+  if (mine || isSilent() || aud.ended || !cur) return;
+  ivInterruptedAt = Date.now();
+  if (ivResumeTimer) clearInterval(ivResumeTimer);
+  ivResumeTimer = setInterval(() => { if (Date.now() - ivInterruptedAt > 90000) { clearInterval(ivResumeTimer); ivResumeTimer = null; return; } ivTryResume(); }, 2000);
+});
+function ivResumeOnReturn() { if (ivInterruptedAt && Date.now() - ivInterruptedAt < 15 * 60000 && document.visibilityState === 'visible') ivTryResume(); }
+document.addEventListener('visibilitychange', ivResumeOnReturn);
+window.addEventListener('pageshow', ivResumeOnReturn);
+window.addEventListener('focus', ivResumeOnReturn);
 aud.addEventListener('play', () => { if (isSilent()) return; { const f = $('#chatv iframe'); try { f && f.contentWindow.postMessage({ ivcApp: 1, appPlaying: 1 }, location.origin); } catch (e) {} } updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'playing'; });
 aud.addEventListener('pause', () => { if (isSilent()) return; /* paused: bring a hidden player back so it can be found */ if (miniHidden) { miniHidden = false; syncMini(); } if (cur) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'paused'; });
 aud.addEventListener('ended', () => { if (isSilent()) return; if (cur) { delete PROG[cur.key]; store('iva_prog', PROG); } updateMini(); refreshLB(); });
