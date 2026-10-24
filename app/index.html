@@ -420,7 +420,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-21c';
+const VERSION = '2026-10-24a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -768,10 +768,10 @@ async function flushSongPending() {
   for (const id of Object.keys(p)) if (await libPut('s:' + id, { saved: !!p[id] }, true)) { delete p[id]; changed = true; }
   if (changed) store('iva_songs_pending', Object.keys(p).length ? p : null);
 }
+// the link alone, no words around it (Chance, 2026-10-24: "just a link, no extra text when you paste")
 function shareSong(s) {
   const url = songUrl(s);
-  const text = s.title + ', an original InnerVerse song from ' + songEpTitle(s);
-  if (navigator.share) navigator.share({ title: s.title, text, url }).catch(() => {});
+  if (navigator.share) navigator.share({ url }).catch(() => {});
   else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => toast('Link copied.'), () => toast(url));
   else toast(url);
 }
@@ -792,6 +792,9 @@ function updateSongUI() {
     b.setAttribute('aria-label', (on ? 'Remove ' : 'Save ') + s.title + (on ? ' from' : ' to') + ' your library');
     b.innerHTML = I.heart(b.dataset.sz || 20, on);
   });
+  // song cards in the chat show play or pause to match (2026-10-24)
+  const cf = $('#chatv iframe');
+  if (cf) { const id = cur && cur.kind === 's' ? cur.key.slice(2) : ''; try { cf.contentWindow.postMessage({ ivcApp: 1, song: { id, playing: !!(id && !aud.paused && !isSilent()) } }, location.origin); } catch (e) {} }
 }
 document.addEventListener('click', e => {
   const h = e.target.closest('[data-song-heart]');
@@ -1483,8 +1486,9 @@ window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || !e.data.ivc) return;
   const d = e.data;
   if (d.level) store('iva_level', d.level === 'all' ? null : d.level);
+  if (d.playSong) { const s = songById(d.playSong); if (s) playSong(s); } // a song card's play button in the chat (2026-10-24)
   if (d.videoPlaying && !aud.paused) aud.pause(); // a video started in the chat
-  if (d.openEp && /^#\/[ep]\/[a-z0-9-]+$/.test(d.openEp)) go(d.openEp); // an episode link tapped in the chat opens here
+  if (d.openEp && /^#\/(?:[ep]|songs)\/[a-z0-9-]+$/.test(d.openEp)) go(d.openEp); // an episode link tapped in the chat opens here
   if (d.openNotify) { go('#/me'); setTimeout(() => { const b = $('#pushBox'); b && b.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }
   if ('unread' in d) {
     S.chatUnread = d.unread || 0; renderTabs();

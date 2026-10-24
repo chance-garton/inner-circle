@@ -380,6 +380,16 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .lpbar .lp:not(.small):not(.vid){display:flex;gap:10px;align-items:flex-start}
 .lpbar .lp:not(.small):not(.vid) .lpbody{flex:1;min-width:0}
 .lpwait{flex:1;font-size:13px;color:var(--muted);padding:8px 0}
+.sng{display:flex;gap:12px;align-items:center;background:rgba(10,15,28,0.55);border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;max-width:440px}
+.sng .sart{width:64px;height:64px;border-radius:8px;object-fit:cover;flex:none;background:var(--card)}
+.sng .sbody{min-width:0;flex:1}
+.sng .sk{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);line-height:1.2}
+.sng .st{font-weight:600;font-size:14px;line-height:1.3;margin-top:4px}
+.sng .se{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;text-decoration:none}
+.sng .sbar{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sng .sbar input{flex:1;min-width:0;accent-color:var(--gold);height:4px;margin:0}
+.sng .sp{width:44px;height:44px;border-radius:50%;border:0;background:var(--gold);color:var(--on-gold);display:inline-flex;align-items:center;justify-content:center;flex:none;cursor:pointer}
+.lpbar .sng{flex:1;margin-top:0;max-width:none}
 .unfurl{display:flex;gap:12px;background:rgba(10,15,28,0.55);border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;align-items:flex-start;max-width:440px}
 .unfurl img{width:136px;height:76px;border-radius:8px;object-fit:cover;flex:none}
 .unfurl .ut{font-weight:600;font-size:14px;line-height:1.38;margin:5px 0 0}
@@ -950,6 +960,10 @@ function epFrom(text) {
   return m[1] ? { kind: m[1].toLowerCase(), slug: m[2].toLowerCase() } : { kind: m[3].toLowerCase() === 'p' ? 'plus' : 'episodes', slug: m[4].toLowerCase() };
 }
 const epUrl = ep => `${SITE}/${ep.kind}/${ep.slug}`;
+// an InnerVerse Music link (the share page circle.../songs/<id>/ or the app's #/songs/<id>) plays right in the chat (Chance, 2026-10-24)
+const SONG_RE = /circle\.innerversepodcast\.com\/(?:app\/?#\/)?songs\/([a-z0-9-]+)/i;
+const SONGS_URL = 'https://circle.innerversepodcast.com/songs/';
+function songFrom(text) { const m = String(text || '').match(SONG_RE); return m ? m[1].toLowerCase() : ''; }
 function secs(h, m, s) { return (Number(h) || 0) * 3600 + Number(m) * 60 + Number(s); }
 function formatText(text, room) {
   const ep = epFrom(text);
@@ -1130,6 +1144,7 @@ function tellApp(obj) { try { if (window.parent !== window) window.parent.postMe
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || !e.data.ivcApp) return;
   if (e.data.room !== undefined) { const r = String(e.data.room || ''); if (S.connected && S.view === 'chat') switchRoom(r); else S.openRoom = r; }
+  if (e.data.song !== undefined) { SP.appId = (e.data.song && e.data.song.id) || ''; SP.appOn = !!(e.data.song && e.data.song.playing); songCardsSync(); }
   if (e.data.appPlaying && typeof PL !== 'undefined' && PL.playing) { try { PL.mode === 'audio' ? PL.audio.pause() : PL.vid && PL.vid.pause(); } catch (err) {} } // the app's own player started
   if ('away' in e.data) { S.appAway = !!e.data.away; if (!S.appAway) onResume(); sendQuiet({ t: 'away', on: away() }); if (!away()) { S.unread = 0; renderMentionBadge(); queueSeen(); markSeenOnScreen(); } }
 });
@@ -1527,7 +1542,71 @@ function unfurlHtml(e, kind, slug, tag) {
     <div style="min-width:0"><div class="ue${isPlus ? '' : ' free'}">${isPlus ? 'Plus+ full episode' : 'Free episode'}</div>
     <div class="ut">${esc(epTitle(e))}</div>${meta ? `<div class="um">${meta}</div>` : ''}</div></${tag || 'a'}>`;
 }
+// ------------------------------------------------------------ InnerVerse Music in the chat (2026-10-24)
+// Chance: "if you paste a music link from the app into a chat, a music player embeds to the chat where you pasted it".
+// Inside the home-screen app the play button hands the song to the app's own player (lock screen, queue);
+// on the website the card plays it here with one shared audio element.
+let SONGS_P = null; const SONGS_BY = {};
+function loadSongs() {
+  if (!SONGS_P) SONGS_P = fetch(SONGS_URL + 'songs.json', { cache: 'no-cache' }).then(r => r.json()).then(j => { (j.songs || []).forEach(x => { if (x && x.id) SONGS_BY[x.id] = x; }); }).catch(() => { SONGS_P = null; });
+  return SONGS_P || Promise.resolve();
+}
+const SP = { a: null, id: '', appId: '', appOn: false };
+const SNG_PLAY = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
+const SNG_PAUSE = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>';
+function songArt(x) { return /^https?:\/\//.test(x.art || '') ? x.art + '?format=300w' : x.art ? SONGS_URL + x.art : ''; }
+function songCardHtml(x, draft) {
+  const art = songArt(x);
+  const len = x.seconds ? fmtT(x.seconds) : '';
+  return `<div class="sng" data-sc="${esc(x.id)}">${art ? `<img class="sart" src="${esc(art)}" alt="" loading="lazy">` : ''}
+    <div class="sbody"><div class="sk">InnerVerse Music</div><div class="st">${esc(x.title)}</div>
+    <a class="se" href="${esc(SITE + '/episodes/' + x.episode)}" target="_blank" rel="noopener">${esc(x.episodeTitle || '')}</a>
+    ${IN_APP ? '' : `<div class="sbar"><span class="scur">0:00</span><input type="range" min="0" max="${x.seconds || 0}" step="1" value="0" aria-label="Seek ${esc(x.title)}"${draft ? ' disabled' : ''}><span>${len}</span></div>`}</div>
+    <button class="sp" ${draft ? 'tabindex="-1"' : `data-songplay="${esc(x.id)}"`} aria-label="Play ${esc(x.title)}">${SNG_PLAY}</button></div>`;
+}
+function songOn(id) { return IN_APP ? SP.appOn && SP.appId === id : !!(SP.a && SP.id === id && !SP.a.paused); }
+function songCardsSync() {
+  document.querySelectorAll('[data-songplay]').forEach(b => { const on = songOn(b.dataset.songplay); b.innerHTML = on ? SNG_PAUSE : SNG_PLAY; b.setAttribute('aria-label', (on ? 'Pause' : 'Play') + ' song'); });
+  if (IN_APP || !SP.a) return;
+  document.querySelectorAll(`.sng[data-sc="${SP.id}"] .sbar`).forEach(bar => {
+    const r = bar.querySelector('input'); if (!r || r.disabled) return;
+    if (!r.matches(':active')) r.value = Math.floor(SP.a.currentTime || 0);
+    bar.querySelector('.scur').textContent = fmtT(SP.a.currentTime || 0);
+  });
+}
+function songToggle(id) {
+  if (IN_APP) { tellApp({ playSong: id }); return; }
+  const x = SONGS_BY[id]; if (!x) return;
+  if (!SP.a) {
+    SP.a = new Audio(); SP.a.preload = 'none';
+    ['play', 'pause', 'ended', 'timeupdate', 'loadedmetadata'].forEach(ev => SP.a.addEventListener(ev, songCardsSync));
+    SP.a.addEventListener('ended', () => { SP.a.currentTime = 0; songCardsSync(); });
+  }
+  if (SP.id === id) { SP.a.paused ? SP.a.play().catch(() => {}) : SP.a.pause(); return; }
+  SP.id = id; SP.a.src = SONGS_URL + x.file; SP.a.play().catch(() => {});
+  try { if (typeof PL !== 'undefined' && PL.playing) PL.mode === 'audio' ? PL.audio.pause() : PL.vid && PL.vid.pause(); } catch (e) {}
+  document.querySelectorAll('.sng .sbar input').forEach(r => { if (r.closest('.sng').dataset.sc !== id) { r.value = 0; r.parentNode.querySelector('.scur').textContent = '0:00'; } });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-songplay]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation(); songToggle(b.dataset.songplay);
+}, true);
+document.addEventListener('input', e => {
+  const r = e.target; if (!r.matches || !r.matches('.sng .sbar input')) return;
+  const id = r.closest('.sng').dataset.sc;
+  if (SP.a && SP.id === id) SP.a.currentTime = Number(r.value);
+  else { songToggle(id); const go = () => { SP.a.currentTime = Number(r.value); }; SP.a.readyState ? go() : SP.a.addEventListener('loadedmetadata', go, { once: true }); }
+});
+function hydrateSongs(root) {
+  const els = (root || document).querySelectorAll('[data-songcard]'); if (!els.length) return;
+  loadSongs().then(() => els.forEach(el => {
+    const id = el.getAttribute('data-songcard'); el.removeAttribute('data-songcard');
+    const x = SONGS_BY[id]; if (!x) return;
+    el.innerHTML = songCardHtml(x); songCardsSync(); stickDown();
+  }));
+}
 function hydrateUnfurls(root) {
+  hydrateSongs(root);
   (root || document).querySelectorAll('[data-unfurl]').forEach(el => {
     const [kind, slug] = el.getAttribute('data-unfurl').split(':'); el.removeAttribute('data-unfurl');
     loadIndexes().then(ix => {
@@ -1543,6 +1622,7 @@ function hydrateUnfurls(root) {
 const IN_APP = (() => { try { return window.parent !== window && window.parent.location.origin === location.origin && /^\/app\//.test(window.parent.location.pathname); } catch (e) { return false; } })();
 if (IN_APP) window.addEventListener('click', e => {
   const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+  const sid = songFrom(a.href); if (sid) { e.preventDefault(); e.stopPropagation(); tellApp({ openEp: '#/songs/' + sid }); return; }
   const ep = epFrom(a.href); if (!ep) return;
   e.preventDefault(); e.stopPropagation();
   const t = (a.href.match(/[?&]t=(\d+)/) || [])[1];
@@ -2728,7 +2808,7 @@ function msgHtml(m, i, list) {
       body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b><span class="qt">${m.reply.deleted ? 'Message deleted' : rk === 'join' ? 'joined the chat' : esc((m.reply.text || (m.reply.image ? 'Photo' : '')).replace(/\s+/g, ' ').slice(0, 200))}</span></button>`;
     }
     if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
-    if (m.text) { const f = formatText(m.text, m.room != null ? m.room : S.room); textEnd = !f.ep && !(m.preview && m.preview.url); body += `<div class="txt">${markMentions(f.html, m)}${textEnd ? '\u0001' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; }
+    if (m.text) { const f = formatText(m.text, m.room != null ? m.room : S.room); textEnd = !f.ep && !songFrom(m.text) && !(m.preview && m.preview.url); body += `<div class="txt">${markMentions(f.html, m)}${textEnd ? '\u0001' : ''}</div>`; if (f.ep) body += `<div data-unfurl="${f.ep.kind}:${f.ep.slug}"></div>`; else { const sid = songFrom(m.text); if (sid) body += `<div data-songcard="${esc(sid)}"></div>`; } }
     if (m.preview && m.preview.url) body += lpHtml(m.preview, m.id);
   }
   const head = first ? `<div class="who${p.role === 'host' ? ' host' : ''}"><button data-who="${esc(m.uid)}" title="View profile"${p.role === 'host' ? '' : ` style="color:${nameColor(m.uid)}"`}>${esc(p.name)}</button>${badges(p)}${signRow(p)}</div>` : '';
@@ -2781,7 +2861,7 @@ function renderMessages(toBottom) {
 function clientLink(text) {
   const m = String(text || '').match(/(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/);
   if (!m) return '';
-  try { const u = new URL(m[1]); if (epFrom(u.href)) return ''; return u.href.slice(0, 800); } catch (e) { return ''; }
+  try { const u = new URL(m[1]); if (epFrom(u.href) || songFrom(u.href)) return ''; return u.href.slice(0, 800); } catch (e) { return ''; }
 }
 const EYE_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 // your own posts always show the eye (even at 0); others' once someone has seen them
@@ -2805,6 +2885,12 @@ function linkPreview(text) {
   const box = $('#linkbar'); if (!box) return;
   const link = clientLink(text);
   const ep = !link ? epFrom(text) : null;
+  const sid = !link && !ep ? songFrom(text) : '';
+  if (sid) {
+    const k = 'song:' + sid; if (S.lpShown === k) return; S.lpShown = k;
+    loadSongs().then(() => { if (S.lpShown !== k) return; const so = SONGS_BY[sid]; box.innerHTML = so ? `<div class="lpbar">${songCardHtml(so, true)}</div>` : ''; stickDown(); });
+    return;
+  }
   if (ep) {
     const k = 'ep:' + ep.kind + ':' + ep.slug; if (S.lpShown === k) return; S.lpShown = k;
     loadIndexes().then(ix => {
