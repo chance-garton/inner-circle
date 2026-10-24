@@ -3054,7 +3054,7 @@ document.addEventListener('touchmove', e => {
     if (!sideways) { RD = null; return; }
     r.go = true; r.x0 = t.clientX; clearTimeout(pressTimer); pressTimer = null;
     if (r.mode === 'open') { r.o = openRooms(); if (!r.o) { RD = null; return; } try { document.activeElement && document.activeElement.blur(); } catch (err) {} }
-    r.o.classList.add('rdrag'); r.o.classList.remove('rsnap');
+    r.o.classList.add('rdrag'); r.o.classList.remove('rsnap'); r.o.firstElementChild.style.animation = 'none'; // never replay the slide-in (it restarted when rdrag came off)
   }
   e.preventDefault();
   const W = innerWidth || 390, d = t.clientX - r.x0;
