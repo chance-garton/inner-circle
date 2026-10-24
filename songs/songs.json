@@ -280,6 +280,26 @@
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/d0096f26-1b67-48ce-95b0-febcde872251/kirkbride-asylums.jpg",
       "seconds": 151,
       "added": "2026-10-19"
+    },
+    {
+      "id": "meg-moonbeam-basket-of-stars",
+      "episode": "meg-moonbeam",
+      "episodeTitle": "Secret Superpowers In Your Chart: Chiron, Natal Eclipses, & Advanced Astrology with Meg Moonbeam",
+      "title": "Basket of Stars",
+      "file": "meg-moonbeam-basket-of-stars.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/beab434b-c49f-4a03-9c04-ceb9713c89db/moonbeam.jpg",
+      "seconds": 258,
+      "added": "2026-10-24"
+    },
+    {
+      "id": "meg-moonbeam-moonbeam",
+      "episode": "meg-moonbeam",
+      "episodeTitle": "Secret Superpowers In Your Chart: Chiron, Natal Eclipses, & Advanced Astrology with Meg Moonbeam",
+      "title": "Moonbeam",
+      "file": "meg-moonbeam-moonbeam.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/beab434b-c49f-4a03-9c04-ceb9713c89db/moonbeam.jpg",
+      "seconds": 140,
+      "added": "2026-10-24"
     }
   ]
 }
