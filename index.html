@@ -241,7 +241,11 @@ html.iv-plus-member #iv-nav.iv-nav-v2 .iv-nav-join { display: none !important; }
 .ibtn.rbig .rdot{top:-6px;right:-6px;box-shadow:0 0 0 2px var(--ground)}
 /* phones: the Rooms list fills the screen and slides in from the left (Chance, 2026-10-24) */
 @media (max-width:860px){
-  .scrim.rfull{padding:0;align-items:stretch;justify-content:flex-start;background:var(--ground)}
+  .scrim.rfull{padding:0;align-items:stretch;justify-content:flex-start;background:rgba(5,8,15,0.6)}
+  .scrim.rfull.rdrag>.sheet,.scrim.rfull.rsnap>.sheet{box-shadow:6px 0 28px rgba(0,0,0,0.55)}
+  .scrim.rfull.rdrag>.sheet{animation:none;will-change:transform}
+  .scrim.rfull.rsnap>.sheet{transition:transform .2s ease-out}
+  .scrim.rfull.rsnap{transition:background-color .2s ease-out}
   .scrim.rfull>.sheet{width:100%!important;max-width:none;height:100%;max-height:none;border:0;border-radius:0;box-shadow:none;background:var(--ground);padding-top:env(safe-area-inset-top);padding-bottom:calc(env(safe-area-inset-bottom) + var(--appsb,0px));animation:rslide .22s ease-out}
 }
 @keyframes rslide{from{transform:translateX(-100%)}to{transform:none}}
@@ -2330,13 +2334,10 @@ function openRooms(focusSearch) {
   o.firstElementChild.style.width = 'min(560px, 100%)';
   if (isPhone()) o.classList.add('rfull');
   $('#rclose').onclick = () => closeOverlay();
-  // full screen on phones: a swipe back to the left closes it again
-  let sx = null, sy = 0;
-  o.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive: true });
-  o.addEventListener('touchend', e => { if (sx == null) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; sx = null; if (dx < -70 && Math.abs(dy) < Math.abs(dx) * 0.6) closeOverlay(); }, { passive: true });
   let t; $('#rq').addEventListener('input', () => { clearTimeout(t); t = setTimeout(drawRooms, 120); });
   drawRooms(); sendQuiet({ t: 'rooms' });
   if (focusSearch === true || matchMedia('(hover: hover)').matches) setTimeout(() => { const q = $('#rq'); q && q.focus(); }, 50);
+  return o;
 }
 function drawRooms() {
   const box = $('#rbody'); if (!box) return;
@@ -3009,19 +3010,60 @@ document.addEventListener('contextmenu', e => {
   if (matchMedia('(hover: none)').matches) return; // phones use the long press below
   openActions(Number(b.dataset.press), e.clientX, e.clientY);
 });
-// phones: a swipe from left to right anywhere in the chat opens the Rooms list (Chance, 2026-10-24)
-let rsw = null;
+// phones: the Rooms list follows the finger (Chance, 2026-10-24: "pulled the menu out following your finger").
+// A sideways drag from left to right anywhere in the chat pulls it in from the left; a drag back to the left
+// on the open list pushes it away. Let go past a third of the screen (or with a flick) and it finishes the move,
+// otherwise it springs back.
+let RD = null;
+function rdSet(p) {
+  const o = RD && RD.o; if (!o) return;
+  RD.p = p = Math.max(0, Math.min(1, p));
+  o.firstElementChild.style.transform = `translateX(${(p - 1) * 100}%)`;
+  o.style.backgroundColor = `rgba(5,8,15,${(0.6 * p).toFixed(3)})`;
+}
+function rdEnd() {
+  const r = RD; RD = null; if (!r || !r.o) return;
+  const o = r.o, sh = o.firstElementChild;
+  const open = r.v > 0.45 ? true : r.v < -0.45 ? false : r.p > (r.mode === 'open' ? 0.33 : 0.67);
+  o.classList.add('rsnap');
+  requestAnimationFrame(() => {
+    sh.style.transform = open ? 'translateX(0)' : 'translateX(-100%)';
+    o.style.backgroundColor = open ? 'rgba(5,8,15,0.6)' : 'rgba(5,8,15,0)';
+  });
+  let done = false;
+  const fin = () => { if (done) return; done = true; if (!open) { if ($('#ovl') === o) closeOverlay(); } else { o.classList.remove('rsnap', 'rdrag'); sh.style.transform = ''; o.style.backgroundColor = ''; if (r.mode === 'open') haptic(10); } };
+  sh.addEventListener('transitionend', fin, { once: true }); setTimeout(fin, 320);
+}
 document.addEventListener('touchstart', e => {
-  rsw = null;
-  if (e.touches.length !== 1 || $('#ovl') || S.view !== 'chat' || !isPhone()) return;
-  const el = e.target;
-  if (!el.closest || !el.closest('.panel') || el.closest('input,textarea,[contenteditable],.sbar,.lp.vid,iframe,.hscroll')) return;
-  const t = e.touches[0]; rsw = { x: t.clientX, y: t.clientY, at: Date.now() };
+  RD = null;
+  if (e.touches.length !== 1 || S.view !== 'chat' || !isPhone()) return;
+  const el = e.target; if (!el.closest) return;
+  const ov = $('#ovl');
+  let mode = '';
+  if (ov && ov.classList.contains('rfull') && el.closest('#ovl.rfull') && !el.closest('input,textarea')) mode = 'close';
+  else if (!ov && el.closest('.panel') && !el.closest('input,textarea,[contenteditable],.sbar,.lp.vid,iframe,.hscroll')) mode = 'open';
+  if (!mode) return;
+  const t = e.touches[0]; RD = { mode, x0: t.clientX, y0: t.clientY, lx: t.clientX, lt: Date.now(), v: 0, p: mode === 'open' ? 0 : 1, o: mode === 'close' ? ov : null, go: false };
 }, { passive: true });
-document.addEventListener('touchend', e => {
-  if (!rsw) return; const t = e.changedTouches[0], dx = t.clientX - rsw.x, dy = t.clientY - rsw.y, ms = Date.now() - rsw.at; rsw = null;
-  if (dx > 70 && Math.abs(dy) < dx * 0.5 && ms < 700 && !$('#ovl')) { haptic(10); openRooms(); }
-}, { passive: true });
+document.addEventListener('touchmove', e => {
+  const r = RD; if (!r) return;
+  const t = e.touches[0], dx = t.clientX - r.x0, dy = t.clientY - r.y0, now = Date.now();
+  if (!r.go) {
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    const sideways = Math.abs(dx) > Math.abs(dy) * 1.2 && (r.mode === 'open' ? dx > 0 : dx < 0);
+    if (!sideways) { RD = null; return; }
+    r.go = true; r.x0 = t.clientX; clearTimeout(pressTimer); pressTimer = null;
+    if (r.mode === 'open') { r.o = openRooms(); if (!r.o) { RD = null; return; } try { document.activeElement && document.activeElement.blur(); } catch (err) {} }
+    r.o.classList.add('rdrag'); r.o.classList.remove('rsnap');
+  }
+  e.preventDefault();
+  const W = innerWidth || 390, d = t.clientX - r.x0;
+  rdSet(r.mode === 'open' ? d / W : 1 + d / W);
+  const dt = now - r.lt; if (dt > 0) r.v = r.v * 0.4 + ((t.clientX - r.lx) / dt) * 0.6;
+  r.lx = t.clientX; r.lt = now;
+}, { passive: false });
+document.addEventListener('touchend', () => { if (RD && RD.go) rdEnd(); else RD = null; }, { passive: true });
+document.addEventListener('touchcancel', () => { if (RD && RD.go) rdEnd(); else RD = null; }, { passive: true });
 let pressTimer = null, pressXY = null;
 document.addEventListener('touchstart', e => {
   const rb = e.target.closest('.react[data-react]');
