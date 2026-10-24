@@ -320,6 +320,26 @@
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/da04aaf6-b5b1-4bb1-86f5-675366306395/inner-whirled-26.jpg",
       "seconds": 133,
       "added": "2026-10-24"
+    },
+    {
+      "id": "inner-whirled-25-white-city",
+      "episode": "inner-whirled-25",
+      "episodeTitle": "Tartaria and the 1893 World's Fair: Debunking the Conspiracy Claims with Historical Records",
+      "title": "White City",
+      "file": "inner-whirled-25-white-city.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/c7cf84e1-2eea-453b-a57a-97920cdf5da5/inner-whirled-25.jpg",
+      "seconds": 185,
+      "added": "2026-10-24"
+    },
+    {
+      "id": "inner-whirled-25-suspicions",
+      "episode": "inner-whirled-25",
+      "episodeTitle": "Tartaria and the 1893 World's Fair: Debunking the Conspiracy Claims with Historical Records",
+      "title": "Suspicions",
+      "file": "inner-whirled-25-suspicions.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/c7cf84e1-2eea-453b-a57a-97920cdf5da5/inner-whirled-25.jpg",
+      "seconds": 188,
+      "added": "2026-10-24"
     }
   ]
 }
