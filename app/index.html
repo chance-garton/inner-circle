@@ -420,7 +420,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-24a';
+const VERSION = '2026-10-24b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1532,11 +1532,13 @@ function sendChatRoom() {
   try { f.contentWindow.postMessage({ ivcApp: 1, room: S.chatRoom }, location.origin); } catch (e) {}
   S.chatRoom = null;
 }
+// the chat page is cached by the phone for up to 10 minutes (GitHub Pages); a fresh address each launch means a chat update shows on the next open (2026-10-24)
+const CHAT_FRESH = Date.now().toString(36);
 function mountChat() {
   if (!S.member || S.chatLoaded) return;
   S.chatLoaded = true;
   const f = document.createElement('iframe');
-  f.title = 'Inner Circle'; f.src = '/?app=1' + (S.chatRoom ? '#room=' + encodeURIComponent(S.chatRoom) : ''); S.chatRoom = null;
+  f.title = 'Inner Circle'; f.src = '/?app=1&v=' + CHAT_FRESH + (S.chatRoom ? '#room=' + encodeURIComponent(S.chatRoom) : ''); S.chatRoom = null;
   f.setAttribute('allow', 'clipboard-write; autoplay');
   $('#chatv').appendChild(f);
   f.addEventListener('load', () => {
