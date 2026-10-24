@@ -235,6 +235,17 @@ html.iv-plus-member #iv-nav.iv-nav-v2 .iv-nav-join { display: none !important; }
 .rcount{flex:none;font-size:12px;color:var(--muted);font-weight:600}
 .rsec{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin:12px 0 4px 14px}
 .rbtn{position:relative}
+/* phones: Rooms sits first in the header, gold and outlined so it reads as the way around the chat (Chance, 2026-10-24) */
+.ibtn.rbig{width:40px;height:40px;border-radius:12px;color:var(--gold);background:rgba(216,170,60,0.14);border:1.5px solid rgba(216,170,60,0.55);margin-right:6px}
+.ibtn.rbig:active{background:rgba(216,170,60,0.26)}
+.ibtn.rbig .rdot{top:-6px;right:-6px;box-shadow:0 0 0 2px var(--ground)}
+/* phones: the Rooms list fills the screen and slides in from the left (Chance, 2026-10-24) */
+@media (max-width:860px){
+  .scrim.rfull{padding:0;align-items:stretch;justify-content:flex-start;background:var(--ground)}
+  .scrim.rfull>.sheet{width:100%!important;max-width:none;height:100%;max-height:none;border:0;border-radius:0;box-shadow:none;background:var(--ground);padding-top:env(safe-area-inset-top);padding-bottom:calc(env(safe-area-inset-bottom) + var(--appsb,0px));animation:rslide .22s ease-out}
+}
+@keyframes rslide{from{transform:translateX(-100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.scrim.rfull>.sheet{animation:none}}
 .rbtn .rdot{position:absolute;top:4px;right:2px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--gold);color:#121826;font-size:10.5px;font-weight:800;display:none;align-items:center;justify-content:center;line-height:1}
 .rlist{display:flex;flex-direction:column;padding:4px 8px 16px}
 .ritem{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:12px;text-align:left;width:100%;color:var(--ink)}
@@ -2317,7 +2328,12 @@ function openRooms(focusSearch) {
     <div style="padding:0 16px 8px"><input id="rq" class="finput" type="search" placeholder="Find an episode room" aria-label="Find an episode room" autocomplete="off" enterkeyhint="search" style="height:46px;font-size:15px"></div>
     <div id="rbody" class="rlist"></div></div>`, false, 'Rooms');
   o.firstElementChild.style.width = 'min(560px, 100%)';
+  if (isPhone()) o.classList.add('rfull');
   $('#rclose').onclick = () => closeOverlay();
+  // full screen on phones: a swipe back to the left closes it again
+  let sx = null, sy = 0;
+  o.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive: true });
+  o.addEventListener('touchend', e => { if (sx == null) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; sx = null; if (dx < -70 && Math.abs(dy) < Math.abs(dx) * 0.6) closeOverlay(); }, { passive: true });
   let t; $('#rq').addEventListener('input', () => { clearTimeout(t); t = setTimeout(drawRooms, 120); });
   drawRooms(); sendQuiet({ t: 'rooms' });
   if (focusSearch === true || matchMedia('(hover: hover)').matches) setTimeout(() => { const q = $('#rq'); q && q.focus(); }, 50);
@@ -2597,10 +2613,10 @@ function renderChat() {
     <main class="panel" aria-label="Inner Circle Chat">
       <div class="ctop" id="ctop">
       <div class="ptop">
-        ${isSaved(S.room) ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button>${savedIcon(30)}` : S.room ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button><button id="roomThumb" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 100))}" alt="">` : `<img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}</button>`
-          : `<a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a><img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}
+        ${isSaved(S.room) ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button><button class="ibtn rbtn rbig" id="roomsBtn2" aria-label="Rooms" title="Rooms">${ROOMS_ICON(22)}<span class="rdot"></span></button>${savedIcon(30)}` : S.room ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button><button class="ibtn rbtn rbig" id="roomsBtn2" aria-label="Rooms" title="Rooms">${ROOMS_ICON(22)}<span class="rdot"></span></button><button id="roomThumb" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 100))}" alt="">` : `<img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}</button>`
+          : `<a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a><button class="ibtn rbtn rbig" id="roomsBtn2" aria-label="Rooms" title="Rooms">${ROOMS_ICON(22)}<span class="rdot"></span></button><img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}
         <button id="ptitle" aria-label="Who is here" style="flex:1;min-width:0;margin-left:4px;text-align:left;color:inherit"><h1 class="room${S.room ? ' ep' : ''}">${esc(S.room ? shortRoom(S.roomInfo.title) : 'Inner Circle Chat')}</h1><div class="sub" id="cnt2"></div></button>
-        <span id="plHost2" style="display:contents"></span><button class="ibtn rbtn" id="roomsBtn2" aria-label="Rooms" title="Rooms">${ROOMS_ICON(21)}<span class="rdot"></span></button>
+        <span id="plHost2" style="display:contents"></span>
         <button class="ibtn mbtn" id="mentBtn2" aria-label="Settings" title="Settings">${I.gear(21)}<span class="mbadge" style="display:none"></span></button>
         <button class="ibtn" id="searchBtn2" aria-label="Search">${I.search(21)}</button>
       </div>
@@ -2993,6 +3009,19 @@ document.addEventListener('contextmenu', e => {
   if (matchMedia('(hover: none)').matches) return; // phones use the long press below
   openActions(Number(b.dataset.press), e.clientX, e.clientY);
 });
+// phones: a swipe from left to right anywhere in the chat opens the Rooms list (Chance, 2026-10-24)
+let rsw = null;
+document.addEventListener('touchstart', e => {
+  rsw = null;
+  if (e.touches.length !== 1 || $('#ovl') || S.view !== 'chat' || !isPhone()) return;
+  const el = e.target;
+  if (!el.closest || !el.closest('.panel') || el.closest('input,textarea,[contenteditable],.sbar,.lp.vid,iframe,.hscroll')) return;
+  const t = e.touches[0]; rsw = { x: t.clientX, y: t.clientY, at: Date.now() };
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  if (!rsw) return; const t = e.changedTouches[0], dx = t.clientX - rsw.x, dy = t.clientY - rsw.y, ms = Date.now() - rsw.at; rsw = null;
+  if (dx > 70 && Math.abs(dy) < dx * 0.5 && ms < 700 && !$('#ovl')) { haptic(10); openRooms(); }
+}, { passive: true });
 let pressTimer = null, pressXY = null;
 document.addEventListener('touchstart', e => {
   const rb = e.target.closest('.react[data-react]');
