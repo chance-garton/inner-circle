@@ -393,6 +393,31 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 @media (max-width:359px){.songrow .songhit{width:80px}.songline .songhit{width:60px}}
 @media (min-width:760px){.media{margin:0;border-radius:16px}.rowep .artc{width:176px}.songrow .songhit{width:120px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* promo box (2026-10-25): the website's cream promo card, fed by innerverse-data promo.json (one tick in the Airtable Promotions table) */
+.pcard{--pp:#F7F4EC;--pe:#E4DDCB;--pf:#1F4A3A;--pd:#163629;--pm:#4F5E4D;--ps:#9A6F1E;position:relative;background:var(--pp);color:var(--pd);border-radius:14px;padding:18px;box-shadow:0 0 0 1px var(--pe) inset;font-family:var(--sans);display:grid;gap:12px}
+.pcard::before{content:"";position:absolute;inset:6px;border:1px solid rgba(31,74,58,.18);border-radius:10px;pointer-events:none}
+.pcard .ptop{display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center;position:relative}
+.pcard.noart .ptop{grid-template-columns:1fr}
+.pcard .part{width:96px;height:96px;border-radius:8px;overflow:hidden;background:#fff}
+.pcard .part img{display:block;width:100%;height:100%;object-fit:cover}
+.pcard .peye{font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--pf)}
+.pcard .pclock{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;font-weight:700;color:var(--ps);font-variant-numeric:tabular-nums}
+.pcard .pclock::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--ps);box-shadow:0 0 0 3px rgba(154,111,30,.18)}
+.pcard h3{font-family:var(--display);font-weight:500;font-size:22px;line-height:1.12;margin:6px 0 0;color:var(--pd);letter-spacing:-.01em}
+.pcard h3 em{font-style:italic;font-weight:400}
+.pcard p{margin:0;font-size:14.5px;line-height:1.55;color:var(--pm);position:relative}
+.pcard ul{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:14px;line-height:1.4;position:relative}
+.pcard li{display:grid;grid-template-columns:14px 1fr;gap:8px;align-items:baseline}
+.pcard li::before{content:"";width:8px;height:8px;transform:translateY(-1px) rotate(45deg);border:1.5px solid var(--pf);border-radius:1px}
+.pcard .pacts{display:flex;flex-wrap:wrap;gap:10px;align-items:center;position:relative}
+.pcard .pcta{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border-radius:999px;background:var(--pf);color:var(--pp);font-weight:800;font-size:14.5px;text-decoration:none}
+.pcard .pcode{display:inline-flex;align-items:stretch;min-height:44px;border:1.5px dashed var(--pf);border-radius:8px;overflow:hidden}
+.pcard .pcode span{padding:0 10px;display:flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--pm)}
+.pcard .pcode button{all:unset;cursor:pointer;padding:0 12px;display:flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:800;font-size:14px;letter-spacing:.12em;color:var(--pd);background:rgba(31,74,58,.07)}
+.pcard .pcode small{font-size:11px;letter-spacing:.04em;font-weight:700;color:var(--pm)}
+.pcard .pfine{font-size:12px;line-height:1.5}
+.pcard .pfine a{color:var(--pf);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+@media (min-width:640px){.pcard .ptop{grid-template-columns:132px 1fr}.pcard .part{width:132px;height:132px}.pcard h3{font-size:26px}}
 </style>
 </head>
 <body>
@@ -420,7 +445,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-24b';
+const VERSION = '2026-10-25a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1125,6 +1150,45 @@ function vibeShuffle(lib) {
   }
   return VIBE.list;
 }
+// ------------------------------------------------------------ promo box (2026-10-25)
+// The same temporary promotion the website shows, from innerverse-data promo.json (built from the Airtable
+// Promotions table; the ticked row). Hidden after Ends On (Chicago date). Members follow Show On's Plus side,
+// visitors its free side. Untick Active and run build-index.yml to remove it here and on the site.
+let PROMO = null;
+async function loadPromo() {
+  try { const r = await fetch(DATA + 'promo.json?t=' + Date.now(), { cache: 'no-store' }); PROMO = r.ok ? await r.json() : null; } catch (e) { PROMO = null; }
+  if (S.lib) renderHome();
+}
+function chicagoToday() { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(new Date()); } catch (e) { return new Date().toISOString().slice(0, 10); } }
+function promoDays(end) { return Math.round((Date.parse(end + 'T00:00:00Z') - Date.parse(chicagoToday() + 'T00:00:00Z')) / 86400000); }
+function promoCard() {
+  const p = PROMO;
+  if (!p || !p.active) return '';
+  if (S.member ? p.onPlus === false : p.onFree === false) return '';
+  const d = p.endsOn ? promoDays(p.endsOn) : null;
+  if (d != null && d < 0) return '';
+  const nice = p.endsOn ? new Date(p.endsOn + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' }) : '';
+  const clock = d == null ? '' : d > 1 ? `Closes ${nice}, ${d} days left` : d === 1 ? 'Closes tomorrow' : 'Last day to enroll';
+  const title = esc(p.headline).replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  let fine = esc(p.fine);
+  if (p.linkLabel && p.linkUrl) fine = fine.replace(esc(p.linkLabel), `<a href="${esc(p.linkUrl)}" target="_blank" rel="noopener">${esc(p.linkLabel)}</a>`);
+  const bullets = Array.isArray(p.bullets) ? p.bullets : [];
+  return `<div class="sec"><aside class="pcard${p.image ? '' : ' noart'}" aria-label="Featured">
+    <div class="ptop">${p.image ? `<div class="part"><img src="${esc(img(p.image, 300))}" alt="" loading="lazy"></div>` : ''}
+      <div>${p.eyebrow ? `<div class="peye">${esc(p.eyebrow)}</div>` : ''}${clock ? `<div class="pclock">${clock}</div>` : ''}<h3>${title}</h3></div></div>
+    ${p.body ? `<p>${esc(p.body)}</p>` : ''}
+    ${bullets.length ? `<ul>${bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}
+    <div class="pacts">${p.buttonUrl ? `<a class="pcta" href="${esc(p.buttonUrl)}" target="_blank" rel="noopener">${esc(p.buttonLabel || 'Learn more')}</a>` : ''}
+      ${p.code ? `<div class="pcode"><span>${esc(p.codeLabel || 'Code')}</span><button type="button" data-promo-copy aria-label="Copy coupon code ${esc(p.code)}">${esc(p.code)} <small>Copy</small></button></div>` : ''}</div>
+    ${fine ? `<p class="pfine">${fine}</p>` : ''}</aside></div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-promo-copy]'); if (!b || !PROMO) return;
+  e.preventDefault();
+  const sm = b.querySelector('small'), done = () => { sm.textContent = 'Copied'; setTimeout(() => { sm.textContent = 'Copy'; }, 1600); };
+  try { navigator.clipboard.writeText(PROMO.code).then(done, done); } catch (err) { done(); }
+});
+
 function renderHome() {
   const v = $('#home');
   if (!S.lib) { v.innerHTML = `<header class="hdr"><div class="row">${headerBrand()}</div></header><div class="loading"><div class="spin"></div></div>`; return; }
@@ -1142,6 +1206,7 @@ function renderHome() {
       <div class="acts"><button class="btn${S.member ? ' gold' : ''}" data-play="${esc(latest.key)}">${I.play(18)} Listen</button><a class="btn line" href="${epHref(latest)}">Open episode</a></div></div></div>` : ''}
     ${cont.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Continue listening</h2></div><div class="hscroll">${cont.map(tile).join('')}</div></div>` : ''}
     ${(() => { const sv = savedList(); return sv.length ? `<div class="sec"><div class="sechead"><h2 class="h2">My library</h2><a href="#/library">See all</a></div><div class="hscroll">${sv.slice(0, 12).map(tile).join('')}</div></div>` : ''; })()}
+    ${promoCard()}
     ${S.member ? '' : `<div class="sec">${plusPitch(true)}</div>`}
     ${songsRow()}
     ${firsts.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Good first episodes</h2></div><div class="hscroll">${firsts.map(tile).join('')}</div></div>` : ''}
@@ -2280,6 +2345,7 @@ loadLibrary().then(async () => {
   $('#home').innerHTML = `<header class="hdr"><div class="row">${headerBrand()}</div></header><div class="wrap"><div class="empty">The episodes could not load. Check your connection and pull this screen down or reopen the app.<br><br><button class="btn line" onclick="location.reload()">Try again</button></div></div>`;
 });
 checkStatus();
+loadPromo();
 if (handoffPending()) { showHandoffBar(); pollHandoff(); }
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(v => {
