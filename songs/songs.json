@@ -2,6 +2,26 @@
   "about": "Original songs made for InnerVerse episodes. The app orders songs by their episode's release date, newest first, and keeps one episode's songs in the order listed here (track order); keep this file in the same order so it reads the way the app shows it. id names the song (and its files and share page, songs/<id>/); episode is the episode's FREE slug (the /episodes/<slug> address); art is the square cover's Squarespace CDN address (Chance sends one per batch), a square image in this folder, or empty to fall back to the episode's thumbnail. After any change here, run: python3 songs/build.py",
   "songs": [
     {
+      "id": "kyle-denton-herbal-dentistry-inside-out",
+      "episode": "kyle-denton-herbal-dentistry",
+      "episodeTitle": "The Tooth Truths Most Dentists Won't Admit, with Kyle Denton of Tippecanoe Herbs",
+      "title": "Inside Out",
+      "file": "kyle-denton-herbal-dentistry-inside-out.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/a1f5bcab-e82e-4730-84f8-d163bab5a696/Golden+tree-of-life+tooth+illustration.png",
+      "seconds": 213,
+      "added": "2026-10-25"
+    },
+    {
+      "id": "kyle-denton-herbal-dentistry-the-whole-tooth",
+      "episode": "kyle-denton-herbal-dentistry",
+      "episodeTitle": "The Tooth Truths Most Dentists Won't Admit, with Kyle Denton of Tippecanoe Herbs",
+      "title": "The Whole Tooth",
+      "file": "kyle-denton-herbal-dentistry-the-whole-tooth.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/a1f5bcab-e82e-4730-84f8-d163bab5a696/Golden+tree-of-life+tooth+illustration.png",
+      "seconds": 207,
+      "added": "2026-10-25"
+    },
+    {
       "id": "astroherbalism-libra-image-of-air",
       "episode": "astroherbalism-libra",
       "episodeTitle": "Libra Herbs: What Makes a Plant Venusian? | Astro-Herbalism",
