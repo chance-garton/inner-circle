@@ -416,6 +416,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 .pcard .pcode button{all:unset;cursor:pointer;padding:0 12px;display:flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:800;font-size:14px;letter-spacing:.12em;color:var(--pd);background:rgba(31,74,58,.07)}
 .pcard .pcode small{font-size:11px;letter-spacing:.04em;font-weight:700;color:var(--pm)}
 .pcard .pfine{font-size:12px;line-height:1.5}
+.eppromo{margin:6px 0 14px}
 .pcard .pfine a{color:var(--pf);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 @media (min-width:640px){.pcard .ptop{grid-template-columns:132px 1fr}.pcard .part{width:132px;height:132px}.pcard h3{font-size:26px}}
 </style>
@@ -445,7 +446,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-25a';
+const VERSION = '2026-10-25b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1158,13 +1159,16 @@ let PROMO = null;
 async function loadPromo() {
   try { const r = await fetch(DATA + 'promo.json?t=' + Date.now(), { cache: 'no-store' }); PROMO = r.ok ? await r.json() : null; } catch (e) { PROMO = null; }
   if (S.lib) renderHome();
+  fillEpPromo();
 }
 function chicagoToday() { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(new Date()); } catch (e) { return new Date().toISOString().slice(0, 10); } }
 function promoDays(end) { return Math.round((Date.parse(end + 'T00:00:00Z') - Date.parse(chicagoToday() + 'T00:00:00Z')) / 86400000); }
-function promoCard() {
+// plusSide: which side of Show On applies (Home: the member's side; an episode page: that page's kind). bare: no Home section wrapper.
+function promoCard(plusSide, bare) {
   const p = PROMO;
   if (!p || !p.active) return '';
-  if (S.member ? p.onPlus === false : p.onFree === false) return '';
+  if (plusSide == null) plusSide = !!S.member;
+  if (plusSide ? p.onPlus === false : p.onFree === false) return '';
   const d = p.endsOn ? promoDays(p.endsOn) : null;
   if (d != null && d < 0) return '';
   const nice = p.endsOn ? new Date(p.endsOn + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' }) : '';
@@ -1173,14 +1177,20 @@ function promoCard() {
   let fine = esc(p.fine);
   if (p.linkLabel && p.linkUrl) fine = fine.replace(esc(p.linkLabel), `<a href="${esc(p.linkUrl)}" target="_blank" rel="noopener">${esc(p.linkLabel)}</a>`);
   const bullets = Array.isArray(p.bullets) ? p.bullets : [];
-  return `<div class="sec"><aside class="pcard${p.image ? '' : ' noart'}" aria-label="Featured">
+  return `${bare ? '' : '<div class="sec">'}<aside class="pcard${p.image ? '' : ' noart'}" aria-label="Featured">
     <div class="ptop">${p.image ? `<div class="part"><img src="${esc(img(p.image, 300))}" alt="" loading="lazy"></div>` : ''}
       <div>${p.eyebrow ? `<div class="peye">${esc(p.eyebrow)}</div>` : ''}${clock ? `<div class="pclock">${clock}</div>` : ''}<h3>${title}</h3></div></div>
     ${p.body ? `<p>${esc(p.body)}</p>` : ''}
     ${bullets.length ? `<ul>${bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}
     <div class="pacts">${p.buttonUrl ? `<a class="pcta" href="${esc(p.buttonUrl)}" target="_blank" rel="noopener">${esc(p.buttonLabel || 'Learn more')}</a>` : ''}
       ${p.code ? `<div class="pcode"><span>${esc(p.codeLabel || 'Code')}</span><button type="button" data-promo-copy aria-label="Copy coupon code ${esc(p.code)}">${esc(p.code)} <small>Copy</small></button></div>` : ''}</div>
-    ${fine ? `<p class="pfine">${fine}</p>` : ''}</aside></div>`;
+    ${fine ? `<p class="pfine">${fine}</p>` : ''}</aside>${bare ? '' : '</div>'}`;
+}
+// the episode page's slot (#epPromo, under the Plus+ card, above Chapters); filled at render and again once promo.json arrives
+function fillEpPromo() {
+  const el = document.getElementById('epPromo'); if (!el || !EPV) return;
+  el.innerHTML = promoCard(!!EPV.plus, true);
+  el.hidden = !el.innerHTML;
 }
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-promo-copy]'); if (!b || !PROMO) return;
@@ -1768,6 +1778,7 @@ function renderEpisode() {
     ${S.member ? `<div class="card" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Inner Circle</div><h3>Talk about this episode</h3><p>Share what stood out with fellow members in this episode's own room.</p><div class="acts"><button class="btn line" id="epRoom" style="--accent:var(--gold)">${I.chat(18)} Join the conversation</button></div></div>` : ''}
     ${E.notes ? `<div class="card" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Members' show notes</div><p style="margin-top:6px">The full research notes for this episode, as a document.</p><button class="btn gold" id="notesBtn">${I.doc(18)} Download the show notes</button><p class="note" id="notesMsg"></p></div>` : ''}
     ${freePlus && !S.member ? `<div class="card goldline" style="margin-top:6px"><div class="eyebrow" style="color:var(--gold)">Plus+ full episode</div><h3>${more ? `There are ${more} more minutes of this conversation.` : 'There is more to this conversation.'}</h3><p>Members hear the whole thing${E.plusDuration ? ', ' + esc(E.plusDuration) + ' in all' : ''}, uncut and ad free.</p><div class="acts"><a class="btn gold" href="${SITE}/plus" target="_blank" rel="noopener">Start your 7-day free trial</a><button class="btn line" data-act="login" style="--accent:var(--gold)">Log in</button></div></div>` : ''}
+    <div id="epPromo" class="eppromo" hidden></div>
     ${E.chapters.length || E.locked.length ? `<div class="acc open" id="chapAcc"><button>Chapters ${I.down(22)}</button><div class="in" id="chapters">${chaptersHtml()}</div></div>` : ''}
     ${E.themes.length ? `<div class="acc"><button>Core themes ${I.down(22)}</button><div class="in">${E.themes.map(t => `<div class="theme"><h4>${esc(t.title)}${t.m ? '<span class="mtag" title="Plus+ members" aria-label="Plus+ members">+</span>' : ''}</h4><p>${esc(t.body)}</p></div>`).join('')}</div></div>` : ''}
     ${E.quotes.length ? `<div class="acc"><button>Memorable ${I.down(22)}</button><div class="in">${E.quotes.map(q => `<div class="quote"><blockquote>${esc(q.text)}</blockquote><div class="who"><img loading="lazy" src="${esc(q.author === HOST ? HOST_PORTRAIT : img(q.portrait, 100))}" alt="">${esc(q.author)}${q.m ? '<span class="mtag" title="Plus+ members" aria-label="Plus+ members">+</span>' : ''}</div></div>`).join('')}</div></div>` : ''}
@@ -1775,6 +1786,7 @@ function renderEpisode() {
     ${related.length ? `<div class="sec"><div class="sechead"><h2 class="h2">You might also like</h2></div><div class="hscroll">${related.map(tile).join('')}</div></div>` : ''}
   </div>`;
   bindBack();
+  fillEpPromo();
   $('#epShare').addEventListener('click', () => {
     const url = SITE + '/' + (E.plus ? 'plus' : 'episodes') + '/' + E.slug;
     if (navigator.share) navigator.share({ title: E.title, url }).catch(() => {});
