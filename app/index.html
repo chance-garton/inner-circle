@@ -430,13 +430,16 @@ html:not(.member) .np .ctl .big{background:var(--lapis);color:#fff}
 /* the song player (2026-10-26): title close to the timeline, the episode it came from at the bottom */
 .np .npbody{max-width:620px;margin:0 auto;width:100%}
 .np.song .npbody{flex:1;display:flex;flex-direction:column}
-.np.song .art.sq{width:min(100%,520px,41vh);max-width:none;margin-top:4px}
+.np.song{padding-top:var(--st);padding-bottom:calc(var(--sb) + 8px)}
+.np.song .grab{padding:0}
+.np.song .grab .iconbtn{height:34px}
+.np.song .art.sq{width:min(100%,520px,38vh);max-width:none;margin-top:2px}
 @media (max-height:700px){.np.song .art.sq{width:min(100%,27vh)}.np .nk{margin-top:14px}.np.song .nt{font-size:22px}.np.song .ctl{gap:16px}.np.song .ctl .big{width:64px;height:64px}.np.song .opts{margin-bottom:12px}.np .ner img{width:88px}}
 .np .nk{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:22px 0 2px}
 .np.song .nt{margin:0;font-size:26px;line-height:1.2}
 .np.song input[type=range]{margin:10px 0 2px}
 .np.song .ctl{margin:10px 0 6px}
-.np.song .opts{margin:4px 0 18px}
+.np.song .opts{margin:4px 0 14px}
 .np .npep{margin-top:auto;display:block;width:100%;text-align:left;background:rgba(233,238,246,0.05);border:1px solid var(--line);border-radius:16px;padding:12px 12px 12px;color:var(--ink)}
 .np .npep:active{background:rgba(233,238,246,0.09)}
 .np .nek{display:block;font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin:0 0 9px 2px}
@@ -621,7 +624,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-26g';
+const VERSION = '2026-10-26h';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
