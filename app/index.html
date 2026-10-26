@@ -427,6 +427,25 @@ html:not(.member) .np .ctl .big{background:var(--lapis);color:#fff}
 .np .ctl .sk small{position:absolute;font-size:10px;font-weight:800;top:19px}
 .np .opts{display:flex;justify-content:center;gap:10px;margin:6px 0 14px}
 .np .opts button{height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--line);font-weight:800;font-size:13.5px}
+/* the song player (2026-10-26): title close to the timeline, the episode it came from at the bottom */
+.np .npbody{max-width:620px;margin:0 auto;width:100%}
+.np.song .npbody{flex:1;display:flex;flex-direction:column}
+.np.song .art.sq{width:min(100%,520px,41vh);max-width:none;margin-top:4px}
+@media (max-height:700px){.np.song .art.sq{width:min(100%,27vh)}.np .nk{margin-top:14px}.np.song .nt{font-size:22px}.np.song .ctl{gap:16px}.np.song .ctl .big{width:64px;height:64px}.np.song .opts{margin-bottom:12px}.np .ner img{width:88px}}
+.np .nk{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:22px 0 2px}
+.np.song .nt{margin:0;font-size:26px;line-height:1.2}
+.np.song input[type=range]{margin:10px 0 2px}
+.np.song .ctl{margin:10px 0 6px}
+.np.song .opts{margin:4px 0 18px}
+.np .npep{margin-top:auto;display:block;width:100%;text-align:left;background:rgba(233,238,246,0.05);border:1px solid var(--line);border-radius:16px;padding:12px 12px 12px;color:var(--ink)}
+.np .npep:active{background:rgba(233,238,246,0.09)}
+.np .nek{display:block;font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin:0 0 9px 2px}
+.np .ner{display:flex;align-items:center;gap:12px}
+.np .ner img{width:112px;aspect-ratio:16/9;object-fit:cover;border-radius:9px;flex:none;box-shadow:0 6px 18px rgba(0,0,0,0.4)}
+.np .net{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.np .net b{font-weight:700;font-size:14.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.np .net span{font-size:12.5px;color:var(--muted)}
+.np .ner svg{flex:none;color:var(--muted)}
 .np .chlist{max-width:620px;margin:0 auto;width:100%}
 
 /* chat */
@@ -602,7 +621,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-26f';
+const VERSION = '2026-10-26g';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -2574,13 +2593,25 @@ function jumpChapter(dir) {
 let npOpen = false;
 function openNP() { if (!cur) return; npOpen = true; renderNP(); const n = $('#np'); n.classList.add('open'); n.setAttribute('aria-hidden', 'false'); }
 function closeNP() { npOpen = false; const n = $('#np'); n.classList.remove('open'); n.setAttribute('aria-hidden', 'true'); }
+// a song's player ends with the episode it came from: its thumbnail, title, show and date (Chance, 2026-10-26)
+function npEpCard(s) {
+  const ep = songEp(s);
+  const title = ep ? ep.title : (s.episodeTitle || 'The episode');
+  const meta = [ep && ep.kind === 'plus' ? 'Plus+ full episode' : ((ep && ep.shows && ep.shows[0]) || ''), fmtDate(songDate(s))].filter(Boolean).map(esc).join(' &middot; ');
+  return `<button class="npep" id="npEp" aria-label="Open the episode: ${esc(title)}">
+    <span class="nek">From the episode</span>
+    <span class="ner">${ep && ep.thumb ? `<img src="${esc(img(ep.thumb, 300))}" alt="">` : ''}<span class="net"><b>${esc(title)}</b>${meta ? `<span>${meta}</span>` : ''}</span>${I.right(20)}</span>
+  </button>`;
+}
 function renderNP() {
   const n = $('#np'); if (!cur) return;
   const d = aud.duration || cur.dur || 0;
+  const song = cur.kind === 's' ? songById(cur.key.slice(2)) : null;
+  n.classList.toggle('song', !!song);
   n.innerHTML = `<div class="grab"><button class="iconbtn" id="npClose" aria-label="Close the player">${I.down(28)}</button></div>
     <img class="art${cur.kind === 's' ? ' sq' : ''}" src="${esc(img(cur.thumb, 750))}" alt="">
-    <div style="max-width:620px;margin:0 auto;width:100%">
-      <div class="nt">${esc(cur.title)}</div><div class="nc" id="npC">${esc(currentChapterTitle())}</div>
+    <div class="npbody">
+      ${song ? `<div class="nk">InnerVerse Music</div>` : ''}<div class="nt">${esc(cur.title)}</div>${song ? '' : `<div class="nc" id="npC">${esc(currentChapterTitle())}</div>`}
       <input type="range" id="npR" min="0" max="${Math.max(1, Math.floor(d))}" step="1" value="${Math.floor(aud.currentTime)}" aria-label="Position">
       <div class="times"><span id="npT">${clock(aud.currentTime)}</span><span id="npD">-${clock(Math.max(0, d - aud.currentTime))}</span></div>
       <div class="ctl">
@@ -2590,7 +2621,8 @@ function renderNP() {
         <button class="sk" id="npFwd" aria-label="Forward 30 seconds">${I.fwd(34)}<small>30</small></button>
         <button class="sk" id="npNext" aria-label="${cur.kind === 's' ? 'Next song' : 'Next chapter'}">${I.next(24)}</button>
       </div>
-      <div class="opts">${cur.kind === 's' && songById(cur.key.slice(2)) ? `<button type="button" class="shufpill" data-shuf-toggle aria-pressed="${shuffleOn}">${I.shuffle(16)} Shuffle</button>` + songActs(songById(cur.key.slice(2)), 18).replace(/class="sact"/g, 'class="sact pill"') + '<button id="npEp">Open the episode</button>' : `<button id="npSpeed">${speed}x speed</button><button id="npEp">Episode page</button>`}</div>
+      <div class="opts">${song ? `<button type="button" class="shufpill" data-shuf-toggle aria-pressed="${shuffleOn}">${I.shuffle(16)} Shuffle</button>` + songActs(song, 18).replace(/class="sact"/g, 'class="sact pill"') : `<button id="npSpeed">${speed}x speed</button><button id="npEp">Episode page</button>`}</div>
+      ${song ? npEpCard(song) : ''}
     </div>
     ${cur.chapters && cur.chapters.length ? `<div class="chlist"><div class="eyebrow" style="margin:6px 8px 6px">Chapters</div><div id="npChaps">${cur.chapters.map((c, i) => `<button class="chap" data-i="${i}"><span class="tm">${clock(c.seek)}</span><span class="ct">${esc(c.title)}</span></button>`).join('')}</div></div>` : ''}`;
   $('#npClose').addEventListener('click', closeNP);
@@ -2600,7 +2632,7 @@ function renderNP() {
   $('#npPrev').addEventListener('click', () => jumpChapter(-1));
   $('#npNext').addEventListener('click', () => jumpChapter(1));
   if ($('#npSpeed')) $('#npSpeed').addEventListener('click', e => { const s = [1, 1.25, 1.5, 1.75, 2, 0.8]; speed = s[(s.indexOf(speed) + 1) % s.length]; aud.playbackRate = speed; store('iva_speed', String(speed)); e.target.textContent = speed + 'x speed'; });
-  $('#npEp').addEventListener('click', () => { closeNP(); go('#/' + (cur.kind === 'p' ? 'p' : 'e') + '/' + cur.slug); });
+  $('#npEp').addEventListener('click', () => { closeNP(); const ep = song && songEp(song); go(ep ? epHref(ep) : '#/' + (cur.kind === 'p' ? 'p' : 'e') + '/' + cur.slug); });
   const r = $('#npR'); let drag = false;
   r.addEventListener('input', () => { drag = true; $('#npT').textContent = clock(r.value); });
   r.addEventListener('change', () => { aud.currentTime = Number(r.value); drag = false; });
@@ -2614,7 +2646,7 @@ function updateNP() {
   if (r.max != Math.floor(d) && d) r.max = Math.floor(d);
   if (!(r._drag && r._drag())) { r.value = Math.floor(aud.currentTime); $('#npT').textContent = clock(aud.currentTime); }
   $('#npD').textContent = '-' + clock(Math.max(0, d - aud.currentTime));
-  $('#npC').textContent = currentChapterTitle();
+  if ($('#npC')) $('#npC').textContent = currentChapterTitle();
   const i = currentChapterIndex();
   $$('#npChaps .chap').forEach((c, k) => c.classList.toggle('now', k === i));
 }
