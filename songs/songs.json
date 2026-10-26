@@ -420,6 +420,26 @@
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/80a748a9-95a0-4bfd-a183-f4cc30c8afbf/shining-island.jpg",
       "seconds": 190,
       "added": "2026-10-26"
+    },
+    {
+      "id": "brandy-gillmore-never-give-up",
+      "episode": "brandy-gillmore",
+      "episodeTitle": "Doctors Said She'd Never Heal. Her Mind Proved Them Wrong. | Brandy Gillmore",
+      "title": "Never Give Up",
+      "file": "brandy-gillmore-never-give-up.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/a78e2e36-82a1-4b0d-b4d5-54e1dfe699ff/never-give-up-brandy-gilmore.jpg",
+      "seconds": 162,
+      "added": "2026-10-26"
+    },
+    {
+      "id": "brandy-gillmore-brandy-neat",
+      "episode": "brandy-gillmore",
+      "episodeTitle": "Doctors Said She'd Never Heal. Her Mind Proved Them Wrong. | Brandy Gillmore",
+      "title": "Brandy Neat",
+      "file": "brandy-gillmore-brandy-neat.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/a78e2e36-82a1-4b0d-b4d5-54e1dfe699ff/never-give-up-brandy-gilmore.jpg",
+      "seconds": 187,
+      "added": "2026-10-26"
     }
   ]
 }
