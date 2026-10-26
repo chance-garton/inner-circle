@@ -287,7 +287,7 @@ html.member .menu .mt.on{border-color:rgba(216,170,60,.65);box-shadow:0 0 0 1px 
 .menu .mt.home .logo{width:54px;height:54px;object-fit:contain;flex:none;filter:drop-shadow(0 0 12px rgba(59,116,204,.6))}
 html.member .menu .mt.home .logo{filter:drop-shadow(0 0 12px rgba(216,170,60,.55))}
 /* the Inner Circle chat: the gold room */
-.menu .mt.chat{background:linear-gradient(120deg,#3A2A08 0%,#6B4D12 45%,#D8AA3C 130%);border-color:rgba(232,196,106,.45)}
+.menu .mt.chat{background:linear-gradient(135deg,#3A2A08 0%,#6B4D12 50%,#D8AA3C 140%);border-color:rgba(232,196,106,.45)}
 .menu .mt.chat .ic{color:var(--gold-lit)}
 .menu .mt.chat .glow{position:absolute;right:-30px;top:-50px;width:170px;height:170px;border-radius:50%;z-index:-1;background:radial-gradient(circle,rgba(255,226,150,.45),transparent 65%)}
 .menu .mt.chat .dot{position:static;margin-left:auto;min-width:28px;height:28px;padding:0 9px;border-radius:14px;background:#fff;color:#0A0F1C;font-size:14px;font-weight:800;line-height:28px;text-align:center;box-shadow:0 0 0 4px rgba(255,255,255,.18)}
@@ -299,16 +299,37 @@ html.member .menu .mt.home .logo{filter:drop-shadow(0 0 12px rgba(216,170,60,.55
 html.member .menu .msearch:focus-within{border-color:rgba(216,170,60,.6)}
 .menu .msearch input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--ink);font:600 17px var(--sans);-webkit-appearance:none;appearance:none}
 .menu .msearch input::placeholder{color:var(--muted)}
-/* Explore and InnerVerse Music: the word over art that keeps changing */
-.menu .mt.art{min-height:210px;align-items:flex-end;padding:16px}
-.menu .mt.art .mosaic{position:absolute;inset:0;z-index:-2;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px}
-.menu .mt.art .mosaic img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .6s ease}
-.menu .mt.art .mosaic img.out{opacity:0}
-.menu .mt.art .shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(7,11,21,0) 35%,rgba(7,11,21,.88) 100%)}
-.menu .mt.art.music .shade{background:linear-gradient(180deg,rgba(20,14,4,0) 35%,rgba(14,10,4,.9) 100%)}
+/* Episodes (16:9) and InnerVerse Music (1:1): the word over one picture at a time, a new one every 5 seconds */
+.menu .mt.art{aspect-ratio:16/9;min-height:0;align-items:flex-end;padding:16px}
+.menu .mt.art.sq{aspect-ratio:1/1}
+.menu .mt.art .pic{position:absolute;inset:0;z-index:-2}
+.menu .mt.art .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transform:scale(1.04);transition:opacity .9s ease,transform 5.5s ease-out}
+.menu .mt.art .pic img.show{opacity:1;transform:scale(1)}
+.menu .mt.art .shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(7,11,21,0) 40%,rgba(7,11,21,.88) 100%)}
+.menu .mt.art.music .shade{background:linear-gradient(180deg,rgba(20,14,4,0) 40%,rgba(14,10,4,.9) 100%)}
 .menu .mt.art.music{border-color:rgba(216,170,60,.35)}
-.menu .mt.art .w{font-size:24px;text-shadow:0 2px 14px rgba(0,0,0,.7)}
+.menu .mt.art .w{font-size:26px;text-shadow:0 2px 14px rgba(0,0,0,.7)}
+.menu .mt.art.sq .w{font-size:21px}
 .menu .mt.art.music .w{color:var(--gold-lit)}
+/* Library beside Music, the same square */
+.menu .mt.lib{aspect-ratio:1/1;min-height:0;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:6px;padding:16px;background:radial-gradient(80% 70% at 100% 0%,rgba(59,116,204,.3),transparent 70%),linear-gradient(160deg,#1B2640,#121A2E)}
+.menu .mt.lib .ic{margin-bottom:auto;width:46px;height:46px;border-radius:14px;background:rgba(143,181,240,.12);border:1px solid rgba(143,181,240,.3)}
+.menu .mt.lib .w{font-size:21px}
+.menu .mt.lib .sub{font-size:12.5px;line-height:1.35;color:#C6CFDD;font-weight:600}
+/* the Inner Circle chat at 16:9 with the newest message in the main thread */
+.menu .mt.chat{aspect-ratio:16/9;min-height:0;flex-direction:column;align-items:stretch;justify-content:space-between;gap:10px;padding:16px}
+.menu .mt.chat .chead{display:flex;align-items:center;gap:10px}
+.menu .mt.chat .chead .w{font-size:23px}
+.menu .mt.chat .msg{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:16px;background:rgba(7,11,21,.42);border:1px solid rgba(255,236,190,.18);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.menu .mt.chat .av{width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;color:#0A0F1C;font-weight:800;font-size:17px}
+.menu .mt.chat .av img{width:100%;height:100%;object-fit:cover}
+.menu .mt.chat .av svg{color:#0A0F1C}
+.menu .mt.chat .mm{flex:1;min-width:0}
+.menu .mt.chat .mn{display:flex;gap:8px;align-items:baseline;font-weight:800;font-size:14px;color:#FFE7A8}
+.menu .mt.chat .mn time{font-weight:600;font-size:12px;color:rgba(255,236,190,.7)}
+.menu .mt.chat .mtx{font-size:14.5px;line-height:1.4;color:#fff;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.menu .mt.chat .msg.locked .mtx{filter:blur(5px);user-select:none}
+.menu .mt.chat .msg .join{font-size:13px;font-weight:700;color:#FFE7A8}
 /* Library, Account, Plus+ */
 .menu .mt.small{min-height:76px}
 .menu .mt.small .w{font-size:21px}
@@ -328,8 +349,9 @@ html.member .menu .mnow .pp{background:var(--gold);color:var(--on-gold)}
 .menu .mnow .eq i{width:2px;background:var(--gold-lit);animation:meq .9s ease-in-out infinite}
 .menu .mnow .eq i:nth-child(2){animation-delay:.2s}.menu .mnow .eq i:nth-child(3){animation-delay:.4s}
 @keyframes meq{0%,100%{height:3px}50%{height:10px}}
-@media (max-width:360px){.menu .mt .w{font-size:21px}.menu .mt.art .w{font-size:19px}.menu .mt.art{min-height:180px}}
-@media (prefers-reduced-motion:reduce){.menu,.menu *{animation:none!important}.menu .mt.art .mosaic img{transition:none}}
+@media (max-width:360px){.menu .mt .w{font-size:21px}.menu .mt.art .w{font-size:21px}.menu .mt.art.sq .w,.menu .mt.lib .w{font-size:17px}.menu .mt.lib .sub{font-size:11.5px}.menu .mt.chat{aspect-ratio:auto}}
+@media (max-width:360px){.menu .mt.art.sq .w{letter-spacing:.06em}}
+@media (prefers-reduced-motion:reduce){.menu,.menu *{animation:none!important}.menu .mt.art .pic img{transition:none}}
 html.mdrag .menu{animation:none;transition:none}
 html.msnap .menu{animation:none;transition:transform .26s cubic-bezier(.2,.8,.2,1)}
 .hdr .row .btn{white-space:nowrap}
@@ -555,7 +577,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-26c';
+const VERSION = '2026-10-26d';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1156,35 +1178,54 @@ function menuItems() {
 // Explore and InnerVerse Music over art that reshuffles every 5 seconds, then Library and Account (Plus+ for visitors)
 let menuPools = null, menuMixT = null;
 function menuPool(kind) {
-  if (kind === 'eps') return library().slice(0, 120).map(x => img(x.thumb, 300));
+  if (kind === 'eps') return library().slice(0, 120).map(x => img(x.thumb, 750));
   return [...new Set(SONGLIST.map(x => songArtUrl(x, 300)))];
 }
-function pickFour(pool, avoid) {
-  const fresh = pool.filter(u => !(avoid || []).includes(u)), src = fresh.length >= 4 ? fresh : pool.slice();
-  for (let i = src.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [src[i], src[j]] = [src[j], src[i]]; }
-  return src.slice(0, 4);
+function pickOne(pool, avoid) {
+  const fresh = pool.filter(u => u !== avoid), src = fresh.length ? fresh : pool;
+  return src.length ? src[Math.floor(Math.random() * src.length)] : '';
 }
-function mosaic(kind) {
-  const four = pickFour(menuPool(kind));
-  return `<div class="mosaic" data-mix="${kind}">${four.map(u => `<img src="${esc(u)}" alt="">`).join('')}</div>`;
+// one picture at a time (Chance, 2026-10-26: "one at a time"); the next fades in over the last every 5 seconds
+function pic(kind) {
+  const u = pickOne(menuPool(kind));
+  return `<div class="pic" data-mix="${kind}">${u ? `<img class="show" src="${esc(u)}" alt="">` : ''}</div>`;
 }
-// every 5 seconds each mosaic deals four new pictures in a fresh random order, fading one cell after another
 function mixMenu() {
-  $$('#menu [data-mix]').forEach(m => {
-    const imgs = [...m.querySelectorAll('img')], now = imgs.map(i => i.getAttribute('src'));
-    const next = pickFour(menuPool(m.dataset.mix), now);
-    next.forEach((u, k) => {
-      const pre = new Image(); pre.src = u;
-      const swap = () => setTimeout(() => {
-        const el = imgs[k]; if (!el || !el.isConnected) return;
-        el.classList.add('out');
-        setTimeout(() => { el.src = u; el.classList.remove('out'); }, 600);
-      }, k * 160);
-      if (pre.complete) swap(); else { pre.onload = swap; pre.onerror = () => {}; }
-    });
+  $$('#menu [data-mix]').forEach((box, k) => {
+    const curImg = box.querySelector('img.show'), now = curImg ? curImg.getAttribute('src') : '';
+    const u = pickOne(menuPool(box.dataset.mix), now); if (!u || u === now) return;
+    const pre = new Image();
+    pre.onload = () => setTimeout(() => {
+      if (!box.isConnected) return;
+      const el = document.createElement('img'); el.alt = ''; el.src = u; box.appendChild(el);
+      requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.add('show'); if (curImg) curImg.classList.remove('show'); }));
+      setTimeout(() => { box.querySelectorAll('img:not(.show)').forEach(x => x.remove()); }, 1000);
+    }, k * 700);
+    pre.src = u;
   });
+  refreshChatTile();
 }
-function startMenuMix() { clearInterval(menuMixT); if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; menuMixT = setInterval(() => { if (document.documentElement.classList.contains('menuopen') && document.visibilityState === 'visible') mixMenu(); }, 5000); }
+// the newest message in Inner Circle Chat's main thread, read from the chat page in its frame (members only)
+function chatLatest() { try { const f = $('#chatv iframe'); const w = f && f.contentWindow; return w && typeof w.ivcLatest === 'function' ? w.ivcLatest() : null; } catch (e) { return null; } }
+function ago(iso) {
+  const t = Date.parse(iso || ''); if (!t) return '';
+  const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+  return m < 1 ? 'now' : m < 60 ? m + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : m < 10080 ? Math.round(m / 1440) + 'd' : new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+function chatPreview() {
+  if (!S.member) return `<div class="msg locked"><span class="av" style="background:#8FB5F0">${I.lock(18)}</span><span class="mm"><span class="mn">Members only</span><span class="join">Join Plus+ to read along and reply</span></span></div>`;
+  const L = chatLatest();
+  if (!L) return `<div class="msg"><span class="mm"><span class="mtx" style="color:#FFE7A8">Open the chat to catch up with the Inner Circle.</span></span></div>`;
+  const av = L.photo ? `<img src="${esc(L.photo)}" alt="">` : L.sym ? L.sym : esc(L.initial);
+  return `<div class="msg" data-latest="${esc(String(L.id || ''))}"><span class="av" style="background:${esc(L.color || '#8FB5F0')}">${av}</span><span class="mm"><span class="mn">${esc(L.name)}<time>${esc(ago(L.created))}</time></span><span class="mtx">${esc(L.text)}</span></span></div>`;
+}
+function refreshChatTile() {
+  const t = $('#menu .mt.chat'); if (!t || !S.member) return;
+  const L = chatLatest(), box = t.querySelector('.msg');
+  if (box && L && box.dataset.latest === String(L.id || '')) { const tm = box.querySelector('time'); if (tm) tm.textContent = ago(L.created); return; }
+  if (box) box.outerHTML = chatPreview();
+}
+function startMenuMix() { clearInterval(menuMixT); if (matchMedia('(prefers-reduced-motion: reduce)').matches) { menuMixT = setInterval(() => { if (document.documentElement.classList.contains('menuopen')) refreshChatTile(); }, 5000); return; } menuMixT = setInterval(() => { if (document.documentElement.classList.contains('menuopen') && document.visibilityState === 'visible') mixMenu(); }, 5000); }
 function stopMenuMix() { clearInterval(menuMixT); menuMixT = null; }
 function renderMenu() {
   const n = S.member && S.chatUnread ? (S.chatUnread > 99 ? '99+' : String(S.chatUnread)) : '';
@@ -1198,18 +1239,16 @@ function renderMenu() {
     <div class="mbody">
       ${nowStrip}
       <button class="mt home${on('home')}" data-go="home"><img class="logo" src="${S.member ? PLUS_LOGO : LOGO}" alt=""><span class="w">Home</span></button>
-      <button class="mt chat${on('chat')}" data-go="chat"><span class="glow"></span><span class="ic">${S.member ? I.chat(26) : I.lock(24)}</span><span class="w">Inner Circle Chat</span>${S.member ? `<span class="dot">${n}</span>` : '<span class="lk">Plus+</span>'}</button>
+      <button class="mt chat${on('chat')}" data-go="chat"><span class="glow"></span><span class="chead"><span class="ic">${S.member ? I.chat(26) : I.lock(24)}</span><span class="w">Inner Circle Chat</span>${S.member ? `<span class="dot">${n}</span>` : '<span class="lk">Plus+</span>'}</span>${chatPreview()}</button>
       <form class="msearch" data-msearch role="search">${I.search(20)}<input id="mq" type="search" enterkeyhint="search" autocomplete="off" placeholder="Search episodes" aria-label="Search episodes" value="${esc(keepQ)}"></form>
+      <button class="mt art${on('search')}" data-go="search">${pic('eps')}<div class="shade"></div><span class="w">Episodes</span></button>
       <div class="mgrid">
-        <button class="mt art${on('search')}" data-go="search">${mosaic('eps')}<div class="shade"></div><span class="w">Explore</span></button>
-        <button class="mt art music${on('songs')}" data-go="songs">${mosaic('songs')}<div class="shade"></div><span class="w">InnerVerse Music</span></button>
+        <button class="mt art sq music${on('songs')}" data-go="songs">${pic('songs')}<div class="shade"></div><span class="w">InnerVerse Music</span></button>
+        <button class="mt lib${on('lib')}" data-go="lib"><span class="ic">${I.books(26)}</span><span class="w">Library</span><span class="sub">Notes, Likes, &amp; Saved Messages</span></button>
       </div>
-      <div class="mgrid">
-        <button class="mt small${on('lib')}" data-go="lib"><span class="ic">${I.books(24)}</span><span class="w">Library</span></button>
-        ${S.member
-          ? `<button class="mt small${on('me')}" data-go="me"><span class="ic">${I.user(24)}</span><span class="w">Account</span></button>`
-          : `<button class="mt small join${on('me')}" data-go="me"><span class="ic">${I.plus(24)}</span><span class="w">Plus+</span></button>`}
-      </div>
+      ${S.member
+        ? `<button class="mt small${on('me')}" data-go="me"><span class="ic">${I.user(24)}</span><span class="w">Account</span></button>`
+        : `<button class="mt small join${on('me')}" data-go="me"><span class="ic">${I.plus(24)}</span><span class="w">Plus+</span></button>`}
     </div>`;
 }
 function openMenu() {

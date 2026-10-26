@@ -1158,6 +1158,24 @@ function savePlace() {
   S.placeT = setTimeout(() => { const box = $('#msgs'); if (!box || S.loadingRoom) return; store(placeKey(), S.stick ? null : JSON.stringify(topAnchor(box))); }, 400);
 }
 function tellApp(obj) { try { if (window.parent !== window) window.parent.postMessage(Object.assign({ ivc: 1 }, obj), location.origin); } catch (e) {} }
+// The app's menu shows the newest message in Inner Circle Chat (app build 2026-10-26d, Chance: "shows a preview of the
+// newest message in the main thread"). The app reads it from here; it is the same origin, so nothing is sent anywhere.
+window.ivcLatest = function () {
+  try {
+    let m = null;
+    if ((S.room || '') === '' && S.messages && S.messages.length) {
+      for (let i = S.messages.length - 1; i >= 0; i--) { const x = S.messages[i]; if (!x.deleted && !x.kind && (x.text || x.image)) { m = x; break; } }
+    }
+    if (!m && S.rooms && S.rooms.main && S.rooms.main.last && !S.rooms.main.last.kind) m = S.rooms.main.last;
+    if (!m) return null;
+    const p = person(m.uid), a = p.avatar || '';
+    let photo = '';
+    if (a.startsWith('img:')) { const el = document.querySelector('img[data-media="' + CSS.escape(a.slice(4)) + '"][src]'); if (el && el.getAttribute('src')) photo = el.src; }
+    const k = a.startsWith('sym:') ? a.slice(4) : '';
+    return { id: m.id, name: p.name || 'Member', text: (m.text || '').replace(/\s+/g, ' ').slice(0, 220) || (m.image ? 'Photo' : ''), created: m.created || '',
+      photo, sym: k ? P(SYMS[k] || '', { s: 22, w: 1.9 }) : '', color: k ? (SYM_COLORS[k] || '#8FB5F0') : hashColor(m.uid), initial: ((p.name || '?').trim().charAt(0) || '?').toUpperCase() };
+  } catch (e) { return null; }
+};
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || !e.data.ivcApp) return;
   if (e.data.room !== undefined) { const r = String(e.data.room || ''); if (S.connected && S.view === 'chat') switchRoom(r); else S.openRoom = r; }
