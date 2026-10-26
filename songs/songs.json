@@ -490,6 +490,26 @@
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/59634bb0-22a3-433b-ac9e-7cf046a5c6c3/mary-twelve-gates.jpg",
       "seconds": 155,
       "added": "2026-10-26"
+    },
+    {
+      "id": "symbolic-studies-wheel-the-bull-wheel",
+      "episode": "symbolic-studies-wheel",
+      "episodeTitle": "Mario Garza (Symbolic Studies) | The Wheel, the Bull, and the Chariot That Doesn’t Move",
+      "title": "The Bull Wheel",
+      "file": "symbolic-studies-wheel-the-bull-wheel.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/7f134e4d-4d40-4f50-ba5e-634d19fce315/mario-garza-bull.jpg",
+      "seconds": 195,
+      "added": "2026-10-26"
+    },
+    {
+      "id": "symbolic-studies-wheel-taurusoid",
+      "episode": "symbolic-studies-wheel",
+      "episodeTitle": "Mario Garza (Symbolic Studies) | The Wheel, the Bull, and the Chariot That Doesn’t Move",
+      "title": "Taurusoid",
+      "file": "symbolic-studies-wheel-taurusoid.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/7f134e4d-4d40-4f50-ba5e-634d19fce315/mario-garza-bull.jpg",
+      "seconds": 246,
+      "added": "2026-10-26"
     }
   ]
 }
