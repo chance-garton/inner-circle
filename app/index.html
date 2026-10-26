@@ -602,7 +602,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-26e';
+const VERSION = '2026-10-26f';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -882,8 +882,10 @@ async function loadSongs() {
   } catch (e) { SONGLIST = []; }
 }
 // newest episode first, by the episode's release date (Chance, 2026-10-19); an episode's own songs keep their track order
+// a song's date is its episode's air date (Chance, 2026-10-26: "date of episode of origin"), the day it was added only as a fallback
+function songDate(s) { return ((S.lib && S.lib.bySlug['e:' + s.episode]) || {}).date || s.added || ''; }
 function sortSongs() {
-  const d = s => ((S.lib && S.lib.bySlug['e:' + s.episode]) || {}).date || s.added || '';
+  const d = songDate;
   SONGLIST = SONGLIST.map((s, i) => [s, i]).sort((a, b) => d(b[0]).localeCompare(d(a[0])) || a[1] - b[1]).map(x => x[0]);
 }
 function songById(id) { return id ? SONGLIST.find(s => s.id === id) || null : null; }
@@ -1059,7 +1061,7 @@ function renderSongs() {
     <h1 class="title">InnerVerse Music</h1>
     <p class="muted" style="margin:0 0 8px">Original songs made for InnerVerse episodes. Press play, then follow any song into the conversation behind it.</p>
     ${SONGLIST.length ? `<div class="songbtns"><button type="button" class="btn" data-playall>${I.play(18)} Play all</button><button type="button" class="btn line" data-shuffle>${I.shuffle(18)} Shuffle</button></div>` : ''}
-    ${SONGLIST.length ? `<div class="list">${SONGLIST.map(s => songRow(s, s.added ? fmtDate(s.added) : '')).join('')}</div>` : `<div class="empty">The songs could not load. Check your connection.</div>`}
+    ${SONGLIST.length ? `<div class="list">${SONGLIST.map(s => songRow(s, songDate(s) ? fmtDate(songDate(s)) : '')).join('')}</div>` : `<div class="empty">The songs could not load. Check your connection.</div>`}
   </div>`;
   bindBack();
   updateSongUI();
