@@ -215,6 +215,11 @@ html.member .chap.now{background:rgba(216,170,60,0.1)}
 html.menuopen .menuwrap{display:block}
 .menu{position:absolute;top:calc(var(--st) + 54px);right:10px;width:min(260px,calc(100% - 20px));background:var(--card2);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 44px rgba(0,0,0,0.6);padding:6px;animation:mdrop .18s ease-out;transform-origin:top right}
 @keyframes mdrop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+/* swipe left on any page (the chat too) slides the menu in from the right edge with the finger; swipe right puts it away (build 2026-10-26a) */
+.menuwrap{transition:background-color .22s ease}
+html.mswipe .menuwrap{background:rgba(5,8,15,0.35)}
+html.mdrag .menu{animation:none;transition:none}
+html.msnap .menu{animation:none;transition:transform .22s cubic-bezier(.2,.8,.2,1)}
 .menu button{position:relative;display:flex;align-items:center;gap:14px;width:100%;min-height:48px;padding:0 14px;border-radius:11px;font-size:16px;font-weight:700;color:var(--ink);text-align:left}
 .menu button svg{color:var(--muted);flex:none}
 .menu button.on{background:rgba(143,181,240,0.12);color:var(--accent)}
@@ -446,7 +451,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-25b';
+const VERSION = '2026-10-26a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -858,9 +863,26 @@ function songRow(s, extra) {
     <div class="info"><button class="stitle" data-song="${esc(s.id)}">${esc(s.title)}</button><span class="l">${esc(songEpTitle(s))}</span><span class="d">${[s.seconds ? clock(s.seconds) : '', extra || ''].filter(Boolean).join(' · ')}</span>
     <div class="rowacts">${songActs(s, 19)}${ep ? `<a class="eplink" href="${epHref(ep)}">Open the episode ${I.right(14)}</a>` : ''}</div></div></div>`;
 }
+// Home shows the songs in a fresh random order on every visit to Home (Chance, 2026-10-26); the music page
+// and next/previous keep the release-date order. The order holds through redraws within one visit.
+let homeMix = null;
+function homeSongs() {
+  const ids = SONGLIST.map(s => s.id);
+  if (!homeMix || homeMix.length !== ids.length || homeMix.some(id => ids.indexOf(id) < 0)) {
+    homeMix = ids.slice();
+    for (let i = homeMix.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [homeMix[i], homeMix[j]] = [homeMix[j], homeMix[i]]; }
+  }
+  return homeMix.map(songById).filter(Boolean);
+}
+function homeSongTiles() { return homeSongs().slice(0, 12).map(songTile).join(''); }
+// a new visit to Home: deal a new order and redraw just that row
+function reshuffleHomeSongs() {
+  homeMix = null;
+  const row = $('#homeSongs'); if (row && SONGLIST.length) { row.innerHTML = homeSongTiles(); row.scrollLeft = 0; updateSongUI(); }
+}
 function songsRow() {
   if (!SONGLIST.length) return '';
-  return `<div class="sec"><div class="sechead"><h2 class="h2">InnerVerse Music</h2><span class="shead"><button type="button" class="shufbtn" data-shuffle aria-label="Shuffle all songs">${I.shuffle(17)}</button><a href="#/songs">See all</a></span></div><div class="hscroll">${SONGLIST.slice(0, 12).map(songTile).join('')}</div></div>`;
+  return `<div class="sec"><div class="sechead"><h2 class="h2">InnerVerse Music</h2><span class="shead"><button type="button" class="shufbtn" data-shuffle aria-label="Shuffle all songs">${I.shuffle(17)}</button><a href="#/songs">See all</a></span></div><div class="hscroll" id="homeSongs">${homeSongTiles()}</div></div>`;
 }
 // the Episode songs page (#/songs, or #/songs/<id> from a shared link: that song is shown first)
 function openSongs(id) {
@@ -979,8 +1001,12 @@ function viewId(tab) { return tab === 'chat' ? 'chatv' : tab === 'lib' ? 'libv' 
 const TAB_HASH = { home: '#/', search: '#/search', lib: '#/library', chat: '#/chat', me: '#/me' };
 let lastTabHash = Object.assign({}, TAB_HASH);
 let NAV = [location.hash || '#/'];
+let prevRoute = null;
 function route() {
   const h = location.hash || '#/';
+  const homeNow = h === '#/' || h === '#', homeBefore = prevRoute === '#/' || prevRoute === '#';
+  if (homeNow && prevRoute !== null && !homeBefore) reshuffleHomeSongs();
+  prevRoute = h;
   if (!/iv_session=/.test(h)) store('iva_last', h);
   const m = h.match(/^#\/(e|p)\/([^/?#]+)/);
   if (m) {
@@ -1028,7 +1054,7 @@ function renderMenu() {
   $('#menu').innerHTML = menuItems().map(x => `<button role="menuitem" data-go="${x[0]}" class="${cur === x[0] ? 'on' : ''}">${x[2]}<span>${x[1]}</span>${x[0] === 'chat' ? `<span class="dot">${n}</span>` : ''}</button>`).join('');
 }
 function openMenu() { renderMenu(); document.documentElement.classList.add('menuopen'); }
-function closeMenu() { document.documentElement.classList.remove('menuopen'); }
+function closeMenu() { document.documentElement.classList.remove('menuopen', 'mswipe', 'mdrag', 'msnap'); const m = $('#menu'); if (m) m.style.transform = ''; MD = null; }
 function goTab(tab) {
   closeMenu();
   if (tab === 'songs') { go('#/songs'); return; }
@@ -1040,6 +1066,73 @@ $('#menuwrap').addEventListener('click', e => {
   if (b) goTab(b.dataset.go); else closeMenu();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+// Swipe left anywhere in the app, the chat included, and the menu slides in from the right edge under the
+// finger, the mirror of the chat's swipe right for rooms (Chance, 2026-10-26). Swipe right on it to put it away.
+// Never starts on a row that scrolls sideways, a typing field, a slider, a video or the pop-up player.
+var MD = null;
+const MD_SKIP = 'input,textarea,select,[contenteditable],iframe,video,#mini,#minitab,#np,.sbar,.lp.vid,.seek';
+function sidewaysScroller(el, stop) {
+  for (let n = el; n && n !== stop && n.nodeType === 1; n = n.parentElement) {
+    if (n.scrollWidth > n.clientWidth + 2) { const ox = n.ownerDocument.defaultView.getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; }
+  }
+  return false;
+}
+function mdW() { return ($('#menu').offsetWidth || 260) + 24; }
+function mdSet(p) {
+  MD.p = p = Math.max(0, Math.min(1, p));
+  $('#menu').style.transform = `translateX(${Math.round((1 - p) * mdW())}px)`;
+}
+function mdEnd() {
+  const r = MD; MD = null; if (!r) return;
+  const open = r.v < -0.45 ? true : r.v > 0.45 ? false : r.p > (r.open ? 0.67 : 0.33);
+  const H = document.documentElement, m = $('#menu');
+  H.classList.remove('mdrag'); H.classList.add('msnap');
+  requestAnimationFrame(() => { m.style.transform = open ? 'translateX(0)' : `translateX(${mdW()}px)`; });
+  let done = false;
+  const fin = () => {
+    if (done) return; done = true;
+    H.classList.remove('msnap'); m.style.transform = '';
+    if (!open) { closeMenu(); H.classList.remove('mswipe'); }
+  };
+  m.addEventListener('transitionend', fin, { once: true }); setTimeout(fin, 320);
+}
+function mdStart(e, d) {
+  MD = null;
+  if (e.touches.length !== 1) return;
+  const el = e.target; if (!el || !el.closest) return;
+  const open = document.documentElement.classList.contains('menuopen');
+  if (!open) {
+    if (el.closest(MD_SKIP) || sidewaysScroller(el, d.body)) return;
+    if (d !== document) { if (S.tab !== 'chat' || d.getElementById('ovl') || el.closest('.hscroll')) return; } // the chat: only from the chat itself, nothing open on top
+    else if (el.closest('.sheetwrap,#menuwrap')) return;
+  } else if (d !== document) return;
+  const t = e.touches[0];
+  MD = { open, d, x0: t.clientX, y0: t.clientY, lx: t.clientX, lt: Date.now(), v: 0, p: open ? 1 : 0, go: false };
+}
+function mdMove(e) {
+  const r = MD; if (!r) return;
+  const t = e.touches[0], dx = t.clientX - r.x0, dy = t.clientY - r.y0, now = Date.now();
+  if (!r.go) {
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    if (!(Math.abs(dx) > Math.abs(dy) * 1.2 && (r.open ? dx > 0 : dx < 0))) { MD = null; return; }
+    r.go = true; r.x0 = t.clientX; r.lx = t.clientX; r.lt = now;
+    const H = document.documentElement;
+    if (!r.open) { try { const a = r.d.activeElement; a && a.blur && a.blur(); } catch (err) {} renderMenu(); H.classList.add('menuopen', 'mswipe'); }
+    H.classList.add('mdrag'); H.classList.remove('msnap');
+    mdSet(r.p);
+  }
+  e.preventDefault();
+  const d = t.clientX - r.x0;
+  mdSet(r.open ? 1 - d / mdW() : -d / mdW());
+  const dt = now - r.lt; if (dt > 0) r.v = r.v * 0.4 + ((t.clientX - r.lx) / dt) * 0.6;
+  r.lx = t.clientX; r.lt = now;
+}
+function swipeMenuOn(d) {
+  d.addEventListener('touchstart', e => mdStart(e, d), { passive: true });
+  d.addEventListener('touchmove', mdMove, { passive: false });
+  ['touchend', 'touchcancel'].forEach(ev => d.addEventListener(ev, () => { if (MD && MD.go) mdEnd(); else MD = null; }, { passive: true }));
+}
+swipeMenuOn(document);
 function navBtnsHtml() {
   const n = S.member && S.chatUnread ? (S.chatUnread > 99 ? '99+' : String(S.chatUnread)) : '';
   return `<span class="navbtns"><button class="iconbtn chatpill${n ? ' has' : ''}" data-nav="chat" aria-label="Chat">${I.chat(19)}<span>Chat</span><span class="dot">${n}</span></button><button class="iconbtn" data-nav="menu" aria-label="Menu" aria-haspopup="menu">${I.menu(24)}</button></span>`;
@@ -1625,7 +1718,7 @@ function mountChat() {
     try { noZoom(d); const vm = d.querySelector('meta[name=viewport]'); if (vm) vm.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'); } catch (e) {}
     st.textContent = '*{touch-action:pan-x pan-y}.nav{display:none!important}.ptop>a.ibtn[aria-label="Back to InnerVerse"]{display:none!important}.ptop{padding-left:12px!important}';
     d.head.appendChild(st);
-    addChatMenu(d); chatPad();
+    addChatMenu(d); chatPad(); swipeMenuOn(d);
     // episode links in the chat open here in the app
     d.addEventListener('click', e => {
       const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
