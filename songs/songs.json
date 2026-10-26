@@ -400,6 +400,26 @@
       "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/6c15c563-c360-45a8-8aa8-70cc918b05b6/Golden-book.jpg",
       "seconds": 120,
       "added": "2026-10-26"
+    },
+    {
+      "id": "jason-quitt-shining-island-the-shining-island",
+      "episode": "jason-quitt-shining-island",
+      "episodeTitle": "The Real Atlantis: Fall of the Pole Star & World Cataclysms | Jason Quitt on The Shining Island",
+      "title": "The Shining Island",
+      "file": "jason-quitt-shining-island-the-shining-island.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/80a748a9-95a0-4bfd-a183-f4cc30c8afbf/shining-island.jpg",
+      "seconds": 269,
+      "added": "2026-10-26"
+    },
+    {
+      "id": "jason-quitt-shining-island-fallen-star",
+      "episode": "jason-quitt-shining-island",
+      "episodeTitle": "The Real Atlantis: Fall of the Pole Star & World Cataclysms | Jason Quitt on The Shining Island",
+      "title": "Fallen Star",
+      "file": "jason-quitt-shining-island-fallen-star.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/80a748a9-95a0-4bfd-a183-f4cc30c8afbf/shining-island.jpg",
+      "seconds": 190,
+      "added": "2026-10-26"
     }
   ]
 }
