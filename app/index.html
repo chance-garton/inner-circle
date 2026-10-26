@@ -26,7 +26,7 @@
 <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="icons/splash/750x1334.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://raw.githubusercontent.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Manrope:wght@400;500;600;700;800&family=IM+Fell+Great+Primer&display=swap">
 <style>
 :root{
   --ground:#0A0F1C; --surface:#111827; --card:#151E33; --card2:#1B2640; --line:rgba(233,238,246,0.12);
@@ -213,69 +213,111 @@ html.member .chap.now{background:rgba(216,170,60,0.1)}
 @media (prefers-reduced-motion:reduce){.navbtns .chatpill.has{animation:none;box-shadow:0 0 0 3px rgba(216,170,60,0.3),0 4px 18px rgba(216,170,60,0.5)}}
 .menuwrap{position:fixed;inset:0;z-index:65;display:none}
 html.menuopen .menuwrap{display:block}
-/* The menu is a full-screen portal (build 2026-10-26b, Chance: "full screen... exciting and premium, not just a list of text links").
-   Opened by the burger it rises in with its tiles arriving one after another; opened by a swipe it follows the finger
-   and never plays an entrance animation afterwards (.nofx), which was the "double pop". */
+/* opened in a browser rather than from the home screen: the install page, not the app (build 2026-10-26c) */
+.gate{position:fixed;inset:0;z-index:85;overflow-y:auto;-webkit-overflow-scrolling:touch;color:var(--ink);text-align:center;
+  background:radial-gradient(110% 55% at 50% 0%,rgba(59,116,204,.32),transparent 62%),radial-gradient(90% 45% at 50% 100%,rgba(216,170,60,.16),transparent 62%),linear-gradient(180deg,#0B1222,#070B15);
+  padding:calc(var(--st) + 36px) 20px calc(var(--sb) + 36px)}
+.gate::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;background-image:radial-gradient(1px 1px at 12% 18%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 78% 9%,#cfe0ff 50%,transparent 51%),radial-gradient(1.4px 1.4px at 64% 34%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 28% 62%,#e8c46a 50%,transparent 51%),radial-gradient(1px 1px at 88% 72%,#fff 50%,transparent 51%),radial-gradient(1.2px 1.2px at 8% 88%,#cfe0ff 50%,transparent 51%)}
+.gate .gin{position:relative;max-width:460px;margin:0 auto}
+.gate .glogo{display:block;margin:0 auto;width:104px;height:104px;object-fit:contain;filter:drop-shadow(0 0 22px rgba(59,116,204,.7));animation:gfloat 6s ease-in-out infinite}
+@keyframes gfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.gate .gword{font-family:var(--brand);font-size:30px;letter-spacing:.14em;text-transform:uppercase;margin:14px 0 0}
+.gate h1{font-family:var(--display);font-weight:600;font-size:30px;line-height:1.15;margin:22px 0 10px}
+.gate .glead{color:#C6CFDD;font-size:16px;line-height:1.55;margin:0 auto;max-width:380px}
+.gate .gtabs{display:inline-flex;gap:4px;margin:26px 0 0;padding:4px;border-radius:99px;background:rgba(233,238,246,.07);border:1px solid var(--line)}
+.gate .gtabs button{min-height:38px;padding:0 16px;border-radius:99px;font-weight:700;font-size:14px;color:var(--muted)}
+.gate .gtabs button.on{background:var(--lapis);color:#fff}
+.gate .gcard{margin:16px 0 0;padding:20px;border-radius:22px;background:rgba(21,30,51,.85);border:1px solid rgba(233,238,246,.12);text-align:left;box-shadow:0 18px 44px rgba(0,0,0,.4)}
+.gate ol{margin:0;padding:0;list-style:none;counter-reset:g}
+.gate li{position:relative;padding:0 0 0 44px;margin:0 0 16px;font-size:16px;line-height:1.45;counter-increment:g}
+.gate li:last-child{margin-bottom:0}
+.gate li::before{content:counter(g);position:absolute;left:0;top:-3px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;background:rgba(143,181,240,.16);color:var(--lapis-lit);border:1px solid rgba(143,181,240,.35)}
+.gate li svg{vertical-align:-4px;color:var(--lapis-lit)}
+.gate .kbd{display:inline-block;padding:1px 7px;border-radius:6px;background:rgba(233,238,246,.1);border:1px solid var(--line);font-size:14px;font-weight:700}
+.gate .gbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;margin:18px 0 0;border-radius:99px;background:var(--lapis);color:#fff;font-weight:800;font-size:16px}
+.gate .gqr{display:flex;align-items:center;gap:16px;margin:16px 0 0;padding:16px;border-radius:18px;background:rgba(233,238,246,.05);border:1px solid var(--line)}
+.gate .gqr .code{width:112px;height:112px;flex:none;padding:8px;border-radius:12px;background:#fff}
+.gate .gqr .code svg{width:100%;height:100%;display:block}
+.gate .gqr p{margin:0;text-align:left;font-size:15px;line-height:1.45;color:#C6CFDD}
+.gate .gqr b{color:var(--ink)}
+.gate .gwhy{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin:24px 0 0;color:var(--muted);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.gate .gwhy span{display:inline-flex;align-items:center;gap:6px}
+.gate .gwhy svg{color:var(--gold-lit)}
+html.gated body > :not(.gate):not(.hodone):not(#aud){visibility:hidden}
+@media (prefers-reduced-motion:reduce){.gate .glogo{animation:none}}
+/* show rows on Home: each headed by its own mark (build 2026-10-26c) */
+.showsec .sechead{align-items:center}
+.showhead{display:flex;align-items:center;gap:10px;margin:0;line-height:1}
+.showhead img{width:42px;height:42px;object-fit:contain;flex:none}
+.showhead span{font-size:22px}
+.showhead.iv span{font-family:var(--brand);text-transform:uppercase;letter-spacing:.08em;color:var(--ink);text-shadow:0 0 18px rgba(59,116,204,.55)}
+.showhead.iv img{filter:drop-shadow(0 0 10px rgba(59,116,204,.55))}
+.showhead.iw span{font-family:'IM Fell Great Primer',Georgia,serif;text-transform:uppercase;letter-spacing:.04em;font-size:23px;color:#fff;text-shadow:0 0 16px rgba(124,92,255,.7)}
+.showhead.iw img{filter:drop-shadow(0 0 9px rgba(124,92,255,.75))}
+.showhead.vr{display:block;width:153px;height:34px;overflow:hidden}
+.showhead.vr img{display:block;width:204px;height:115px;max-width:none;margin:-41px 0 0 -26px;filter:drop-shadow(0 0 10px rgba(233,238,246,.3))}
+.showhead.ah span{font-family:var(--display);font-style:italic;font-weight:600;font-size:23px;color:#B9D99A;text-shadow:0 0 16px rgba(143,184,90,.4)}
+/* The menu is full screen (builds 2026-10-26b and c; Chance: "exciting and premium, not just a list of text links", then
+   "too busy"). One word per tile in the brand type, art that moves, nothing else. Opened by the burger it rises in with
+   its tiles arriving one after another; opened by a swipe it follows the finger and never plays an entrance (.nofx). */
 .menu{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
-  background:radial-gradient(120% 60% at 100% 0%,rgba(59,116,204,.30),transparent 60%),radial-gradient(90% 50% at 0% 100%,rgba(216,170,60,.18),transparent 62%),linear-gradient(180deg,#0B1222 0%,#070B15 100%);
+  background:radial-gradient(120% 60% at 100% 0%,rgba(59,116,204,.28),transparent 60%),radial-gradient(90% 50% at 0% 100%,rgba(216,170,60,.16),transparent 62%),linear-gradient(180deg,#0B1222 0%,#070B15 100%);
   padding:calc(var(--st) + 10px) 16px calc(var(--sb) + 24px);animation:mportal .32s cubic-bezier(.2,.8,.2,1) both}
-.menu::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.55;
+.menu::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
   background-image:radial-gradient(1px 1px at 12% 18%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 78% 9%,#cfe0ff 50%,transparent 51%),radial-gradient(1.4px 1.4px at 64% 34%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 28% 62%,#e8c46a 50%,transparent 51%),radial-gradient(1px 1px at 88% 72%,#fff 50%,transparent 51%),radial-gradient(1.2px 1.2px at 8% 88%,#cfe0ff 50%,transparent 51%),radial-gradient(1px 1px at 46% 8%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 52% 92%,#e8c46a 50%,transparent 51%)}
 @keyframes mportal{from{opacity:0;transform:scale(1.03)}to{opacity:1;transform:none}}
 @keyframes mtile{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
-.menu .mtop{position:relative;display:flex;align-items:center;gap:10px;min-height:54px;margin-bottom:6px}
-.menu .mtop .brandmark{flex:1}
+.menu .mtop{position:relative;display:flex;align-items:center;justify-content:flex-end;min-height:54px;margin-bottom:8px}
 .menu .mx{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(233,238,246,.08);border:1px solid var(--line);color:var(--ink)}
 .menu .mx:active{transform:scale(.94)}
-.menu .meyebrow{position:relative;font-family:var(--display);font-style:italic;font-size:15px;color:var(--muted);margin:2px 2px 14px}
-.menu .mgrid{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:640px;margin:0 auto}
-.menu .mt{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:0;min-height:150px;padding:14px;border-radius:20px;
+.menu .mbody{position:relative;display:flex;flex-direction:column;gap:12px;max-width:560px;margin:0 auto}
+.menu .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.menu .mt{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;min-height:84px;padding:16px 18px;border-radius:20px;
   background:linear-gradient(160deg,#1B2640,#121A2E);border:1px solid rgba(233,238,246,.10);box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06);
-  color:var(--ink);text-align:left;isolation:isolate;transition:transform .15s ease}
+  color:var(--ink);text-align:left;isolation:isolate;transition:transform .15s ease;width:100%}
 .menu .mt:active{transform:scale(.975)}
-.menu .mt.wide{grid-column:span 2}
-.menu .mt.tall{min-height:208px}
-.menu.enter .mt,.menu.enter .mnow{animation:mtile .42s cubic-bezier(.2,.8,.2,1) both}
-.menu.enter .mt:nth-child(1){animation-delay:.04s}.menu.enter .mt:nth-child(2){animation-delay:.09s}.menu.enter .mt:nth-child(3){animation-delay:.14s}
-.menu.enter .mt:nth-child(4){animation-delay:.19s}.menu.enter .mt:nth-child(5){animation-delay:.24s}.menu.enter .mt:nth-child(6){animation-delay:.29s}
+.menu .mt .w{font-family:var(--brand);font-size:25px;letter-spacing:.1em;text-transform:uppercase;line-height:1.05;color:#fff}
+.menu .mt .ic{width:30px;height:30px;display:grid;place-items:center;color:var(--lapis-lit);flex:none}
+.menu .mt.on{border-color:rgba(143,181,240,.6);box-shadow:0 0 0 1px rgba(143,181,240,.35),0 12px 34px rgba(59,116,204,.25)}
+html.member .menu .mt.on{border-color:rgba(216,170,60,.65);box-shadow:0 0 0 1px rgba(216,170,60,.35),0 12px 34px rgba(216,170,60,.2)}
+.menu.enter .mbody > *{animation:mtile .42s cubic-bezier(.2,.8,.2,1) both}
+.menu.enter .mbody > :nth-child(2){animation-delay:.06s}.menu.enter .mbody > :nth-child(3){animation-delay:.12s}.menu.enter .mbody > :nth-child(4){animation-delay:.18s}.menu.enter .mbody > :nth-child(5){animation-delay:.24s}.menu.enter .mbody > :nth-child(6){animation-delay:.3s}
 .menu.nofx,.menu.nofx *{animation:none!important}
-.menu .mt .bg{position:absolute;inset:0;z-index:-2;background-size:cover;background-position:center}
-.menu .mt .bg img{width:100%;height:100%;object-fit:cover;display:block}
-.menu .mt .shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(7,11,21,.05) 0%,rgba(7,11,21,.55) 45%,rgba(7,11,21,.94) 100%)}
-.menu .mt .mosaic{position:absolute;inset:0;z-index:-2;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;opacity:.85}
-.menu .mt .mosaic img{width:100%;height:100%;object-fit:cover;display:block}
-.menu .mt .ic{position:relative;flex:none;margin-bottom:auto;align-self:flex-start;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(10,15,28,.55);border:1px solid rgba(233,238,246,.14);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--lapis-lit)}
-.menu .mt .k{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--lapis-lit)}
-.menu .mt .n{font-family:var(--display);font-weight:600;font-size:23px;line-height:1.1;letter-spacing:-.01em;margin-top:3px}
-.menu .mt.wide .n{font-size:26px}
-.menu .mt .s{font-size:13px;color:#C6CFDD;margin-top:4px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.menu .mt .here{position:absolute;top:14px;right:14px;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:99px;background:rgba(143,181,240,.18);color:var(--lapis-lit);border:1px solid rgba(143,181,240,.35)}
-html.member .menu .mt .here{background:rgba(216,170,60,.18);color:var(--gold-lit);border-color:rgba(216,170,60,.4)}
-.menu .mt.on{border-color:rgba(143,181,240,.55);box-shadow:0 0 0 1px rgba(143,181,240,.35),0 12px 34px rgba(59,116,204,.25)}
-html.member .menu .mt.on{border-color:rgba(216,170,60,.6);box-shadow:0 0 0 1px rgba(216,170,60,.35),0 12px 34px rgba(216,170,60,.2)}
-/* music: gold */
-.menu .mt.music .k,.menu .mt.music .ic{color:var(--gold-lit)}
-.menu .mt.music .shade{background:linear-gradient(180deg,rgba(40,26,4,.10) 0%,rgba(16,12,6,.6) 48%,rgba(10,8,4,.95) 100%)}
-/* chat: the gold room */
-.menu .mt.chat{min-height:0;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto auto;column-gap:14px;align-items:center;padding:16px;background:linear-gradient(120deg,#3A2A08 0%,#6B4D12 45%,#D8AA3C 130%);border-color:rgba(232,196,106,.45)}
-.menu .mt.chat .k{color:var(--gold-lit)}
-.menu .mt.chat .ic{background:rgba(10,15,28,.35);color:var(--gold-lit);border-color:rgba(232,196,106,.35)}
-.menu .mt.chat .glow{position:absolute;right:-30px;top:-40px;width:170px;height:170px;border-radius:50%;z-index:-1;background:radial-gradient(circle,rgba(255,226,150,.45),transparent 65%)}
-.menu .mt.chat .dot{position:absolute;top:14px;right:14px;min-width:26px;height:26px;padding:0 8px;border-radius:13px;background:#fff;color:#0A0F1C;font-size:13px;font-weight:800;line-height:26px;text-align:center;box-shadow:0 0 0 4px rgba(255,255,255,.18)}
+/* Home: the logo and the word */
+.menu .mt.home .logo{width:54px;height:54px;object-fit:contain;flex:none;filter:drop-shadow(0 0 12px rgba(59,116,204,.6))}
+html.member .menu .mt.home .logo{filter:drop-shadow(0 0 12px rgba(216,170,60,.55))}
+/* the Inner Circle chat: the gold room */
+.menu .mt.chat{background:linear-gradient(120deg,#3A2A08 0%,#6B4D12 45%,#D8AA3C 130%);border-color:rgba(232,196,106,.45)}
+.menu .mt.chat .ic{color:var(--gold-lit)}
+.menu .mt.chat .glow{position:absolute;right:-30px;top:-50px;width:170px;height:170px;border-radius:50%;z-index:-1;background:radial-gradient(circle,rgba(255,226,150,.45),transparent 65%)}
+.menu .mt.chat .dot{position:static;margin-left:auto;min-width:28px;height:28px;padding:0 9px;border-radius:14px;background:#fff;color:#0A0F1C;font-size:14px;font-weight:800;line-height:28px;text-align:center;box-shadow:0 0 0 4px rgba(255,255,255,.18)}
 .menu .mt.chat .dot:empty{display:none}
-.menu .mt.small{min-height:156px}
-.menu .mt.chat .ic{grid-row:1 / span 3;margin:0;align-self:center;width:48px;height:48px;border-radius:15px}
-.menu .mt.chat .k,.menu .mt.chat .n,.menu .mt.chat .s{grid-column:2}
-.menu .mt.chat .n{font-size:23px}
-.menu .mt .ic + .here,.menu .mt .k{margin-top:10px}
-/* Plus+ for visitors: the invitation */
+.menu .mt.chat .lk{margin-left:auto;color:rgba(255,236,190,.85);font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+/* the search bar */
+.menu .msearch{display:flex;align-items:center;gap:10px;min-height:56px;padding:0 16px;border-radius:18px;background:rgba(233,238,246,.07);border:1px solid rgba(233,238,246,.16);color:var(--muted)}
+.menu .msearch:focus-within{border-color:rgba(143,181,240,.6);background:rgba(233,238,246,.1)}
+html.member .menu .msearch:focus-within{border-color:rgba(216,170,60,.6)}
+.menu .msearch input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--ink);font:600 17px var(--sans);-webkit-appearance:none;appearance:none}
+.menu .msearch input::placeholder{color:var(--muted)}
+/* Explore and InnerVerse Music: the word over art that keeps changing */
+.menu .mt.art{min-height:210px;align-items:flex-end;padding:16px}
+.menu .mt.art .mosaic{position:absolute;inset:0;z-index:-2;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px}
+.menu .mt.art .mosaic img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .6s ease}
+.menu .mt.art .mosaic img.out{opacity:0}
+.menu .mt.art .shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(7,11,21,0) 35%,rgba(7,11,21,.88) 100%)}
+.menu .mt.art.music .shade{background:linear-gradient(180deg,rgba(20,14,4,0) 35%,rgba(14,10,4,.9) 100%)}
+.menu .mt.art.music{border-color:rgba(216,170,60,.35)}
+.menu .mt.art .w{font-size:24px;text-shadow:0 2px 14px rgba(0,0,0,.7)}
+.menu .mt.art.music .w{color:var(--gold-lit)}
+/* Library, Account, Plus+ */
+.menu .mt.small{min-height:76px}
+.menu .mt.small .w{font-size:21px}
 .menu .mt.join{background:linear-gradient(150deg,#1A1408,#0E0B05);border-color:rgba(216,170,60,.55)}
-.menu .mt.join .k,.menu .mt.join .ic{color:var(--gold-lit)}
-.menu .mt.join .n{color:var(--gold-lit)}
+.menu .mt.join .w,.menu .mt.join .ic{color:var(--gold-lit)}
 .menu .mt.join::after{content:"";position:absolute;inset:-40%;z-index:-1;background:conic-gradient(from 0deg,transparent 0 70%,rgba(232,196,106,.22) 80%,transparent 90%);animation:mspin 6s linear infinite}
 @keyframes mspin{to{transform:rotate(1turn)}}
 /* now playing strip */
-.menu .mnow{position:relative;display:flex;align-items:center;gap:12px;max-width:640px;margin:0 auto 12px;padding:10px;border-radius:18px;background:rgba(233,238,246,.06);border:1px solid var(--line);color:var(--ink);width:100%;text-align:left}
+.menu .mnow{position:relative;display:flex;align-items:center;gap:12px;padding:10px;border-radius:18px;background:rgba(233,238,246,.06);border:1px solid var(--line);color:var(--ink);width:100%;text-align:left}
 .menu .mnow img{width:48px;height:48px;border-radius:12px;object-fit:cover;flex:none}
 .menu .mnow .tx{flex:1;min-width:0}
 .menu .mnow .k{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
@@ -286,12 +328,8 @@ html.member .menu .mnow .pp{background:var(--gold);color:var(--on-gold)}
 .menu .mnow .eq i{width:2px;background:var(--gold-lit);animation:meq .9s ease-in-out infinite}
 .menu .mnow .eq i:nth-child(2){animation-delay:.2s}.menu .mnow .eq i:nth-child(3){animation-delay:.4s}
 @keyframes meq{0%,100%{height:3px}50%{height:10px}}
-.menu .mfoot{position:relative;text-align:center;margin:22px 0 0;font-family:var(--display);font-style:italic;font-size:13px;color:rgba(154,166,186,.7)}
-@media (min-width:760px){.menu .mgrid{grid-template-columns:repeat(4,1fr)}.menu .mt.wide{grid-column:span 2}.menu .mt.tall{min-height:240px}}
-@media (max-width:360px){.menu .mt .n{font-size:20px}.menu .mt.wide .n{font-size:23px}.menu .mt .k{font-size:10px;letter-spacing:.12em}}
-.menu .mt .n{overflow-wrap:anywhere}
-@media (prefers-reduced-motion:reduce){.menu,.menu *{animation:none!important}}
-/* while a swipe drives it */
+@media (max-width:360px){.menu .mt .w{font-size:21px}.menu .mt.art .w{font-size:19px}.menu .mt.art{min-height:180px}}
+@media (prefers-reduced-motion:reduce){.menu,.menu *{animation:none!important}.menu .mt.art .mosaic img{transition:none}}
 html.mdrag .menu{animation:none;transition:none}
 html.msnap .menu{animation:none;transition:transform .26s cubic-bezier(.2,.8,.2,1)}
 .hdr .row .btn{white-space:nowrap}
@@ -517,7 +555,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-26b';
+const VERSION = '2026-10-26c';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -689,9 +727,9 @@ function showHandoffDone() {
   const d = document.createElement('div'); d.id = 'hodone'; d.className = 'hodone';
   d.innerHTML = `<div style="max-width:360px"><img src="${PLUS_LOGO}" alt="" style="width:64px;height:64px;display:block;margin:0 auto"><h2>${ok ? 'You are logged in' : 'Almost there'}</h2>
     <p class="muted" style="font-size:16px;line-height:1.55">${ok ? 'Go back to the InnerVerse app on your home screen. It will finish logging you in by itself. You can close this tab.' : 'Your login worked here, but it could not be passed to the home screen app. Open the app and log in again, or use "Trouble logging in?" there.'}</p>
-    <button class="btn line block" id="hoStay" style="margin-top:22px">Keep using InnerVerse here instead</button></div>`;
+    ${gated ? '' : '<button class="btn line block" id="hoStay" style="margin-top:22px">Keep using InnerVerse here instead</button>'}</div>`;
   document.body.appendChild(d);
-  d.querySelector('#hoStay').onclick = () => d.remove();
+  if (d.querySelector('#hoStay')) d.querySelector('#hoStay').onclick = () => d.remove();
 }
 function logout() {
   store(TOKEN_KEY, null); store('iva_status', null);
@@ -1108,60 +1146,91 @@ function renderTabs() {
   $$('.navbtns .dot, .menu .dot, .ivanav .dot').forEach(d => { d.textContent = n; });
   $$('.navbtns .chatpill').forEach(b => b.classList.toggle('has', !!n));
   const chatDoc = chatDocument(); if (chatDoc) chatDoc.querySelectorAll('.ivanav .dot').forEach(d => { d.textContent = n; });
-  if (document.documentElement.classList.contains('menuopen')) renderMenu();
+  // an open menu keeps its tiles (and the moving art and the search box); only the badge above changes
 }
 function menuItems() {
   return [['home', 'Home', I.home(22)], ['search', 'Episodes', I.search(22)], ['songs', 'InnerVerse Music', I.music(22)], ['lib', 'Library', I.books(22)],
     ['chat', 'Chat', I.chat(22)], ['me', S.member ? 'Account' : 'Plus+', S.member ? I.user(22) : I.plus(22)]];
 }
-// The full-screen menu (build 2026-10-26b): a bento of live tiles, each showing something real from the app
+// The full-screen menu (builds 2026-10-26b and c): Home (logo and word), the Inner Circle chat, a search bar, then
+// Explore and InnerVerse Music over art that reshuffles every 5 seconds, then Library and Account (Plus+ for visitors)
+let menuPools = null, menuMixT = null;
+function menuPool(kind) {
+  if (kind === 'eps') return library().slice(0, 120).map(x => img(x.thumb, 300));
+  return [...new Set(SONGLIST.map(x => songArtUrl(x, 300)))];
+}
+function pickFour(pool, avoid) {
+  const fresh = pool.filter(u => !(avoid || []).includes(u)), src = fresh.length >= 4 ? fresh : pool.slice();
+  for (let i = src.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [src[i], src[j]] = [src[j], src[i]]; }
+  return src.slice(0, 4);
+}
+function mosaic(kind) {
+  const four = pickFour(menuPool(kind));
+  return `<div class="mosaic" data-mix="${kind}">${four.map(u => `<img src="${esc(u)}" alt="">`).join('')}</div>`;
+}
+// every 5 seconds each mosaic deals four new pictures in a fresh random order, fading one cell after another
+function mixMenu() {
+  $$('#menu [data-mix]').forEach(m => {
+    const imgs = [...m.querySelectorAll('img')], now = imgs.map(i => i.getAttribute('src'));
+    const next = pickFour(menuPool(m.dataset.mix), now);
+    next.forEach((u, k) => {
+      const pre = new Image(); pre.src = u;
+      const swap = () => setTimeout(() => {
+        const el = imgs[k]; if (!el || !el.isConnected) return;
+        el.classList.add('out');
+        setTimeout(() => { el.src = u; el.classList.remove('out'); }, 600);
+      }, k * 160);
+      if (pre.complete) swap(); else { pre.onload = swap; pre.onerror = () => {}; }
+    });
+  });
+}
+function startMenuMix() { clearInterval(menuMixT); if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; menuMixT = setInterval(() => { if (document.documentElement.classList.contains('menuopen') && document.visibilityState === 'visible') mixMenu(); }, 5000); }
+function stopMenuMix() { clearInterval(menuMixT); menuMixT = null; }
 function renderMenu() {
   const n = S.member && S.chatUnread ? (S.chatUnread > 99 ? '99+' : String(S.chatUnread)) : '';
   const here = !$('#ep').hidden && (location.hash || '').indexOf('#/songs') === 0 ? 'songs' : S.tab;
-  const lib = library(), latest = lib[0];
-  const art = (u, w) => u ? `<img src="${esc(img(u, w || 300))}" alt="" loading="lazy">` : '';
-  const four = xs => xs.length >= 4 ? `<div class="mosaic">${xs.slice(0, 4).map(u => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</div>` : (xs[0] ? `<div class="bg"><img src="${esc(xs[0])}" alt=""></div>` : '');
   const on = k => here === k ? ' on' : '';
-  const hereTag = k => here === k ? '<span class="here">You are here</span>' : '';
-  const saved = savedList().length + savedSongs().length;
-  const fmtN = x => x >= 1000 ? x.toLocaleString('en-US') : String(x);
-  const songs = [...new Set(SONGLIST.map(x => songArtUrl(x, 300)))].slice(0, 4);
-  const eps = lib.slice(1, 5).map(x => img(x.thumb, 300));
   const playing = cur && aud && !aud.paused && !(typeof isSilent === 'function' && isSilent());
   const nowStrip = cur ? `<button class="mnow" data-mnow><img src="${esc(cur.kind === 's' ? cur.thumb : img(cur.thumb, 300))}" alt=""><span class="tx"><span class="k">${playing ? '<span class="eq"><i></i><i></i><i></i></span>Now playing' : 'Paused'}</span><span class="t" style="display:block">${esc(cur.title || '')}</span></span><span class="pp" data-mpp aria-label="${playing ? 'Pause' : 'Play'}">${playing ? I.pause(20) : I.play(20)}</span></button>` : '';
   const m = $('#menu');
-  m.innerHTML = `<div class="mtop">${headerBrand()}<button class="mx" data-mclose aria-label="Close menu">${I.close(22)}</button></div>
-    <div class="meyebrow">Where to next?</div>
-    ${nowStrip}
-    <div class="mgrid">
-      <button class="mt wide tall${on('home')}" data-go="home">${latest ? `<div class="bg">${art(latest.thumb, 750)}</div>` : ''}<div class="shade"></div><span class="ic">${I.home(20)}</span>${hereTag('home')}
-        <span class="k">Home</span><span class="n">${latest ? (S.member ? 'Newest full episode' : 'Newest episode') : 'Home'}</span>${latest ? `<span class="s">${esc(latest.title)}</span>` : ''}</button>
-      <button class="mt tall${on('search')}" data-go="search">${four(eps)}<div class="shade"></div><span class="ic">${I.search(20)}</span>${hereTag('search')}
-        <span class="k">Explore</span><span class="n">${lib.length ? fmtN(lib.length) + ' episodes' : 'Episodes'}</span><span class="s">Search guests, topics and titles</span></button>
-      <button class="mt tall music${on('songs')}" data-go="songs">${four(songs)}<div class="shade"></div><span class="ic">${I.music(20)}</span>${hereTag('songs')}
-        <span class="k">InnerVerse Music</span><span class="n">${SONGLIST.length ? SONGLIST.length + ' songs' : 'Songs'}</span><span class="s">Original songs from the episodes</span></button>
-      <button class="mt wide chat${on('chat')}" data-go="chat"><span class="glow"></span><span class="ic">${S.member ? I.chat(20) : I.lock(20)}</span>${S.member ? `<span class="dot">${n}</span>` : ''}${here === 'chat' && !n ? hereTag('chat') : ''}
-        <span class="k">Inner Circle</span><span class="n">${S.member ? (n ? `${n} new ${n === '1' ? 'message' : 'messages'}` : 'Chat with members') : 'Members only chat'}</span><span class="s">${S.member ? 'Rooms for every episode, live with the community' : 'Join Plus+ to step inside'}</span></button>
-      <button class="mt small${on('lib')}" data-go="lib"><span class="ic">${I.books(20)}</span>${hereTag('lib')}
-        <span class="k">Library</span><span class="n">${saved ? saved + ' saved' : 'Your shelf'}</span><span class="s">${saved ? 'Episodes, songs and notes' : 'Heart anything to keep it'}</span></button>
-      ${S.member
-        ? `<button class="mt small${on('me')}" data-go="me"><span class="ic">${I.user(20)}</span>${hereTag('me')}<span class="k">Account</span><span class="n">${esc((S.name || 'You').split(' ')[0])}</span><span class="s">Plus+ member</span></button>`
-        : `<button class="mt small join${on('me')}" data-go="me"><span class="ic">${I.plus(20)}</span>${hereTag('me')}<span class="k">Plus+</span><span class="n">Go deeper</span><span class="s">Full episodes and the chat</span></button>`}
-    </div>
-    <div class="mfoot">Explore the InnerVerse</div>`;
+  const keepQ = m.querySelector('#mq') ? m.querySelector('#mq').value : '';
+  m.innerHTML = `<div class="mtop"><button class="mx" data-mclose aria-label="Close menu">${I.close(22)}</button></div>
+    <div class="mbody">
+      ${nowStrip}
+      <button class="mt home${on('home')}" data-go="home"><img class="logo" src="${S.member ? PLUS_LOGO : LOGO}" alt=""><span class="w">Home</span></button>
+      <button class="mt chat${on('chat')}" data-go="chat"><span class="glow"></span><span class="ic">${S.member ? I.chat(26) : I.lock(24)}</span><span class="w">Inner Circle Chat</span>${S.member ? `<span class="dot">${n}</span>` : '<span class="lk">Plus+</span>'}</button>
+      <form class="msearch" data-msearch role="search">${I.search(20)}<input id="mq" type="search" enterkeyhint="search" autocomplete="off" placeholder="Search episodes" aria-label="Search episodes" value="${esc(keepQ)}"></form>
+      <div class="mgrid">
+        <button class="mt art${on('search')}" data-go="search">${mosaic('eps')}<div class="shade"></div><span class="w">Explore</span></button>
+        <button class="mt art music${on('songs')}" data-go="songs">${mosaic('songs')}<div class="shade"></div><span class="w">InnerVerse Music</span></button>
+      </div>
+      <div class="mgrid">
+        <button class="mt small${on('lib')}" data-go="lib"><span class="ic">${I.books(24)}</span><span class="w">Library</span></button>
+        ${S.member
+          ? `<button class="mt small${on('me')}" data-go="me"><span class="ic">${I.user(24)}</span><span class="w">Account</span></button>`
+          : `<button class="mt small join${on('me')}" data-go="me"><span class="ic">${I.plus(24)}</span><span class="w">Plus+</span></button>`}
+      </div>
+    </div>`;
 }
 function openMenu() {
   const m = $('#menu'); m.classList.remove('nofx'); renderMenu();
   m.classList.add('enter'); clearTimeout(openMenu.t); openMenu.t = setTimeout(() => m.classList.remove('enter'), 900);
-  m.scrollTop = 0; document.documentElement.classList.add('menuopen');
+  m.scrollTop = 0; document.documentElement.classList.add('menuopen'); startMenuMix();
 }
-function closeMenu() { document.documentElement.classList.remove('menuopen', 'mswipe', 'mdrag', 'msnap'); const m = $('#menu'); if (m) { m.style.transform = ''; m.classList.remove('enter'); } MD = null; }
+function closeMenu() { stopMenuMix(); try { const q = document.getElementById('mq'); if (q) { q.value = ''; q.blur(); } } catch (e) {} document.documentElement.classList.remove('menuopen', 'mswipe', 'mdrag', 'msnap'); const m = $('#menu'); if (m) { m.style.transform = ''; m.classList.remove('enter'); } MD = null; }
 function goTab(tab) {
   closeMenu();
   if (tab === 'songs') { go('#/songs'); return; }
   if (tab === S.tab && $('#ep').hidden) { const v = $('#' + viewId(tab)); v.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   go(TAB_HASH[tab]);
 }
+$('#menuwrap').addEventListener('submit', e => {
+  if (!e.target.closest('[data-msearch]')) return;
+  e.preventDefault();
+  const q = ($('#mq').value || '').trim();
+  closeMenu();
+  if (q) go('#/search?q=' + encodeURIComponent(q)); else { go('#/search'); setTimeout(() => { const f = $('#q'); if (f) f.focus(); }, 250); }
+});
 $('#menuwrap').addEventListener('click', e => {
   if (e.target.closest('[data-mpp]')) { e.stopPropagation(); togglePlay(); setTimeout(renderMenu, 60); return; }
   if (e.target.closest('[data-mnow]')) { closeMenu(); openNP(); return; }
@@ -1203,6 +1272,7 @@ function mdEnd() {
 }
 function mdStart(e, d) {
   MD = null;
+  if (gated) return;
   if (e.touches.length !== 1) return;
   const el = e.target; if (!el || !el.closest) return;
   const open = document.documentElement.classList.contains('menuopen');
@@ -1222,7 +1292,7 @@ function mdMove(e) {
     if (!(Math.abs(dx) > Math.abs(dy) * 1.2 && (r.open ? dx > 0 : dx < 0))) { MD = null; return; }
     r.go = true; r.x0 = t.clientX; r.lx = t.clientX; r.lt = now;
     const H = document.documentElement;
-    if (!r.open) { try { const a = r.d.activeElement; a && a.blur && a.blur(); } catch (err) {} const m = $('#menu'); m.classList.remove('enter'); m.classList.add('nofx'); renderMenu(); m.scrollTop = 0; H.classList.add('menuopen', 'mswipe'); }
+    if (!r.open) { try { const a = r.d.activeElement; a && a.blur && a.blur(); } catch (err) {} const m = $('#menu'); m.classList.remove('enter'); m.classList.add('nofx'); renderMenu(); m.scrollTop = 0; H.classList.add('menuopen', 'mswipe'); startMenuMix(); }
     H.classList.add('mdrag'); H.classList.remove('msnap');
     mdSet(r.p);
   }
@@ -1397,6 +1467,19 @@ document.addEventListener('click', e => {
   try { navigator.clipboard.writeText(PROMO.code).then(done, done); } catch (err) { done(); }
 });
 
+// each show's row is headed by its own mark (Chance, 2026-10-26: "incorporate the logos"); Vibe Rant's logo is a wordmark,
+// Astro-Herbalism has no logo yet, so it keeps a styled title
+const SHOW_LOGO = {
+  'InnerVerse': 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-Electric-Logo-2026.png',
+  'Inner Whirled': 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/a39095cd-b9d2-444d-b4e2-14a2484d766d/Inner-Whirled-Logo.png',
+  'Vibe Rant': 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/b8217739-ae93-4527-bd8a-37d690f4296b/VIBRANT_LOGO.png'
+};
+function showHead(sh) {
+  const u = SHOW_LOGO[sh];
+  if (sh === 'Vibe Rant' && u) return `<h2 class="showhead vr"><img src="${esc(img(u, 500))}" alt="Vibe Rant"></h2>`;
+  const cls = sh === 'InnerVerse' ? 'iv' : sh === 'Inner Whirled' ? 'iw' : 'ah';
+  return `<h2 class="showhead ${cls}">${u ? `<img src="${esc(img(u, 300))}" alt="">` : ''}<span>${esc(sh)}</span></h2>`;
+}
 function renderHome() {
   const v = $('#home');
   if (!S.lib) { v.innerHTML = `<header class="hdr"><div class="row">${headerBrand()}</div></header><div class="loading"><div class="spin"></div></div>`; return; }
@@ -1405,7 +1488,7 @@ function renderHome() {
   const cont = Object.entries(PROG).filter(([k, p]) => p.t > 60 && S.lib.bySlug[k]).sort((a, b) => b[1].at - a[1].at).map(([k]) => pick(S.lib.bySlug[k])).filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 10);
   const firsts = FIRST_EPISODES.map(s => pick(S.lib.bySlug['e:' + s] || S.lib.bySlug['p:' + s])).filter(Boolean);
   const byShow = sh => sh === 'Vibe Rant' ? vibeShuffle(lib) : lib.filter(x => x.shows.includes(sh)).slice(0, 10);
-  const showRow = sh => { const xs = byShow(sh); if (!xs.length) return ''; return `<div class="sec"><div class="sechead"><h2 class="h2">${esc(sh)}</h2><a href="#/search?show=${encodeURIComponent(sh)}">See all</a></div><div class="hscroll">${xs.map(tile).join('')}</div></div>`; };
+  const showRow = sh => { const xs = byShow(sh); if (!xs.length) return ''; return `<div class="sec showsec" data-show="${esc(sh)}"><div class="sechead">${showHead(sh)}<a href="#/search?show=${encodeURIComponent(sh)}">See all</a></div><div class="hscroll">${xs.map(tile).join('')}</div></div>`; };
   v.innerHTML = `<header class="hdr"><div class="row">${headerBrand()}<span class="sp"></span>${S.member ? '' : '<button class="btn line" data-act="login" style="min-height:36px;padding:0 14px;font-size:14px">Log in</button>'}</div></header>
   <div class="wrap">
     ${latest ? `<div class="eyebrow" style="margin-top:8px">${S.member ? 'Newest full episode' : 'Newest episode'}</div>
@@ -1418,7 +1501,7 @@ function renderHome() {
     ${S.member ? '' : `<div class="sec">${plusPitch(true)}</div>`}
     ${songsRow()}
     ${firsts.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Good first episodes</h2></div><div class="hscroll">${firsts.map(tile).join('')}</div></div>` : ''}
-    ${['Inner Whirled', 'InnerVerse', 'Vibe Rant', 'Astro-Herbalism'].map(showRow).join('')}
+    ${['InnerVerse', 'Inner Whirled', 'Vibe Rant', 'Astro-Herbalism'].map(showRow).join('')}
   </div>`;
 }
 document.addEventListener('click', e => {
@@ -1808,7 +1891,7 @@ function sendChatRoom() {
 // the chat page is cached by the phone for up to 10 minutes (GitHub Pages); a fresh address each launch means a chat update shows on the next open (2026-10-24)
 const CHAT_FRESH = Date.now().toString(36);
 function mountChat() {
-  if (!S.member || S.chatLoaded) return;
+  if (!S.member || S.chatLoaded || gated) return;
   S.chatLoaded = true;
   const f = document.createElement('iframe');
   f.title = 'Inner Circle'; f.src = '/?app=1&v=' + CHAT_FRESH + (S.chatRoom ? '#room=' + encodeURIComponent(S.chatRoom) : ''); S.chatRoom = null;
@@ -2507,6 +2590,54 @@ function showInstall(force) {
   w.addEventListener('click', e => { if (e.target === w) close(); });
 }
 
+
+// ------------------------------------------------------------ opened in a browser: show how to install, not the app
+// Chance, 2026-10-26: "/app from desktop or mobile should just give instructions to install the app, rather than the
+// app opening in a browser window". The login return (?h= handoff) still runs underneath and shows its own screen on top.
+// ?browser=1 lets a test or a support session use the app in a browser tab (kept for that tab only).
+try { if (/[?&]browser=1\b/.test(location.search)) sessionStorage.setItem('iva_browser', '1'); } catch (e) {}
+const gated = !standalone && (() => { try { return sessionStorage.getItem('iva_browser') !== '1'; } catch (e) { return true; } })();
+function showGate() {
+  document.documentElement.classList.add('gated');
+  const desk = !(isIOS || isAndroid);
+  const ua = navigator.userAgent;
+  const deskKind = /Firefox\//.test(ua) ? 'firefox' : (/Safari\//.test(ua) && !/Chrome|Chromium|Edg\//.test(ua)) ? 'safari' : 'chromium';
+  const dots = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>';
+  const installIc = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M12 8v6M9 11l3 3 3-3M8 21h8"/></svg>';
+  const steps = {
+    iphone: `<ol><li>Open <b>circle.innerversepodcast.com/app</b> in <b>Safari</b>.</li><li>Tap the Share button ${I.share(18)} in the toolbar.</li><li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li><li>Open <b>InnerVerse</b> from your Home Screen.</li></ol>`,
+    android: `<ol><li>Open <b>circle.innerversepodcast.com/app</b> in <b>Chrome</b>.</li><li>Tap the menu ${dots} at the top right.</li><li>Tap <b>Install app</b> or <b>Add to Home screen</b>.</li><li>Open <b>InnerVerse</b> from your home screen.</li></ol>`,
+    computer: deskKind === 'safari'
+      ? `<ol><li>In Safari's menu bar, choose <span class="kbd">File</span> then <b>Add to Dock</b>.</li><li>Click <b>Add</b>.</li><li>Open <b>InnerVerse</b> from your Dock.</li></ol>`
+      : deskKind === 'firefox'
+      ? `<ol><li>Firefox cannot install web apps. Open <b>circle.innerversepodcast.com/app</b> in <b>Chrome</b>, <b>Edge</b> or <b>Safari</b> instead.</li><li>Or scan the code below to put it on your phone.</li></ol>`
+      : `<ol><li>Click the install icon ${installIc} at the right end of the address bar, or open the browser menu ${dots} and choose <b>Install InnerVerse</b>.</li><li>Click <b>Install</b>.</li><li>InnerVerse opens in its own window and lives in your apps.</li></ol>`
+  };
+  let pick = isAndroid ? 'android' : isIOS ? 'iphone' : 'computer';
+  const g = document.createElement('div'); g.className = 'gate'; g.id = 'gate';
+  g.innerHTML = `<div class="gin"><img class="glogo" src="${LOGO}" alt=""><div class="gword">InnerVerse</div>
+    <h1>The InnerVerse app</h1>
+    <p class="glead">Every episode, InnerVerse Music and the Inner Circle chat, right on your ${desk ? 'computer or phone' : 'home screen'}. Free, and no app store needed.</p>
+    <div class="gtabs" role="tablist"><button role="tab" data-g="iphone">iPhone</button><button role="tab" data-g="android">Android</button><button role="tab" data-g="computer">Computer</button></div>
+    <div class="gcard"><div id="gSteps"></div><button class="gbtn" id="gGo" hidden>${installIc} Install InnerVerse</button></div>
+    ${desk ? `<div class="gqr"><div class="code" id="gQr" aria-label="QR code for circle.innerversepodcast.com/app"></div><p><b>On your phone?</b> Point its camera here to open the install page there.</p></div>` : ''}
+    <div class="gwhy"><span>${I.head(16)} Every episode</span><span>${I.music(16)} Music</span><span>${I.chat(16)} The Inner Circle</span></div></div>`;
+  document.body.appendChild(g);
+  const paint = () => {
+    g.querySelectorAll('[data-g]').forEach(b => { const on = b.dataset.g === pick; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    g.querySelector('#gSteps').innerHTML = steps[pick];
+    g.querySelector('#gGo').hidden = !(installEvt && ((pick === 'android' && isAndroid) || (pick === 'computer' && desk)));
+  };
+  paint();
+  g.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => { pick = b.dataset.g; paint(); }));
+  g.querySelector('#gGo').addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; paint(); });
+  window.addEventListener('beforeinstallprompt', () => setTimeout(paint, 0));
+  window.addEventListener('appinstalled', () => { const st = g.querySelector('#gSteps'); if (st) st.innerHTML = '<p style="margin:0;font-size:16px">InnerVerse is installed. Open it from your apps.</p>'; });
+  if (desk) loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js').then(() => {
+    try { const q = window.qrcode(0, 'M'); q.addData('https://circle.innerversepodcast.com/app/'); q.make(); g.querySelector('#gQr').innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); } catch (e) {}
+  }, () => { const c = g.querySelector('.gqr'); if (c) c.remove(); });
+}
+
 // ------------------------------------------------------------ fill the whole screen
 // On some iPhones a home-screen app's page stops short of the bottom of the screen (by about the status bar's height),
 // leaving a blank strip under fixed bars. Measure it and let the bars and pages reach the real bottom.
@@ -2565,7 +2696,7 @@ function checkUpdate() {
 }
 setTimeout(checkUpdate, 1500);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { checkStatus(); checkUpdate(); } else if (cur && aud.currentTime) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); });
-setTimeout(() => showInstall(false), 2500);
+if (gated) showGate(); else setTimeout(() => showInstall(false), 2500);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>
