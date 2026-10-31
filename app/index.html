@@ -624,7 +624,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-31a';
+const VERSION = '2026-10-31b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1983,7 +1983,7 @@ function mountChat() {
   S.chatLoaded = true;
   const f = document.createElement('iframe');
   f.title = 'Inner Circle'; f.src = '/?app=1&v=' + CHAT_FRESH + (S.chatRoom ? '#room=' + encodeURIComponent(S.chatRoom) : ''); S.chatRoom = null;
-  f.setAttribute('allow', 'clipboard-write; autoplay');
+  f.setAttribute('allow', 'clipboard-write; autoplay; fullscreen; picture-in-picture; encrypted-media'); f.setAttribute('allowfullscreen', ''); // without these a video posted in the chat cannot go full screen or pop out (2026-10-31b)
   $('#chatv').appendChild(f);
   f.addEventListener('load', () => {
     setTimeout(tellChat, 300);
