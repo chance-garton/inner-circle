@@ -2,6 +2,26 @@
   "about": "Original songs made for InnerVerse episodes. The app orders songs by their episode's release date, newest first, and keeps one episode's songs in the order listed here (track order); keep this file in the same order so it reads the way the app shows it. id names the song (and its files and share page, songs/<id>/); episode is the episode's FREE slug (the /episodes/<slug> address); art is the square cover's Squarespace CDN address (Chance sends one per batch), a square image in this folder, or empty to fall back to the episode's thumbnail. After any change here, run: python3 songs/build.py",
   "songs": [
     {
+      "id": "inner-whirled-32-galatea",
+      "episode": "inner-whirled-32",
+      "episodeTitle": "Exposing the Astrological Errors of Fomenko's New Chronology",
+      "title": "Galatea",
+      "file": "inner-whirled-32-galatea.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/8836ff9c-6857-4e29-b52e-aa8c4ac97fb0/IW-32.jpg",
+      "seconds": 188,
+      "added": "2026-11-01"
+    },
+    {
+      "id": "inner-whirled-32-loggia",
+      "episode": "inner-whirled-32",
+      "episodeTitle": "Exposing the Astrological Errors of Fomenko's New Chronology",
+      "title": "Loggia",
+      "file": "inner-whirled-32-loggia.mp3",
+      "art": "https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/8836ff9c-6857-4e29-b52e-aa8c4ac97fb0/IW-32.jpg",
+      "seconds": 194,
+      "added": "2026-11-01"
+    },
+    {
       "id": "kyle-denton-herbal-dentistry-inside-out",
       "episode": "kyle-denton-herbal-dentistry",
       "episodeTitle": "The Tooth Truths Most Dentists Won't Admit, with Kyle Denton of Tippecanoe Herbs",
