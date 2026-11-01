@@ -2380,7 +2380,7 @@ function openRooms(focusSearch) {
 function drawRooms() {
   const box = $('#rbody'); if (!box) return;
   const q = ($('#rq') && $('#rq').value.trim()) || '';
-  const item = r => `<button class="ritem${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}">${r.saved ? savedIcon(56) : r.live ? `<span class="livebadge"><span class="livedot"></span>LIVE</span>` : r.key ? `<img class="rimg" src="${esc(thumbAt(r.thumb, 300))}" alt="" loading="lazy">` : `<span class="rlogo"><img src="${PLUS_LOGO}" alt=""></span>`}<span style="flex:1;min-width:0"><span class="rt">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span><span class="rl">${lastLine(r)}</span></span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : (r.key && !r.saved && r.total ? `<span class="rcount">${r.total}</span>` : '')}</button>`;
+  const item = r => `<button class="ritem${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}">${r.saved ? savedIcon(56) : r.live ? `<span class="livebadge"><span class="livedot"></span>LIVE</span>` : r.key ? `<img class="rimg" src="${esc(thumbAt(r.thumb, 300))}" alt="" loading="lazy">` : `<span class="rlogo"><img src="${PLUS_LOGO}" alt=""></span>`}<span style="flex:1;min-width:0"><span class="rt">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span><span class="rl">${lastLine(r)}</span></span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : ''}</button>`;
   if (!q) {
     const R = S.rooms;
     if (!R) { box.innerHTML = `<div style="padding:20px">${loaderHtml()}</div>`; return; }
