@@ -689,6 +689,14 @@ body.ivc-pl .phead{padding-left:16px}
 .epp.phone .eppch button{padding:8px 8px}
 .plslot[data-phone="true"]{flex:none}
 .plbtn.on{background:rgba(216,170,60,0.13)}
+.plrow{display:none}
+@media (max-width:860px){
+  .plrow:not([hidden]){display:flex;border-bottom:1px solid var(--line);background:rgba(10,15,28,0.96);flex:none}
+  .ctop .plrow{background:transparent;border-bottom:0;border-top:1px solid rgba(233,238,246,0.06)}
+  .plrowb{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;color:var(--gold);font:inherit;font-size:13.5px;font-weight:700;text-align:left;background:none}
+  .plrowb.on{background:rgba(216,170,60,0.10)}
+  .plrowb .plrowk{margin-left:auto;color:var(--muted,#8b93a7);font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
 .ibtn.plbtn{color:var(--gold)}
 .plnow{color:var(--gold)}
 .eq{display:inline-flex;align-items:flex-end;gap:2px;height:13px;width:14px}
@@ -1097,6 +1105,7 @@ function startAtPlace(lastRead) {
   if (!S.unseen.size) S.restorePlace = true;
 }
 function markSeenOnScreen() {
+  markMentionsOnScreen();
   if (away() || S.view !== 'chat' || !S.unseen.size) return;
   let changed = false;
   for (const id of S.seenOnScreen) if (S.unseen.delete(id)) changed = true;
@@ -1198,9 +1207,19 @@ function onIncoming(m) {
   }
 }
 function lastSeenMention() { return Number(load('ivc_seen_mention') || 0); }
+// mentions read in the chat itself (2026-10-31): kept by id, so one seen here does not clear another unread elsewhere
+function mentionsRead() { try { return new Set(JSON.parse(load('ivc_ment_read') || '[]')); } catch (e) { return new Set(); } }
+function markMentionsOnScreen() {
+  if (away() || S.view !== 'chat' || !S.newMentions) return;
+  const seen = lastSeenMention(), done = mentionsRead(); let add = false;
+  for (const id of S.seenOnScreen) { const x = findMsg(id); if (x && x.id > seen && !done.has(x.id) && mentionedMe(x)) { done.add(x.id); add = true; } }
+  if (!add) return;
+  store('ivc_ment_read', JSON.stringify([...done].filter(id => id > seen).slice(-300)));
+  countNewMentions();
+}
 function countNewMentions() {
-  const seen = lastSeenMention();
-  S.newMentions = S.messages.filter(x => mentionedMe(x) && x.id > seen && !x.deleted).length;
+  const seen = lastSeenMention(), done = mentionsRead();
+  S.newMentions = S.messages.filter(x => mentionedMe(x) && x.id > seen && !done.has(x.id) && !x.deleted).length;
   renderMentionBadge();
 }
 function renderMentionBadge() {
@@ -1787,7 +1806,7 @@ function plSlot() {
   if (slot && slot.dataset.phone !== String(phone)) { slot.remove(); slot = null; }
   if (!slot) {
     slot = document.createElement('div'); slot.id = 'plslot'; slot.className = 'plslot'; slot.dataset.phone = String(phone);
-    if (phone) { const after = $('.livebar', panel) || $('.ptop', panel); after.insertAdjacentElement('afterend', slot); }
+    if (phone) { const after = $('.livebar', panel) || $('#plRow2', panel) || $('.ptop', panel); after.insertAdjacentElement('afterend', slot); }
     else shell.insertBefore(slot, panel);
   }
 }
@@ -1959,10 +1978,10 @@ function plDraw() {
 }
 // the header's Play episode button (and Now playing, when the episode playing belongs to another room)
 function plBtnHtml(phone) {
-  if (!plRoomOk()) return PL.playing && PL.room && !plHere() ? `<button class="${phone ? 'ibtn plnow' : 'btn2 sm plnow'}" id="plNow${phone ? '2' : ''}" title="Back to the episode that is playing" aria-label="Now playing: back to its room">${eqIcon()}${phone ? '' : 'Now playing'}</button>` : '';
+  if (!plRoomOk()) return PL.playing && PL.room && !plHere() ? `<button class="${phone ? 'plrowb plnow' : 'btn2 sm plnow'}" id="plNow${phone ? '2' : ''}" title="Back to the episode that is playing" aria-label="Now playing: back to its room">${eqIcon()}${phone ? '<span>Now playing</span><span class="plrowk">Back to its room</span>' : 'Now playing'}</button>` : '';
   const here = plHere(), on = here && PL.open, playing = here && PL.playing;
   const label = on ? 'Hide player' : playing ? 'Show player' : 'Play episode';
-  return phone ? `<button class="ibtn plbtn${on ? ' on' : ''}" id="plBtn2" aria-label="${label}" aria-pressed="${on}" title="${label}">${playing ? eqIcon() : I.tri(19)}</button>`
+  return phone ? `<button class="plrowb plbtn${on ? ' on' : ''}" id="plBtn2" aria-pressed="${on}">${on ? P('<path d="m6 15 6-6 6 6"/>',{s:16}) : playing ? eqIcon() : I.tri(13)}<span>${label}</span>${on ? '' : `<span class="plrowk">Listen or watch, with chapters</span>`}</button>`
     : `<button class="btn2 sm plbtn${on ? ' on' : ''}" id="plBtn" aria-pressed="${on}">${playing ? eqIcon() : I.tri(13)}${label}</button>`;
 }
 const eqIcon = () => `<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>`;
@@ -1970,6 +1989,7 @@ function renderPlBtns() {
   ['', '2'].forEach(k => {
     const host = $('#plHost' + k); if (!host) return;
     host.innerHTML = plBtnHtml(k === '2');
+    if (k === '2') { const row = $('#plRow2'); if (row) row.hidden = !host.innerHTML; }
     const b = $('#plBtn' + k); if (b) b.onclick = () => { if (plHere() && PL.open) plShow(false); else plOpenRoom(); };
     const n = $('#plNow' + k); if (n) n.onclick = () => { const r = PL.room; switchRoom(r, () => plShow(true)); };
   });
@@ -2635,10 +2655,10 @@ function renderChat() {
         ${isSaved(S.room) ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button><button class="ibtn rbtn rbig" id="roomsBtn2" aria-label="Rooms" title="Rooms">${ROOMS_ICON(22)}<span class="rdot"></span></button>${savedIcon(30)}` : S.room ? `<button class="ibtn" id="roomBack" aria-label="Back to Inner Circle Chat" title="Inner Circle Chat">${I.back(22)}</button><button class="ibtn rbtn rbig" id="roomsBtn2" aria-label="Rooms" title="Rooms">${ROOMS_ICON(22)}<span class="rdot"></span></button><button id="roomThumb" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 100))}" alt="">` : `<img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}</button>`
           : `<a class="ibtn" href="${SITE}/" aria-label="Back to InnerVerse">${I.back(22)}</a><button class="ibtn rbtn rbig" id="roomsBtn2" aria-label="Rooms" title="Rooms">${ROOMS_ICON(22)}<span class="rdot"></span></button><img src="${PLUS_LOGO}" alt="" style="width:30px;height:30px">`}
         <button id="ptitle" aria-label="Who is here" style="flex:1;min-width:0;margin-left:4px;text-align:left;color:inherit"><h1 class="room${S.room ? ' ep' : ''}">${esc(S.room ? shortRoom(S.roomInfo.title) : 'Inner Circle Chat')}</h1><div class="sub" id="cnt2"></div></button>
-        <span id="plHost2" style="display:contents"></span>
         <button class="ibtn mbtn" id="mentBtn2" aria-label="Settings" title="Settings">${I.gear(21)}<span class="mbadge" style="display:none"></span></button>
         <button class="ibtn" id="searchBtn2" aria-label="Search">${I.search(21)}</button>
       </div>
+      <div class="plrow" id="plRow2" hidden><span id="plHost2" style="display:contents"></span></div>
       <div class="phead desk">
         ${isSaved(S.room) ? savedIcon(44) : S.room ? `<button id="roomThumbD" aria-label="Open the episode" style="flex:none;display:flex">${S.roomInfo.thumb ? `<img class="rth" src="${esc(thumbAt(S.roomInfo.thumb, 300))}" alt="">` : ''}</button>` : ''}
         <div style="flex:1;min-width:0"><h2 class="room" style="${S.room ? 'font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' : ''}">${esc(S.room ? S.roomInfo.title : 'Inner Circle Chat')}</h2><div class="sub" id="cnt"></div></div>
