@@ -624,7 +624,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-10-31a';
+const VERSION = '2026-11-03a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1931,7 +1931,9 @@ window.addEventListener('message', e => {
   const d = e.data;
   if (d.level) store('iva_level', d.level === 'all' ? null : d.level);
   if (d.playSong) { const s = songById(d.playSong); if (s) playSong(s); } // a song card's play button in the chat (2026-10-24)
-  if (d.videoPlaying && !aud.paused) aud.pause(); // a video started in the chat
+  // a video started in the chat; only a play that came from a tap counts (build 2026-11-03a: an Android member's audio
+  // stopped on opening the chat, and a play the chat reports without a tap must never stop the app's player)
+  if (d.videoPlaying && !aud.paused && (!navigator.userActivation || navigator.userActivation.isActive)) aud.pause();
   if (d.openEp && /^#\/(?:[ep]|songs)\/[a-z0-9-]+$/.test(d.openEp)) go(d.openEp); // an episode link tapped in the chat opens here
   if (d.openNotify) { go('#/me'); setTimeout(() => { const b = $('#pushBox'); b && b.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }
   if ('unread' in d) {
@@ -2341,7 +2343,7 @@ async function startVideo(at, autoplay) {
       } });
   } else if (vm) {
     VP = { type: 'pending' };
-    media.innerHTML = `<div class="frame"><iframe id="vmp" src="https://player.vimeo.com/video/${vm.id}?${vm.h ? 'h=' + vm.h + '&' : ''}playsinline=1&muted=0&title=0&byline=0&portrait=0${autoplay ? '&autoplay=1' : ''}#t=${Math.floor(at || 0)}s" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+    media.innerHTML = `<div class="frame"><iframe id="vmp" src="https://player.vimeo.com/video/${vm.id}?${vm.h ? 'h=' + vm.h + '&' : ''}playsinline=1&muted=0&title=0&byline=0&portrait=0&pip=1${autoplay ? '&autoplay=1' : ''}#t=${Math.floor(at || 0)}s" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
     try {
       await loadScript('https://player.vimeo.com/api/player.js');
       if (!EPV || EPV !== E || !VP || VP.type !== 'pending') return;
@@ -2798,6 +2800,15 @@ function checkUpdate() {
 setTimeout(checkUpdate, 1500);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { checkStatus(); checkUpdate(); } else if (cur && aud.currentTime) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); });
 if (gated) showGate(); else setTimeout(() => showInstall(false), 2500);
+// a video going full screen turns sideways with the phone (build 2026-11-03a, an Android member: rotation did nothing,
+// because Android keeps an installed app to the manifest's portrait); back to portrait when full screen ends
+function fsTurn() {
+  const o = screen.orientation; if (!o || !o.lock) return;
+  const fs = document.fullscreenElement || document.webkitFullscreenElement;
+  if (fs) o.lock('landscape').catch(() => {}); else { try { o.unlock(); } catch (e) {} }
+}
+document.addEventListener('fullscreenchange', fsTurn);
+document.addEventListener('webkitfullscreenchange', fsTurn);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>
