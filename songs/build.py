@@ -30,11 +30,45 @@ def thumbs():
         return {}
 
 
+IMG_BASE = 'https://images.innerversepodcast.com'
+IMG_WIDTHS = (300, 500, 750, 1000, 1500)
+LOGO = IMG_BASE + '/sq/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-electric-logo-2026/w300.webp'
+
+
 def full_art(art, w):
-    """A song's art as a full address: a Squarespace CDN link (sized with ?format=) or a file in this folder."""
+    """A song's art as a full address: a link on our image host (the plain original), a Squarespace CDN
+    link (sized with ?format=) or a file in this folder. Share-card tags and the lock-screen cover use the
+    original; page pictures go through sized()."""
     if art.startswith('http'):
         return art.split('?')[0] + f'?format={w}w' if 'squarespace-cdn.com' in art else art
     return BASE + art
+
+
+def sized(addr, w):
+    """(src, back): the small WebP for an address on our image host, plus the plain address to fall back
+    to if that size was never made (back is '' when nothing needs a fallback)."""
+    if addr.startswith(IMG_BASE + '/'):
+        import re
+        m = re.match(r'^(.*)/(?:orig\.[a-z0-9]+|w\d+\.webp)(?:[?#].*)?$', addr)
+        if m:
+            pick = next((x for x in IMG_WIDTHS if x >= w), IMG_WIDTHS[-1])
+            s = f'{m.group(1)}/w{pick}.webp'
+            return (s, addr) if s != addr else (addr, '')
+    return addr, ''
+
+
+def img_tag(addr, w, cls='', alt=''):
+    """An <img> for an address, sized for our image host with a plain-address fallback."""
+    src, back = sized(addr, w)
+    onerr = f' onerror="this.onerror=null;this.src=\'{html.escape(back)}\'"' if back else ''
+    c = f' class="{cls}"' if cls else ''
+    return f'<img{c} src="{html.escape(src)}" alt="{html.escape(alt)}"{onerr}>'
+
+
+def thumb_at(thumb, w):
+    """An episode thumbnail at a width: our image host's original stays plain (sized() handles it), a
+    Squarespace one gets ?format=."""
+    return thumb if thumb.startswith(IMG_BASE + '/') else thumb + f'?format={w}w'
 
 
 def write_cover(sid, src):
@@ -124,8 +158,8 @@ footer a{{color:var(--lapis-lit);font-weight:700;text-decoration:none}}
 </head>
 <body>
 <main>
-  <a class="brand" href="{site}/"><img src="https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-Electric-Logo-2026.png?format=100w" alt="">InnerVerse</a>
-  <img class="art" src="{art}" alt="Art for {title}">
+  <a class="brand" href="{site}/"><img src="{logo}" alt="">InnerVerse</a>
+  {art_img}
   <div class="eyebrow">An original InnerVerse song</div>
   <h1>{title}</h1>
   <p class="from">From the episode <b>{ep_title}</b>{length}</p>
@@ -150,25 +184,25 @@ def main():
         ep = eps.get(s['episode'], {})
         ep_title = s.get('episodeTitle') or ep.get('title') or 'an InnerVerse episode'
         thumb = (ep.get('thumb') or '').split('?')[0]
-        art = full_art(s.get('art'), 750) if s.get('art') else (thumb + '?format=750w' if thumb else 'https://circle.innerversepodcast.com/app/icons/icon-512.png')
+        art = full_art(s.get('art'), 750) if s.get('art') else (thumb_at(thumb, 750) if thumb else 'https://circle.innerversepodcast.com/app/icons/icon-512.png')
         siblings = [x for x in songs if x['episode'] == s['episode'] and x['id'] != sid]
 
         def sib(x):
-            a = full_art(x.get('art'), 300) if x.get('art') else (thumb + '?format=300w' if thumb else '')
-            return (f'<a href="{BASE}{html.escape(x["id"])}/"><img src="{html.escape(a)}" alt="">'
+            a = full_art(x.get('art'), 300) if x.get('art') else (thumb_at(thumb, 300) if thumb else '')
+            return (f'<a href="{BASE}{html.escape(x["id"])}/">{img_tag(a, 300)}'
                     f'<span>{html.escape(x["title"])}<small>{clock(x.get("seconds"))}</small></span></a>')
         more = (f'<div class="more"><h2>More songs from this episode</h2>{"".join(sib(x) for x in siblings)}</div>'
                 if siblings else '')
         page = PAGE.format(
             title=html.escape(s['title']), id=html.escape(sid),
             desc=html.escape(f'An original InnerVerse song from the episode {ep_title}.'),
-            url=f'{BASE}{sid}/', art=html.escape(art), audio=f'{BASE}{html.escape(s["file"])}',
+            url=f'{BASE}{sid}/', art=html.escape(art), art_img=img_tag(art, 750, 'art', 'Art for ' + s['title']), logo=LOGO, audio=f'{BASE}{html.escape(s["file"])}',
             ep_title=html.escape(ep_title), ep_url=f'{SITE}/episodes/{html.escape(s["episode"])}',
             length=f' · {clock(s["seconds"])}' if s.get('seconds') else '', more=more, site=SITE)
         os.makedirs(os.path.join(ROOT, sid), exist_ok=True)
         with open(os.path.join(ROOT, sid, 'index.html'), 'w') as f:
             f.write(page)
-        write_cover(sid, full_art(s['art'], 1000) if s.get('art') else (thumb + '?format=1000w' if thumb else ''))
+        write_cover(sid, full_art(s['art'], 1000) if s.get('art') else (thumb_at(thumb, 1000) if thumb else ''))
         built.add(sid)
     for name in os.listdir(ROOT):
         p = os.path.join(ROOT, name)

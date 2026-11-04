@@ -472,7 +472,7 @@ html:not(.member) .np .ctl .big{background:var(--lapis);color:#fff}
 html.playing #chatv iframe{height:calc(100% - var(--st) - var(--minih) - max(12px,calc(var(--sb) - 22px)))}
 html.kb #chatv iframe{height:calc(100% - var(--st))}
 .loading{display:grid;place-items:center;padding:60px 0;color:var(--muted)}
-.spin{width:52px;height:52px;background:url('https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-Electric-Logo-2026.png?format=300w') center/contain no-repeat;animation:sp 1.6s linear infinite}
+.spin{width:52px;height:52px;background:url('https://images.innerversepodcast.com/sq/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-electric-logo-2026/w300.webp') center/contain no-repeat;animation:sp 1.6s linear infinite}
 @media (prefers-reduced-motion: reduce){.spin{animation:none}}
 @keyframes sp{to{transform:rotate(360deg)}}
 
@@ -631,10 +631,10 @@ const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/ma
 const SITE = 'https://www.innerversepodcast.com';
 const SONGS = location.origin + '/songs/'; // the episode songs: songs.json plus one mp3 per song, public, in this repo
 const TOKEN_KEY = 'ivc_token'; // shared with the Inner Circle page on this address
-const LOGO = 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-Electric-Logo-2026.png?format=300w';
-const PLUS_LOGO = 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/c3607ade-e087-4b27-af0f-e0913f4dc3d0/plus+asset.png?format=300w';
+const LOGO = 'https://images.innerversepodcast.com/sq/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-electric-logo-2026/w300.webp';
+const PLUS_LOGO = 'https://images.innerversepodcast.com/sq/c3607ade-e087-4b27-af0f-e0913f4dc3d0/plus-asset/w300.webp';
 const HOST = 'Chance Garton';
-const HOST_PORTRAIT = 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/aa717e55-9487-4255-a7df-3f8ef10940c4/Chance+Garton+Patreon+Portrait.png?format=100w';
+const HOST_PORTRAIT = 'https://images.innerversepodcast.com/sq/aa717e55-9487-4255-a7df-3f8ef10940c4/chance-garton-patreon-portrait/w300.webp';
 const FIRST_EPISODES = ['astrotheology-101', 'chris-crutchfield', 'marizelle-arce-terrain-doctor', 'inner-whirled-25', 'keys-to-the-tarot'];
 const SHOWS = ['InnerVerse', 'Inner Whirled', 'Vibe Rant', 'Astro-Herbalism', 'Marvelous Demystifiers'];
 const THEMES = ['Consciousness & Reality', 'Historical Investigations', 'Myth, Symbolism, & Language', 'Holistic Health'];
@@ -1568,9 +1568,9 @@ document.addEventListener('click', e => {
 // each show's row is headed by its own mark (Chance, 2026-10-26: "incorporate the logos"); Vibe Rant's logo is a wordmark,
 // Astro-Herbalism has no logo yet, so it keeps a styled title
 const SHOW_LOGO = {
-  'InnerVerse': 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-Electric-Logo-2026.png',
-  'Inner Whirled': 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/a39095cd-b9d2-444d-b4e2-14a2484d766d/Inner-Whirled-Logo.png',
-  'Vibe Rant': 'https://images.squarespace-cdn.com/content/5987d897cf81e0278ec5322e/b8217739-ae93-4527-bd8a-37d690f4296b/VIBRANT_LOGO.png'
+  'InnerVerse': 'https://images.innerversepodcast.com/sq/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-electric-logo-2026/w300.webp',
+  'Inner Whirled': 'https://images.innerversepodcast.com/sq/a39095cd-b9d2-444d-b4e2-14a2484d766d/inner-whirled-logo/w300.webp',
+  'Vibe Rant': 'https://images.innerversepodcast.com/sq/b8217739-ae93-4527-bd8a-37d690f4296b/vibrant-logo/w300.webp'
 };
 function showHead(sh) {
   const u = SHOW_LOGO[sh];
