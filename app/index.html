@@ -624,7 +624,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-11-03a';
+const VERSION = '2026-11-04c';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -2804,7 +2804,13 @@ if (handoffPending()) { showHandoffBar(); pollHandoff(); }
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(v => {
     v = (v || '').trim();
-    if (v && v !== VERSION && !(cur && !aud.paused) && !videoOwns) location.reload();
+    // reload once per new version only, so a version stamp left behind in a build can never loop the app (2026-11-04)
+    if (v && v !== VERSION && !(cur && !aud.paused) && !videoOwns) {
+      let done = ''; try { done = sessionStorage.getItem('iva_reloaded_for') || ''; } catch (e) {}
+      if (done === v) return;
+      try { sessionStorage.setItem('iva_reloaded_for', v); } catch (e) {}
+      location.reload();
+    }
   }).catch(() => {});
 }
 setTimeout(checkUpdate, 1500);
