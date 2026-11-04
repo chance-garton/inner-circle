@@ -46,7 +46,7 @@ self.addEventListener('fetch', e => {
   }
   if (url.origin === location.origin && url.pathname.indexOf('/app/') === 0) { e.respondWith(networkFirst(req, null, true)); return; }
   if (url.hostname === 'raw.githubusercontent.com' && /innerverse-data/.test(url.pathname)) { e.respondWith(networkFirst(req)); return; }
-  if (url.hostname === 'images.squarespace-cdn.com') { e.respondWith(cacheFirst(req)); return; }
+  if (url.hostname === 'images.squarespace-cdn.com' || url.hostname === 'images.innerversepodcast.com') { e.respondWith(cacheFirst(req)); return; }
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') { e.respondWith(cacheFirst(req)); return; }
 });
 

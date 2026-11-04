@@ -1581,7 +1581,20 @@ const mediaSize = new Map(); // rendered size of each image, so a redraw holds i
 // an episode's card: thumbnail, Plus+ or free, show and length, title; one look for the chat, the composer and the picker
 function epEntry(ix, kind, slug) { return kind === 'plus' ? (ix.plus[slug] || ix.free[slug]) : (ix.free[slug] || ix.plus[slug]); }
 // Squarespace's image CDN makes a small copy when format= is the first query parameter (100, 300, 500, 750 wide)
-const thumbAt = (u, w) => { u = String(u || ''); return /images\.squarespace-cdn\.com/.test(u) && u.indexOf('?') < 0 ? u + '?format=' + w + 'w' : u; };
+// our own image host (images.innerversepodcast.com): the small WebP for the width asked; if that size was never made, the plain address loads instead
+const IMG_BASE = 'https://images.innerversepodcast.com', IMG_WIDTHS = [300, 500, 750, 1000, 1500], imgBack = {};
+window.addEventListener('error', ev => { const el = ev.target; if (el && el.tagName === 'IMG' && imgBack[el.src]) { const o = imgBack[el.src]; delete imgBack[el.src]; el.src = o; } }, true);
+const thumbAt = (u, w) => {
+  u = String(u || '');
+  if (u.indexOf(IMG_BASE + '/') === 0) {
+    const m = /^(.*)\/(?:orig\.[a-z0-9]+|w\d+\.webp)(?:[?#].*)?$/.exec(u);
+    if (!m) return u;
+    const pick = IMG_WIDTHS.find(x => x >= w) || IMG_WIDTHS[IMG_WIDTHS.length - 1], s = m[1] + '/w' + pick + '.webp';
+    if (s !== u) imgBack[s] = u;
+    return s;
+  }
+  return /images\.squarespace-cdn\.com/.test(u) && u.indexOf('?') < 0 ? u + '?format=' + w + 'w' : u;
+};
 const epTitle = e => String(e.title || '').replace(/\s*\(PLUS\)\s*$/i, '');
 function epMeta(e, isPlus) {
   const show = String((e.shows && e.shows[0]) || '').replace(/^innerverse$/i, 'InnerVerse');
@@ -1608,7 +1621,7 @@ function loadSongs() {
 const SP = { a: null, id: '', appId: '', appOn: false };
 const SNG_PLAY = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
 const SNG_PAUSE = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>';
-function songArt(x) { return /^https?:\/\//.test(x.art || '') ? x.art + '?format=300w' : x.art ? SONGS_URL + x.art : ''; }
+function songArt(x) { return /^https?:\/\//.test(x.art || '') ? (x.art.indexOf(IMG_BASE + '/') === 0 ? thumbAt(x.art, 300) : x.art + '?format=300w') : x.art ? SONGS_URL + x.art : ''; }
 function songCardHtml(x, draft) {
   const art = songArt(x);
   const len = x.seconds ? fmtT(x.seconds) : '';

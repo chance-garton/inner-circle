@@ -647,8 +647,18 @@ const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch (e) {} }
 function load(k, json) { try { const v = localStorage.getItem(k); return json ? (v ? JSON.parse(v) : null) : v; } catch (e) { return null; } }
+// our own image host: pick the small WebP for the width asked; if that size was never made, the plain address loads instead
+const IMG_BASE = 'https://images.innerversepodcast.com', IMG_WIDTHS = [300, 500, 750, 1000, 1500], imgBack = {};
+window.addEventListener('error', ev => { const el = ev.target; if (el && el.tagName === 'IMG' && imgBack[el.src]) { const o = imgBack[el.src]; delete imgBack[el.src]; el.src = o; } }, true);
 function img(url, w) {
   if (!url) return '';
+  if (url.indexOf(IMG_BASE + '/') === 0) {
+    const m = /^(.*)\/(?:orig\.[a-z0-9]+|w\d+\.webp)(?:[?#].*)?$/.exec(url);
+    if (!m) return url;
+    const want = w || 500, pick = IMG_WIDTHS.find(x => x >= want) || IMG_WIDTHS[IMG_WIDTHS.length - 1], s = m[1] + '/w' + pick + '.webp';
+    if (s !== url) imgBack[s] = url;
+    return s;
+  }
   if (/squarespace-cdn\.com/.test(url)) return url.split('?')[0] + '?format=' + (w || 500) + 'w';
   return url;
 }
