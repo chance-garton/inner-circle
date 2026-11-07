@@ -669,6 +669,13 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 .tu-home .t{font-family:var(--display);font-weight:600;font-size:18px;line-height:1.2}
 .tu-home .nx{font-size:13px;font-weight:700;color:var(--gold-lit)}
 .tu-home .go{color:var(--muted)}
+.seenmk{position:absolute;left:6px;bottom:6px;z-index:1;display:inline-flex;align-items:center;gap:4px;padding:3px 8px 3px 6px;border-radius:999px;background:rgba(10,15,28,.82);color:#9FD8A8;font-size:11.5px;font-weight:800}
+.tile .seenmk{top:8px;bottom:auto;left:8px}
+.rowep .seenmk{top:4px;bottom:auto;left:4px;font-size:10.5px;padding:2px 7px 2px 5px}
+.rowep .artc{position:relative}
+.seen .art{opacity:.55}
+.watchbtn{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 14px;margin:0 0 12px;border-radius:999px;border:1px solid var(--line);font-size:14px;font-weight:800;color:var(--muted)}
+.watchbtn.on{border-color:rgba(159,216,168,.5);background:rgba(159,216,168,.12);color:#9FD8A8}
 .bk-msg{padding:22px 4px;text-align:center;color:var(--muted);font-size:14.5px}
 </style>
 </head>
@@ -699,7 +706,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-11-07b';
+const VERSION = '2026-11-07c';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -756,6 +763,7 @@ function toast(msg) {
 }
 const P = (d, s, w) => `<svg viewBox="0 0 24 24" width="${s||22}" height="${s||22}" fill="none" stroke="currentColor" stroke-width="${w||2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const I = {
+  check: (s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`,
   fork: (s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2v8a3 3 0 0 0 6 0V2"/><path d="M12 13v9"/><path d="M5 6c-1.2 1.6-1.2 4.4 0 6M19 6c1.2 1.6 1.2 4.4 0 6"/></svg>`,
   gift: (s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v9H5v-9M7.5 8a2.5 2.5 0 1 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 1 1 0 5"/></svg>`,
   home: s => P('<path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5.5 9v10.5h13V9"/><path d="M10 19.5v-5h4v5"/>', s),
@@ -1181,6 +1189,7 @@ let PROG = load('iva_prog', true) || {};
 function saveProg(key, t, d) {
   if (!key || !d) return;
   if (key.indexOf('s:') === 0) return; // a song always starts from the top
+  autoWatched(key, t, d);
   if (t > d - 45) delete PROG[key]; else PROG[key] = { t: Math.round(t), d: Math.round(d), at: Date.now() };
   store('iva_prog', PROG);
 }
@@ -1190,7 +1199,13 @@ function saveProg(key, t, d) {
 // Free listeners: kept on this phone, and carried over to the account if they join.
 const LIB = new Map();
 function twinOf(it) { if (!it) return null; return it.kind === 'plus' ? it.free : it.plus; }
-function libGet(it) { const p = pick(it); if (!p) return null; const t = twinOf(p); return LIB.get(p.key) || (t && LIB.get(t.key)) || null; }
+function libGet(it) { const p = pick(it); if (!p) return null; const t = twinOf(p), a = LIB.get(p.key), b = t && LIB.get(t.key); const has = x => x && (x.saved || x.note); return has(a) ? a : has(b) ? b : null; }
+// Watched (build 2026-11-07c, Chance): an episode is watched when this version, or its Plus+ version, was finished or
+// marked. Finishing the Plus+ version marks the free one too; finishing the free one does not mark the Plus+ one.
+function isWatched(it) { const p = pick(it); const x = p && LIB.get(p.key); return !!(x && x.watched); }
+function watchKeys(key) { const it = S.lib && S.lib.bySlug[key]; return it && it.kind === 'plus' && it.free ? [key, it.free.key] : [key]; }
+async function setWatched(key, on, quiet) { if (!key || key.indexOf('s:') === 0) return; for (const k of watchKeys(key)) { const x = LIB.get(k); if (!!(x && x.watched) !== on) await libPut(k, { watched: on }, quiet); } }
+function autoWatched(key, t, d) { if (!key || !d || key.indexOf('s:') === 0) return; if (t >= d - Math.max(60, d * 0.03)) { const x = LIB.get(key); if (!(x && x.watched)) setWatched(key, true, true).then(() => { refreshLibViews(); refreshWatchBtn(); }); } }
 function libKeyFor(it) { const x = libGet(it); return x ? x.key : pick(it).key; }
 let libReq = 0;
 async function loadMyLib() {
@@ -1215,6 +1230,7 @@ async function loadMyLib() {
         const change = {};
         if (x.saved && !(have && have.saved)) change.saved = true;
         if (x.note && !(have && have.note)) change.note = x.note;
+        if (x.watched && !(LIB.get(k) || {}).watched && k.indexOf('s:') !== 0 && !(await libPut(k, { watched: true }, true))) return; // watched stays on the version they finished
         if (key.indexOf('s:') === 0) { if (change.saved) { const p = songPending(); p[key.slice(2)] = true; store('iva_songs_pending', p); } continue; } // a song heart: sent with the others waiting
         if (Object.keys(change).length && !(await libPut(key, change, true))) return; // offline: try again later
       }
@@ -1229,11 +1245,12 @@ async function loadMyLib() {
   }
 }
 async function libPut(key, change, quiet) {
-  const prev = LIB.get(key) || { key, saved: false, savedAt: 0, note: '', noteAt: 0 };
+  const prev = LIB.get(key) || { key, saved: false, savedAt: 0, note: '', noteAt: 0, watched: false, watchedAt: 0 };
   const next = Object.assign({}, prev, change, { key });
   if ('saved' in change) next.savedAt = change.saved ? (prev.saved ? prev.savedAt : Date.now()) : 0;
   if ('note' in change) next.noteAt = Date.now();
-  if (!next.saved && !next.note) LIB.delete(key); else LIB.set(key, next);
+  if ('watched' in change) next.watchedAt = change.watched ? (prev.watched ? prev.watchedAt : Date.now()) : 0;
+  if (!next.saved && !next.note && !next.watched) LIB.delete(key); else LIB.set(key, next);
   if (S.member && S.token) {
     store('iva_mylib_m', [...LIB.values()]);
     try {
@@ -1248,7 +1265,7 @@ function savedList() {
   return library().filter(it => { const x = libGet(it); return x && (x.saved || x.note); }).sort((a, b) => when(b) - when(a));
 }
 function mineMark(it) { const x = libGet(it); if (!x || !(x.saved || x.note)) return ''; return x.saved ? I.heart(15, true) : I.pen(15); }
-function refreshLibViews() { if (!S.lib) return; renderHome(); if (S.show === '__saved') renderSearch(true); renderLib(true); }
+function refreshLibViews() { if (!S.lib) return; renderHome(); if (S.show === '__saved' || S.show === '__unwatched') renderSearch(true); renderLib(true); }
 
 // ------------------------------------------------------------ routing
 function go(h) { if (location.hash !== h) location.hash = h; else route(); }
@@ -1494,7 +1511,7 @@ function navBtnsHtml() {
 }
 // every header gets the chat and menu buttons at its right end, whichever view drew it
 function addNavBtns() {
-  $$('.hdr .row').forEach(r => { if (!r.querySelector('.navbtns')) r.insertAdjacentHTML('beforeend', navBtnsHtml()); });
+  $$('.hdr').forEach(h => { const r = h.querySelector('.row'); if (r && !r.querySelector('.navbtns')) r.insertAdjacentHTML('beforeend', navBtnsHtml()); }); // the first row only (a second row of chips got a stray pair, 2026-11-07)
 }
 new MutationObserver(addNavBtns).observe(document.body, { childList: true, subtree: true });
 document.addEventListener('click', e => {
@@ -1541,7 +1558,8 @@ function meta(it) {
 function progBar(it) { const p = PROG[it.key]; return p && p.d ? `<div class="bar"><i style="width:${Math.min(100, Math.round(p.t / p.d * 100))}%"></i></div>` : ''; }
 function tile(it) {
   const mk = mineMark(it);
-  return `<a class="tile" href="${epHref(it)}">${mk ? `<span class="mine" aria-label="In your library">${mk}</span>` : ''}<img class="art" loading="lazy" src="${esc(img(it.thumb, 500))}" alt=""><div class="t">${esc(it.title)}</div><div class="m">${meta(it)}</div>${progBar(it)}</a>`;
+  const w = isWatched(it);
+  return `<a class="tile${w ? ' seen' : ''}" href="${epHref(it)}">${mk ? `<span class="mine" aria-label="In your library">${mk}</span>` : ''}${w ? `<span class="seenmk">${I.check(13)} Watched</span>` : ''}<img class="art" loading="lazy" src="${esc(img(it.thumb, 500))}" alt=""><div class="t">${esc(it.title)}</div><div class="m">${meta(it)}</div>${progBar(it)}</a>`;
 }
 function rowEp(it, why) {
   let plusMark = '';
@@ -1549,7 +1567,8 @@ function rowEp(it, why) {
     const extra = Math.max(0, durMin(it.plus.duration) - durMin(it.duration));
     plusMark = `<div class="ext">${I.lock(14)}<span>${extra ? extra + ' min Plus+ extension for members' : 'Plus+ extension for members'}</span></div>`;
   }
-  return `<a class="rowep" href="${epHref(it)}"><div class="artc"><img class="art" loading="lazy" src="${esc(img(it.thumb, 300))}" alt="">${it.date ? `<div class="d">${esc(fmtDate(it.date))}</div>` : ''}</div>
+  const w = isWatched(it);
+  return `<a class="rowep${w ? ' seen' : ''}" href="${epHref(it)}"><div class="artc">${w ? `<span class="seenmk">${I.check(12)} Watched</span>` : ''}<img class="art" loading="lazy" src="${esc(img(it.thumb, 300))}" alt="">${it.date ? `<div class="d">${esc(fmtDate(it.date))}</div>` : ''}</div>
     <div class="info"><div class="k">${meta(it)}${mineMark(it) ? `<span class="mine" aria-label="In your library">${mineMark(it)}</span>` : ''}</div><div class="t">${esc(it.title)}</div>${it.topicLine ? `<div class="l">${esc(it.topicLine)}</div>` : ''}${plusMark}${why ? `<div class="why">${esc(why)}</div>` : ''}</div></a>`;
 }
 function headerBrand() {
@@ -1681,7 +1700,8 @@ function renderHome() {
     ${S.member ? '' : `<div class="sec">${plusPitch(true)}</div>`}
     ${songsRow()}
     ${tuneHomeCard()}
-    ${firsts.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Good first episodes</h2></div><div class="hscroll">${firsts.map(tile).join('')}</div></div>` : ''}
+    ${S.member ? (() => { const un = library().filter(x => !isWatched(x)).slice(0, 12); return un.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Not watched yet</h2><a href="#/search?show=__unwatched">See all</a></div><div class="hscroll">${un.map(tile).join('')}</div></div>` : ''; })()
+      : firsts.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Good first episodes</h2></div><div class="hscroll">${firsts.map(tile).join('')}</div></div>` : ''}
     ${['InnerVerse', 'Inner Whirled', 'Vibe Rant', 'Astro-Herbalism'].map(showRow).join('')}
   </div>`;
 }
@@ -1712,6 +1732,7 @@ let searchShown = 30, searchList = [], searchClose = false;
 function runSearch() {
   let list = library();
   if (S.show === '__saved') { const sv = savedList(); list = sv; }
+  else if (S.show === '__unwatched') list = list.filter(x => !isWatched(x));
   else if (S.show) list = list.filter(x => x.shows.includes(S.show));
   if (S.theme) list = list.filter(x => x.topics.includes(S.theme));
   const phrase = norm(S.q);
@@ -1733,7 +1754,7 @@ function renderSearch(keepInput) {
   if (!keepInput || !$('#q')) {
     v.innerHTML = `<header class="hdr"><div class="row"><h1>${S.member ? 'Plus+ episodes' : 'Episodes'}</h1></div>
       <div class="row" style="display:block"><label class="searchbox">${I.search(20)}<input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="Search guests, topics, titles" value="${esc(S.q)}"><button class="iconbtn" id="qx" aria-label="Clear" ${S.q ? '' : 'hidden'}>${I.close(18)}</button></label>
-      <div class="chips" id="showchips">${['', ...SHOWS].map(s => `<button class="chip${S.show === s ? ' on' : ''}" data-show="${esc(s)}">${s ? esc(s) : 'All shows'}</button>`).join('')}</div>
+      <div class="chips" id="showchips">${['', '__unwatched', ...SHOWS].map(s => `<button class="chip${S.show === s ? ' on' : ''}" data-show="${esc(s)}">${s === '__unwatched' ? I.check(14) + ' Not watched' : s ? esc(s) : 'All shows'}</button>`).join('')}</div>
       <div class="chips" id="themechips">${THEMES.map(s => `<button class="chip${S.theme === s ? ' on' : ''}" data-theme="${esc(s)}">${esc(s)}</button>`).join('')}</div></div></header>
       <div class="wrap"><div id="reshead"></div><div class="list" id="results"></div><div class="more" id="moreWrap"></div></div>`;
     const q = $('#q');
@@ -1827,10 +1848,13 @@ function libRows() {
   if (LIBF.f === 'saved') list = list.filter(it => libGet(it).saved);
   if (LIBF.f === 'notes') list = list.filter(it => (libGet(it).note || '').trim());
   if (LIBF.f === 'msgs' || LIBF.f === 'songs') list = [];
+  const watchedAll = library().filter(isWatched).sort((a, b) => ((LIB.get(pick(b).key) || {}).watchedAt || 0) - ((LIB.get(pick(a).key) || {}).watchedAt || 0));
+  counts.watched = watchedAll.length;
+  if (LIBF.f === 'watched') list = watchedAll;
   const terms = norm(LIBF.q).split(' ').filter(Boolean);
   if (terms.length) {
     list = list.filter(it => {
-      const hay = ' ' + [it._t, it._g, it._s, it._l, norm(libGet(it).note)].join(' ');
+      const hay = ' ' + [it._t, it._g, it._s, it._l, norm((libGet(it) || {}).note || '')].join(' ');
       return terms.every(t => hay.indexOf(' ' + t) >= 0 || hay.indexOf(t) >= 0);
     });
   }
@@ -1840,10 +1864,10 @@ function libRows() {
   return { list, counts, terms, msgs, songs };
 }
 function libRow(it, terms) {
-  const x = libGet(it), note = (x.note || '').trim();
+  const x = libGet(it) || LIB.get(pick(it).key) || {}, note = (x.note || '').trim();
   const inNote = terms.length && terms.some(t => note.toLowerCase().indexOf(t) >= 0);
   const shown = terms.length ? noteSnippet(note, terms) : note;
-  const when = Math.max(x.savedAt || 0, x.noteAt || 0);
+  const when = Math.max(x.savedAt || 0, x.noteAt || 0, x.watchedAt || 0);
   return `<div class="librow">${rowEp(it, inNote ? 'Found in your notes' : '')}
     ${note ? `<div class="libnote${terms.length ? ' hit' : ''}" data-href="${epHref(it)}" role="link" tabindex="0" aria-label="Open your notes on this episode">${noteHtml(shown, terms)}</div>` : ''}
     <div class="libmeta">${x.saved ? `<span class="on">${I.heart(13, true)} Saved</span>` : ''}${note ? `<span>${I.pen(13)} Note</span>` : ''}${when ? `<span>${esc(fmtDate(localDay(when)))}</span>` : ''}${note ? '' : `<a href="${epHref(it)}" data-note="1">Add a note</a>`}</div></div>`;
@@ -1867,7 +1891,7 @@ function renderLib(keepInput) {
 let libShown = 30;
 function renderLibResults() {
   const { list, counts, terms, msgs, songs } = libRows();
-  $('#libchips').innerHTML = [['', 'All', counts.all], ['saved', 'Saved', counts.saved], ['songs', 'Songs', counts.songs], ['notes', 'With notes', counts.notes]].concat(S.member ? [['msgs', 'Messages', counts.msgs]] : [])
+  $('#libchips').innerHTML = [['', 'All', counts.all], ['saved', 'Saved', counts.saved], ['songs', 'Songs', counts.songs], ['notes', 'With notes', counts.notes], ['watched', 'Watched', counts.watched]].concat(S.member ? [['msgs', 'Messages', counts.msgs]] : [])
     .map(c => `<button class="chip${LIBF.f === c[0] ? ' on' : ''}" data-f="${c[0]}">${c[1]}${c[2] ? ` <span class="cnt">${c[2]}</span>` : ''}</button>`).join('');
   const n = list.length + msgs.length + songs.length;
   $('#libhead').innerHTML = terms.length ? `<div class="reshead">${n ? `${n} ${n === 1 ? 'match' : 'matches'} for "${esc(LIBF.q.trim())}"` : ''}</div>` : '';
@@ -1876,6 +1900,7 @@ function renderLibResults() {
   else if (terms.length) empty = `<div class="empty">Nothing in your library matches "${esc(LIBF.q.trim())}".</div>`;
   else if (LIBF.f === 'saved') empty = `<div class="empty">No saved episodes yet. Tap the heart on an episode to save it.</div>`;
   else if (LIBF.f === 'songs') empty = `<div class="empty">No saved songs yet. Tap the heart on a song to keep it here.<br><br><a class="btn line" href="#/songs">Browse episode songs</a></div>`;
+  else if (LIBF.f === 'watched') empty = `<div class="empty">Nothing marked watched yet. Episodes you finish are marked for you, or tap Mark as watched on an episode's page.</div>`;
   else if (LIBF.f === 'notes') empty = `<div class="empty">No notes yet. Open an episode and tap My notes to start one.</div>`;
   else if (LIBF.f === 'msgs') empty = `<div class="empty">No saved messages yet. In the chat, press and hold a message and choose Save. Notes you write in Saved messages show here too.</div>`;
   const epHtml = list.slice(0, libShown).map(it => libRow(it, terms)).join('');
@@ -2385,6 +2410,7 @@ function renderEpisode() {
     <div id="listenBox"></div>
     <div class="crumb">${crumb.join(' / ')}${tail ? ' · ' + tail : ''}</div>
     <h1 class="title">${esc(E.title)}</h1>
+    <button type="button" class="watchbtn" id="epWatched"></button>
     <div class="desc">${E.intro.map(p => `<p>${esc(p)}</p>`).join('')}</div>
     ${songCard(E.freeSlug || E.slug)}
     <div class="acc${(libGet(E.it) || {}).note ? ' open' : ''}" id="noteAcc"><button>My notes ${I.down(22)}</button><div class="in">
@@ -2422,7 +2448,19 @@ function renderEpisode() {
   $('#chapters') && $('#chapters').addEventListener('click', e => { const c = e.target.closest('.chap[data-seek]'); if (c) seekChapter(Number(c.dataset.seek)); });
   setMode(mode, false);
 }
+function refreshWatchBtn() {
+  const b = $('#epWatched'); if (!b || !EPW) return; const on = isWatched(EPW.it);
+  b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.innerHTML = on ? `${I.check(16)} Watched` : `${I.check(16)} Mark as watched`;
+}
+let EPW = null;
 function wireMine(E) {
+  EPW = E; refreshWatchBtn();
+  $('#epWatched').addEventListener('click', async () => {
+    const on = !isWatched(E.it); const b = $('#epWatched');
+    b.classList.toggle('on', on); b.innerHTML = on ? `${I.check(16)} Watched` : `${I.check(16)} Mark as watched`;
+    toast(on ? 'Marked as watched.' : 'Marked as not watched.');
+    await setWatched(pick(E.it).key, on); refreshLibViews();
+  });
   const key = () => libKeyFor(E.it);
   if ($('#epRoom')) $('#epRoom').onclick = () => go('#/chat?room=' + encodeURIComponent('ep:' + (E.freeSlug || E.slug)));
   const sb = $('#epSave');
@@ -2546,6 +2584,7 @@ function videoTick() {
   if (!VP || !EPV || !videoOwns) return;
   const t = videoTime(); if (t == null) return;
   const d = durMin(EPV.duration) * 60;
+  if (t > 5 && d) autoWatched(EPV.key, t + (EPV.plus ? 0 : EPV.offset), d);
   if (t > 5 && d) { PROG[EPV.key] = { t: Math.round(t + (EPV.plus ? 0 : EPV.offset)), d, at: Date.now() }; store('iva_prog', PROG); }
 }
 setInterval(videoTick, 5000);
@@ -2722,7 +2761,7 @@ window.addEventListener('pageshow', ivResumeOnReturn);
 window.addEventListener('focus', ivResumeOnReturn);
 aud.addEventListener('play', () => { if (isSilent()) return; { const f = $('#chatv iframe'); try { f && f.contentWindow.postMessage({ ivcApp: 1, appPlaying: 1 }, location.origin); } catch (e) {} } updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'playing'; });
 aud.addEventListener('pause', () => { if (isSilent()) return; /* paused: bring a hidden player back so it can be found */ if (miniHidden) { miniHidden = false; syncMini(); } if (cur) saveProg(cur.key, aud.currentTime, aud.duration || cur.dur); updateMini(); refreshLB(); if (navigator.mediaSession) navigator.mediaSession.playbackState = 'paused'; });
-aud.addEventListener('ended', () => { if (isSilent()) return; if (cur) { delete PROG[cur.key]; store('iva_prog', PROG); } updateMini(); refreshLB(); });
+aud.addEventListener('ended', () => { if (isSilent()) return; if (cur) { autoWatched(cur.key, 1, 1); delete PROG[cur.key]; store('iva_prog', PROG); } updateMini(); refreshLB(); });
 let retried = false;
 aud.addEventListener('error', async () => {
   if (isSilent()) return;

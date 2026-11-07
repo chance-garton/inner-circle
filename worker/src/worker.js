@@ -299,6 +299,8 @@ export class Room {
     this.sql.exec('CREATE TABLE IF NOT EXISTS handoff (h TEXT PRIMARY KEY, token TEXT, created INTEGER)');
     this.sql.exec(`CREATE TABLE IF NOT EXISTS library (uid TEXT, ekey TEXT, saved INTEGER DEFAULT 0, saved_at INTEGER DEFAULT 0,
       note TEXT DEFAULT '', note_at INTEGER DEFAULT 0, PRIMARY KEY (uid, ekey)) WITHOUT ROWID`);
+    try { this.sql.exec('ALTER TABLE library ADD COLUMN watched INTEGER DEFAULT 0'); } catch (e) { /* already there (2026-11-07, Mark as watched) */ }
+    try { this.sql.exec('ALTER TABLE library ADD COLUMN watched_at INTEGER DEFAULT 0'); } catch (e) { /* already there */ }
     try { this.sql.exec("ALTER TABLE members ADD COLUMN notify TEXT DEFAULT 'all'"); } catch (e) { /* already there */ }
     try { this.sql.exec('ALTER TABLE members ADD COLUMN push_unread INTEGER DEFAULT 0'); } catch (e) { /* already there */ }
     if (!this.one("SELECT v FROM meta WHERE k = 'modlog_backfill'")) {
@@ -631,11 +633,13 @@ export class Room {
         const savedAt = 'saved' in body ? (body.saved ? (cur && cur.saved ? cur.saved_at : now) : 0) : (cur ? cur.saved_at : 0);
         const note = 'note' in body ? String(body.note || '').slice(0, 10000) : (cur ? cur.note : '');
         const noteAt = 'note' in body ? now : (cur ? cur.note_at : 0);
-        if (!saved && !note) this.sql.exec('DELETE FROM library WHERE uid = ? AND ekey = ?', uid, k);
-        else this.sql.exec('INSERT OR REPLACE INTO library (uid, ekey, saved, saved_at, note, note_at) VALUES (?, ?, ?, ?, ?, ?)', uid, k, saved, savedAt, note, noteAt);
-        return json({ ok: true, item: { key: k, saved: !!saved, savedAt, note, noteAt } });
+        const watched = 'watched' in body ? (body.watched ? 1 : 0) : (cur ? cur.watched || 0 : 0);
+        const watchedAt = 'watched' in body ? (body.watched ? (cur && cur.watched ? cur.watched_at : now) : 0) : (cur ? cur.watched_at || 0 : 0);
+        if (!saved && !note && !watched) this.sql.exec('DELETE FROM library WHERE uid = ? AND ekey = ?', uid, k);
+        else this.sql.exec('INSERT OR REPLACE INTO library (uid, ekey, saved, saved_at, note, note_at, watched, watched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', uid, k, saved, savedAt, note, noteAt, watched, watchedAt);
+        return json({ ok: true, item: { key: k, saved: !!saved, savedAt, note, noteAt, watched: !!watched, watchedAt } });
       }
-      const items = this.all('SELECT * FROM library WHERE uid = ?', uid).map(r => ({ key: r.ekey, saved: !!r.saved, savedAt: r.saved_at, note: r.note, noteAt: r.note_at }));
+      const items = this.all('SELECT * FROM library WHERE uid = ?', uid).map(r => ({ key: r.ekey, saved: !!r.saved, savedAt: r.saved_at, note: r.note, noteAt: r.note_at, watched: !!r.watched, watchedAt: r.watched_at || 0 }));
       // Saved messages, newest first, for the app's Library tab (2026-10-11)
       const msgs = this.shapeAll(this.all("SELECT * FROM messages WHERE room = ? AND deleted = 0 AND COALESCE(kind, '') = '' ORDER BY id DESC LIMIT 500", savedKey(uid)));
       const people = {};
