@@ -597,6 +597,72 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 .eppromo{margin:6px 0 14px}
 .pcard .pfine a{color:var(--pf);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 @media (min-width:640px){.pcard .ptop{grid-template-columns:132px 1fr}.pcard .part{width:132px;height:132px}.pcard h3{font-size:26px}}
+
+/* Sessions and Book (build 2026-11-07a): Biofield Tuning and the scheduler inside the app */
+.tu-hero{position:relative;margin:4px -16px 0;overflow:hidden;border-radius:0 0 26px 26px}
+.tu-hero img{width:100%;aspect-ratio:4/3;object-fit:cover;object-position:center 40%}
+.tu-hero .fade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,15,28,.05) 0%,rgba(10,15,28,.55) 32%,rgba(10,15,28,.9) 62%,var(--ground))}
+.tu-hero .tx{position:absolute;left:0;right:0;bottom:0;padding:0 20px 18px}
+.tu-hero h2{font-family:var(--display);font-weight:600;font-size:30px;line-height:1.12;margin:6px 0 8px;letter-spacing:-.01em}
+.tu-hero p{margin:0;color:#D5DCE8;font-size:15px;line-height:1.45}
+.tu-acts{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:16px}
+.tu-acts .btn{min-height:50px}
+.tu-gift{display:inline-flex;align-items:center;gap:7px;padding:0 18px;border-radius:999px;border:1px solid rgba(216,170,60,.45);color:var(--gold-lit);font-weight:800;font-size:14.5px;min-height:50px}
+.tu-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 12px}
+.tu-list{display:grid;gap:10px}
+.tu-row{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;width:100%;text-align:left;padding:10px 14px 10px 10px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.tu-row img{width:64px;height:64px;border-radius:12px;object-fit:cover}
+.tu-row .n{font-weight:800;font-size:16px;line-height:1.25;display:block}
+.tu-row .d{display:block;color:var(--muted);font-size:13px;line-height:1.35;margin-top:2px}
+.tu-row .pr{font-family:var(--display);font-weight:600;font-size:21px;text-align:right;line-height:1.1}
+.tu-row .pr s{display:block;font-family:var(--sans);font-size:12px;color:var(--muted);font-weight:600}
+.tu-row.best{border-color:rgba(216,170,60,.45);background:linear-gradient(120deg,rgba(216,170,60,.1),rgba(216,170,60,0) 60%),var(--card)}
+.tu-row.best .d{color:var(--gold-lit)}
+.tu-steps{counter-reset:st;display:grid;gap:10px}
+.tu-step{display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:start;padding:14px;border-radius:16px;background:var(--card)}
+.tu-step:before{counter-increment:st;content:counter(st);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:600;font-size:19px;color:var(--lapis-lit);background:rgba(59,116,204,.16);border:1px solid rgba(143,181,240,.3)}
+.tu-step b{display:block;font-size:16px;margin:1px 0 3px}
+.tu-step span{display:block;color:#C6CFDD;font-size:14.5px;line-height:1.5}
+.tu-quotes{align-items:flex-start}.tu-quotes .q{flex:0 0 84%;scroll-snap-align:start;padding:18px;border-radius:16px;background:linear-gradient(160deg,#1B2640,#121A2E);border:1px solid var(--line)}
+.tu-quotes .st{color:var(--gold);letter-spacing:2px;font-size:13px}
+.tu-quotes p{font-family:var(--display);font-size:17px;line-height:1.45;margin:8px 0 10px}
+.tu-quotes .who{color:var(--muted);font-size:13px;font-weight:700}
+.tu-facts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tu-facts div{padding:14px;border-radius:14px;background:var(--card);font-size:13px;color:var(--muted);line-height:1.35}
+.tu-facts b{display:block;font-family:var(--display);font-size:22px;color:var(--ink);font-weight:600}
+.bk-chips .chip{height:auto;padding:8px 14px;text-align:left;line-height:1.25}
+.bk-chips .chip small{display:block;font-size:12px;font-weight:700;opacity:.75}
+.bk-sum{display:grid;grid-template-columns:76px 1fr;gap:14px;align-items:center;margin-top:16px}
+.bk-sum img{width:76px;height:76px;border-radius:14px;object-fit:cover}
+.bk-sum h2{font-family:var(--display);font-weight:600;font-size:23px;line-height:1.15;margin:0 0 4px}
+.bk-sum p{margin:0;color:#C6CFDD;font-size:13.5px;line-height:1.4}
+.bk-opts{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0;padding:0;list-style:none}
+.bk-opts li{font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:999px;background:rgba(143,181,240,.1);border:1px solid rgba(143,181,240,.22);color:#C6D7F2}
+.bk-deal{margin-top:12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(216,170,60,.4);background:rgba(216,170,60,.07);font-size:13.5px;color:#E7DDC4;line-height:1.45}
+.bk-deal b{color:var(--gold-lit)}
+.cal{margin-top:20px;padding:14px 12px 12px;border-radius:18px;background:var(--card);border:1px solid var(--line)}
+.cal-head{display:flex;align-items:center;justify-content:space-between;padding:0 4px 10px}
+.cal-head b{font-family:var(--display);font-weight:600;font-size:19px}
+.cal-head .iconbtn[disabled]{opacity:.25}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal-grid .wd{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.08em;padding-bottom:4px}
+.cal-grid .d{aspect-ratio:1;border-radius:12px;display:grid;place-items:center;font-size:15px;font-weight:700;color:rgba(233,238,246,.28)}
+.cal-grid button.d{color:var(--ink);background:rgba(59,116,204,.18);position:relative}
+.cal-grid button.d:after{content:"";position:absolute;bottom:6px;width:4px;height:4px;border-radius:50%;background:var(--lapis-lit)}
+.cal-grid button.d.on{background:var(--accent);color:var(--on-gold)}
+.cal-grid button.d.on:after{background:var(--on-gold)}
+.cal-grid .d.today{box-shadow:inset 0 0 0 1px rgba(233,238,246,.3)}
+.bk-times{margin-top:18px}
+.bk-times .lbl{font-size:13px;font-weight:800;color:var(--muted);margin:0 0 10px}
+.bk-tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.bk-tgrid button{min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:800;font-size:15px}
+.bk-tgrid button.on{background:var(--accent);border-color:var(--accent);color:var(--on-gold)}
+.bk-tz{font-size:12.5px;color:var(--muted);margin:12px 0 0}
+.bk-go{margin-top:22px}
+.bk-go .btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
+.bk-go .note{text-align:center;margin:10px 0 0;font-size:12.5px;color:var(--muted)}
+.bk-alt{display:flex;flex-direction:column;gap:2px;margin-top:20px}
+.bk-msg{padding:22px 4px;text-align:center;color:var(--muted);font-size:14.5px}
 </style>
 </head>
 <body>
@@ -605,6 +671,8 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <section class="view" id="libv" aria-label="My library" hidden></section>
 <section class="view" id="chatv" aria-label="Inner Circle" hidden></section>
 <section class="view" id="me" aria-label="Account" hidden></section>
+<section class="view" id="tune" aria-label="Biofield Tuning" hidden></section>
+<section class="view" id="book" aria-label="Book a session" hidden></section>
 <section class="view" id="ep" aria-label="Episode" hidden></section>
 
 <button class="mini" id="mini" aria-label="Open the player">
@@ -624,7 +692,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-11-04c';
+const VERSION = '2026-11-07a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -681,6 +749,8 @@ function toast(msg) {
 }
 const P = (d, s, w) => `<svg viewBox="0 0 24 24" width="${s||22}" height="${s||22}" fill="none" stroke="currentColor" stroke-width="${w||2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const I = {
+  fork: (s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2v8a3 3 0 0 0 6 0V2"/><path d="M12 13v9"/><path d="M5 6c-1.2 1.6-1.2 4.4 0 6M19 6c1.2 1.6 1.2 4.4 0 6"/></svg>`,
+  gift: (s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v9H5v-9M7.5 8a2.5 2.5 0 1 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 1 1 0 5"/></svg>`,
   home: s => P('<path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5.5 9v10.5h13V9"/><path d="M10 19.5v-5h4v5"/>', s),
   search: s => P('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', s),
   chat: s => P('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5z"/><path d="M8.5 8.5h7M8.5 11.5h4.5"/>', s),
@@ -1177,13 +1247,13 @@ function refreshLibViews() { if (!S.lib) return; renderHome(); if (S.show === '_
 function go(h) { if (location.hash !== h) location.hash = h; else route(); }
 function setTab(tab) {
   S.tab = tab;
-  for (const id of ['home', 'search', 'libv', 'chatv', 'me']) $('#' + id).hidden = (id !== viewId(tab));
+  for (const id of ['home', 'search', 'libv', 'chatv', 'me', 'tune', 'book']) $('#' + id).hidden = (id !== viewId(tab));
   closeMenu();
   if (tab === 'chat') { if (!S.member) renderChatDoor(); else { mountChat(); setTimeout(maybeAskPush, 1200); try { navigator.clearAppBadge && navigator.clearAppBadge(); } catch (e) {} } }
   tellChat();
 }
 function viewId(tab) { return tab === 'chat' ? 'chatv' : tab === 'lib' ? 'libv' : tab; }
-const TAB_HASH = { home: '#/', search: '#/search', lib: '#/library', chat: '#/chat', me: '#/me' };
+const TAB_HASH = { home: '#/', search: '#/search', lib: '#/library', chat: '#/chat', me: '#/me', tune: '#/sessions', book: '#/book' };
 let lastTabHash = Object.assign({}, TAB_HASH);
 let NAV = [location.hash || '#/'];
 let prevRoute = null;
@@ -1212,6 +1282,8 @@ function route() {
     setTab('chat'); sendChatRoom();
   }
   else if (h.indexOf('#/me') === 0) setTab('me');
+  else if (h.indexOf('#/sessions') === 0) { setTab('tune'); renderTune(); }
+  else if (h.indexOf('#/book') === 0) { const q = new URLSearchParams(h.split('?')[1] || ''); setTab('book'); renderBook(q.get('type')); }
   else setTab('home');
 }
 window.addEventListener('hashchange', () => { setTimeout(tellChat, 50);
@@ -1304,9 +1376,12 @@ function renderMenu() {
         <button class="mt art sq music${on('songs')}" data-go="songs">${pic('songs')}<div class="shade"></div><span class="w">InnerVerse Music</span></button>
         <button class="mt lib${on('lib')}" data-go="lib"><span class="ic">${I.books(26)}</span><span class="w">Library</span><span class="sub">Notes, Likes, &amp; Saved Messages</span></button>
       </div>
+      <div class="mgrid">
+      <button class="mt small tune${on('tune') || on('book')}" data-go="tune"><span class="ic">${I.fork(24)}</span><span class="w">Sessions</span></button>
       ${S.member
         ? `<button class="mt small${on('me')}" data-go="me"><span class="ic">${I.user(24)}</span><span class="w">Account</span></button>`
         : `<button class="mt small join${on('me')}" data-go="me"><span class="ic">${I.plus(24)}</span><span class="w">Plus+</span></button>`}
+      </div>
     </div>`;
 }
 function openMenu() {
@@ -1820,6 +1895,149 @@ $('#libv').addEventListener('click', e => {
 });
 $('#libv').addEventListener('keydown', e => { const nt = e.target.closest('.libnote'); if (nt && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); S.openNote = true; go(nt.dataset.href); } });
 
+// ------------------------------------------------------------ sessions (Biofield Tuning) and booking (build 2026-11-07a)
+// #/sessions sells the work, #/book picks a session and a time from the live openings at /booking/api/slots, then hands
+// off to the website's scheduler (/booking/?type=&start=), which opens at Your details; payment finishes there in the browser.
+const BOOK = SITE + '/booking/';
+const TIMG = {
+  full: 'https://images.innerversepodcast.com/sq/6bb5638d-d68e-4ec2-892e-78a18eb52e8c/full-session/w1000.webp',
+  quick: 'https://images.innerversepodcast.com/sq/644de7b9-776d-4c5b-9890-fdcb0945ccc7/quick-tune-up/w1000.webp',
+  read: 'https://images.innerversepodcast.com/sq/105d1ad2-ff3f-4dc2-8391-19366c5cd3a5/counseling-readings/w1000.webp'
+};
+// same names, prices and wording as the booking section on /biofield-tuning
+const TTYPES = [
+  { id: 'tuning-45', name: 'Full Session', tag: 'Most popular', price: '$200', img: 'full', time: '45 minutes of tuning; 60 to 90 minutes total with intake and wrap up.', desc: 'The most thorough way to work with your energy field. We identify and balance patterns of stagnant energy across multiple areas, with room to go deep.' },
+  { id: 'tuning-20', name: 'Quick Tune Up', tag: 'Great for first timers', price: '$100', img: 'quick', time: '20 minutes of tuning; about 45 minutes total with intake and wrap up.', desc: 'A focused introduction to Biofield Tuning and the fastest way to feel what it does. We target one specific area of imbalance and get to work.' },
+  { id: 'counseling-30', name: 'Counseling & Readings', tag: 'Clarity & self-understanding', price: '$75', img: 'read', time: 'A 30-minute session.', desc: 'Choose the focus of your reading when you book:', opts: ['Natal Chart Reading', 'Chiron & Core Wound Healing', 'Tarot & I Ching', 'Open conversation'] },
+  { id: 'bundle-3', name: 'Three Full Sessions', tag: 'Best value, save $100', price: '$500', was: '$600', img: 'full', time: 'Each 60 to 90 minutes total. Passes never expire.', desc: 'Three Full Sessions for the price of two and a half. Book your first one now, use the rest at your own pace, or gift one to someone you care about.' }
+];
+const ttype = id => TTYPES.find(t => t.id === id) || TTYPES[0];
+const TQUOTES = [
+  ['I was blown away after the session as my lower back had little to no discomfort. It still feels better than ever a couple of weeks later.', 'Todd'],
+  ['My eczema disappeared two days later. So much expansion is happening in my career and personal life since my session. I feel lighter.', 'Ashly'],
+  ['It feels like the air conditioner noise was shut off, and I had not even known it was on all of this time.', 'Maureen'],
+  ['I feel lighter, my chest is lighter, I am breathing easier, and most importantly I am feeling optimistic and more energetic.', 'Bohdan'],
+  ['I had forgotten what it was like to walk easily and comfortably, and now that is what it feels like most of the time.', 'Jeff']
+];
+function tuneRow(t) {
+  return `<a class="tu-row${t.id === 'bundle-3' ? ' best' : ''}" href="#/book?type=${t.id}"><img src="${TIMG[t.img]}" alt="" loading="lazy"><span><span class="n">${esc(t.name)}</span><span class="d">${esc(t.tag)}</span></span><span class="pr">${t.was ? `<s>${t.was}</s>` : ''}${t.price}</span></a>`;
+}
+function renderTune() {
+  const v = $('#tune'); if (v.dataset.done) return; v.dataset.done = '1';
+  v.innerHTML = `<header class="hdr"><div class="row"><h1>Sessions</h1></div></header>
+  <div class="wrap">
+    <div class="tu-hero"><img src="${TIMG.full}" alt=""><div class="fade"></div><div class="tx"><div class="eyebrow">Remote Biofield Tuning</div><h2>Feel lighter, clearer, and more like yourself again</h2><p>Sound finds where stress, pain and emotion are stuck in your body, and puts that energy back into healthy circulation. One-to-one over Zoom, from anywhere.</p></div></div>
+    <div class="tu-acts"><a class="btn gold" href="#/book">Book a session</a><a class="tu-gift" href="${BOOK}?gift=1&type=tuning-45" target="_blank" rel="noopener">${I.gift(17)} Gift</a></div>
+    <div class="sec"><div class="tu-h"><h2 class="h2">Choose your session</h2></div><div class="tu-list">${TTYPES.map(tuneRow).join('')}</div></div>
+    <div class="sec"><div class="tu-h"><h2 class="h2">How a session goes</h2></div><div class="tu-steps">
+      <div class="tu-step"><span><b>Intake</b><span>A short conversation about what is going on for you, physically, emotionally or energetically. You do not need to arrive with the right words for it.</span></span></div>
+      <div class="tu-step"><span><b>The tuning</b><span>I help you feel how your body and energy actually feel, then use tuning forks to find the most significant areas of stuck energy and help you release it.</span></span></div>
+      <div class="tu-step"><span><b>Integration</b><span>We talk through what keeps you from getting stuck again, and I recommend an herbal medicine to guide you. Your session is recorded and yours to keep.</span></span></div>
+    </div></div>
+    <div class="sec"><div class="tu-h"><h2 class="h2">What people say</h2></div><div class="hscroll tu-quotes">${TQUOTES.map(q => `<div class="q"><div class="st">★★★★★</div><p>“${esc(q[0])}”</p><div class="who">${esc(q[1])} · After a remote session</div></div>`).join('')}</div></div>
+    <div class="sec tu-facts"><div><b>600+</b>remote sessions</div><div><b>Since 2021</b>working with clients</div></div>
+    <div class="sec card"><h3>My promise to you</h3><p>If you feel you got nothing out of a session, tell me. I will work with you toward a fair resolution, whether that is another session or a refund.</p><div class="acts"><a class="btn gold" href="#/book">See openings</a></div></div>
+    <div class="sec">
+      <a class="linkrow" href="${SITE}/biofield-tuning" target="_blank" rel="noopener">More about Biofield Tuning ${I.right(18)}</a>
+      <a class="linkrow" href="mailto:chance@innerversepodcast.com">Email Chance a question ${I.right(18)}</a>
+    </div>
+  </div>`;
+}
+// ---- booking
+const BK = { type: 'tuning-45', slots: {}, loading: {}, month: null, day: '', start: '' };
+const BK_TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { return ''; } })();
+function bkDay(iso) { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function bkTime(iso) { return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); }
+function bkTzName() { try { return new Intl.DateTimeFormat(undefined, { timeZoneName: 'long' }).formatToParts(new Date()).find(x => x.type === 'timeZoneName').value; } catch (e) { return BK_TZ; } }
+async function bkLoad(type, from) {
+  const key = type + '|' + (from || '');
+  if (BK.slots[key] || BK.loading[key]) return BK.loading[key];
+  BK.loading[key] = fetch(BOOK + 'api/slots?type=' + encodeURIComponent(type) + (from ? '&from=' + from : ''), { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : Promise.reject(r.status)).then(j => { BK.slots[key] = j; return j; })
+    .catch(() => { BK.slots[key] = { error: true, slots: [] }; }).finally(() => { delete BK.loading[key]; });
+  return BK.loading[key];
+}
+// every opening loaded so far for the session type, newest windows included
+function bkAll() {
+  const out = new Set(); let err = false, to = '';
+  for (const k in BK.slots) if (k.indexOf(BK.type + '|') === 0) { const j = BK.slots[k]; if (j.error) err = true; (j.slots || []).forEach(x => out.add(x)); if (j.to && j.to > to) to = j.to; }
+  return { list: [...out].sort(), err, to };
+}
+function renderBook(type) {
+  const v = $('#book');
+  if (type && TTYPES.some(t => t.id === type) && type !== BK.type) { BK.type = type; BK.day = ''; BK.start = ''; BK.month = null; }
+  const t = ttype(BK.type);
+  if (!BK.month) { const n = new Date(); BK.month = new Date(n.getFullYear(), n.getMonth(), 1); }
+  v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" data-bkback aria-label="Back">${I.back(24)}</button><h1>Book</h1></div></header>
+  <div class="wrap">
+    <div class="chips bk-chips" role="radiogroup" aria-label="Session">${TTYPES.map(x => `<button class="chip${x.id === t.id ? ' on' : ''}" role="radio" aria-checked="${x.id === t.id}" data-bktype="${x.id}">${esc(x.name)}<small>${x.price}</small></button>`).join('')}</div>
+    <div class="bk-sum"><img src="${TIMG[t.img]}" alt=""><div><h2>${esc(t.name)}</h2><p>${esc(t.time)}</p></div></div>
+    <p class="note" style="margin:12px 0 0;color:#C6CFDD;font-size:14.5px">${esc(t.desc)}</p>
+    ${t.opts ? `<ul class="bk-opts">${t.opts.map(o => `<li>${esc(o)}</li>`).join('')}</ul>` : ''}
+    ${t.id === 'bundle-3' ? `<div class="bk-deal"><b>$167 a session.</b> Pick the time for your first one below. Your other two passes wait on your own page to book, keep or gift.</div>` : ''}
+    <div id="bkCal"></div>
+    <div class="bk-go"><a class="btn gold block" id="bkGo" target="_blank" rel="noopener" aria-disabled="true">Pick a time</a><p class="note">Your details and payment finish securely on innerversepodcast.com.</p></div>
+    <div class="sec bk-alt">
+      <a class="linkrow" href="${BOOK}?gift=1&type=${t.id}" target="_blank" rel="noopener"><span style="display:inline-flex;align-items:center;gap:8px;color:var(--gold-lit)">${I.gift(17)} Give ${esc(t.name)} as a gift</span>${I.right(18)}</a>
+      <a class="linkrow" href="#/sessions">About Biofield Tuning ${I.right(18)}</a>
+    </div>
+    <p class="note" style="margin-top:18px;font-size:12.5px;color:var(--muted)">Reschedule free with 2 or more hours' notice. Cancel with 2 or more hours' notice for a refund minus a $25 processing fee. Openings start 48 hours out.</p>
+  </div>`;
+  const oc = v.querySelector('.bk-chips .chip.on'); if (oc) oc.parentNode.scrollLeft = Math.max(0, oc.offsetLeft - 16);
+  bkCal();
+  bkLoad(BK.type).then(() => { if (!$('#book').hidden) bkCal(); });
+}
+function bkCal() {
+  const box = $('#bkCal'); if (!box) return;
+  const { list, err, to } = bkAll();
+  const loadingNow = Object.keys(BK.loading).some(k => k.indexOf(BK.type + '|') === 0);
+  const byDay = {}; list.forEach(x => { (byDay[bkDay(x)] = byDay[bkDay(x)] || []).push(x); });
+  const days = Object.keys(byDay).sort();
+  if (!list.length && loadingNow) { box.innerHTML = `<div class="cal"><div class="loading" style="padding:40px 0"><div class="spin"></div></div></div>`; return; }
+  if (err && !list.length) { box.innerHTML = `<div class="cal"><div class="bk-msg">Openings did not load. You can still pick a time on the website.<br><br><a class="btn line" href="${BOOK}?type=${BK.type}" target="_blank" rel="noopener">See all times</a></div></div>`; bkBtn(); return; }
+  // jump the calendar to the first month with openings the first time a type loads
+  const mKey = d => d.getFullYear() * 12 + d.getMonth();
+  if (!BK.day && days.length) { const f = days[0].split('-'); const fm = new Date(+f[0], +f[1] - 1, 1); if (mKey(BK.month) < mKey(fm)) BK.month = fm; const inM = days.find(d => d.slice(0, 7) === `${BK.month.getFullYear()}-${String(BK.month.getMonth() + 1).padStart(2, '0')}`); BK.day = inM || days[0]; }
+  const y = BK.month.getFullYear(), m = BK.month.getMonth();
+  const first = new Date(y, m, 1), lead = first.getDay(), dim = new Date(y, m + 1, 0).getDate();
+  const todayKey = bkDay(new Date().toISOString());
+  const nowM = new Date(); const canPrev = mKey(BK.month) > mKey(nowM);
+  // need the next window when this month runs past what has loaded
+  const monthEnd = `${y}-${String(m + 1).padStart(2, '0')}-${String(dim).padStart(2, '0')}`;
+  if (to && monthEnd > to && !loadingNow) bkLoad(BK.type, to).then(() => { if (!$('#book').hidden) bkCal(); });
+  let cells = ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => `<span class="wd">${d}</span>`).join('');
+  for (let i = 0; i < lead; i++) cells += '<span></span>';
+  for (let d = 1; d <= dim; d++) {
+    const k = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const cls = (k === todayKey ? ' today' : '') + (k === BK.day ? ' on' : '');
+    cells += byDay[k] ? `<button class="d${cls}" data-bkday="${k}" aria-label="${new Date(y, m, d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}, ${byDay[k].length} openings">${d}</button>` : `<span class="d${cls}">${d}</span>`;
+  }
+  const times = byDay[BK.day] || [];
+  const dayLabel = BK.day ? new Date(BK.day + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : '';
+  box.innerHTML = `<div class="cal"><div class="cal-head"><button class="iconbtn" data-bkm="-1" aria-label="Previous month" ${canPrev ? '' : 'disabled'}>${I.back(22)}</button><b>${first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</b><button class="iconbtn" data-bkm="1" aria-label="Next month">${I.right(22)}</button></div><div class="cal-grid">${cells}</div></div>
+    <div class="bk-times">${times.length ? `<p class="lbl">${esc(dayLabel)}</p><div class="bk-tgrid" role="radiogroup" aria-label="Time">${times.map(x => `<button role="radio" aria-checked="${x === BK.start}" class="${x === BK.start ? 'on' : ''}" data-bkstart="${x}">${esc(bkTime(x))}</button>`).join('')}</div>` : `<div class="bk-msg">${loadingNow ? 'Loading openings' : 'No openings this month. Try the next one.'}</div>`}
+    <p class="bk-tz">Times in ${esc(bkTzName())}</p></div>`;
+  bkBtn();
+}
+function bkBtn() {
+  const b = $('#bkGo'); if (!b) return;
+  const t = ttype(BK.type);
+  if (BK.start) { b.href = `${BOOK}?type=${BK.type}&start=${encodeURIComponent(BK.start)}`; b.removeAttribute('aria-disabled'); b.textContent = `Continue: ${new Date(BK.start).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}, ${bkTime(BK.start)}`; }
+  else { b.removeAttribute('href'); b.setAttribute('aria-disabled', 'true'); b.textContent = 'Pick a time'; }
+  void t;
+}
+$('#book').addEventListener('click', e => {
+  if (e.target.closest('[data-bkback]')) { if (NAV.length > 1) history.back(); else go('#/sessions'); return; }
+  const ty = e.target.closest('[data-bktype]');
+  if (ty) { history.replaceState(null, '', '#/book?type=' + ty.dataset.bktype); NAV[NAV.length - 1] = location.hash; const top = $('#book').scrollTop; renderBook(ty.dataset.bktype); $('#book').scrollTop = top; return; }
+  const mo = e.target.closest('[data-bkm]');
+  if (mo && !mo.disabled) { BK.month = new Date(BK.month.getFullYear(), BK.month.getMonth() + Number(mo.dataset.bkm), 1); const { list } = bkAll(); const pre = `${BK.month.getFullYear()}-${String(BK.month.getMonth() + 1).padStart(2, '0')}`; BK.day = (list.map(bkDay).find(d => d.slice(0, 7) === pre)) || ''; BK.start = ''; bkCal(); return; }
+  const dy = e.target.closest('[data-bkday]');
+  if (dy) { BK.day = dy.dataset.bkday; BK.start = ''; bkCal(); return; }
+  const st = e.target.closest('[data-bkstart]');
+  if (st) { BK.start = st.dataset.bkstart; bkCal(); setTimeout(() => { const g = $('#bkGo'); if (g) g.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 60); }
+});
+
 // ------------------------------------------------------------ account
 function renderMe() {
   const v = $('#me');
@@ -1831,7 +2049,7 @@ function renderMe() {
     <div class="sec">
       <a class="linkrow" href="#/chat">The Inner Circle ${I.right(18)}</a>
       <a class="linkrow" href="${SITE}/plus" target="_blank" rel="noopener">Your private podcast feed ${I.right(18)}</a>
-      <a class="linkrow" href="${SITE}/biofield-tuning" target="_blank" rel="noopener">Book a Biofield Tuning session ${I.right(18)}</a>
+      <a class="linkrow" href="#/sessions">Book a Biofield Tuning session ${I.right(18)}</a>
       <a class="linkrow" href="${SITE}" target="_blank" rel="noopener">innerversepodcast.com ${I.right(18)}</a>
     </div>
     ${!standalone ? `<div class="sec card"><h3>Using the home screen app?</h3><p>If the app on your home screen asks you to log in again, copy your sign-in here and paste it there under "Trouble logging in?"</p><button class="btn line" id="copyTok">Copy my sign-in</button></div>` : ''}
@@ -1841,7 +2059,7 @@ function renderMe() {
     <div class="sec" style="margin-top:8px">${plusPitch(false)}</div>
     ${standalone && !S.signedIn ? `<div class="sec card"><h3>Trouble logging in?</h3><p>If you logged in but the app still shows this screen, open circle.innerversepodcast.com/app in Safari, log in there, tap Copy my sign-in on the Account tab, then paste it here.</p><input class="field" id="pasteTok" placeholder="Paste your sign-in" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn line block" id="useTok">Use this sign-in</button></div>` : ''}
     <div class="sec">
-      <a class="linkrow" href="${SITE}/biofield-tuning" target="_blank" rel="noopener">Book a Biofield Tuning session ${I.right(18)}</a>
+      <a class="linkrow" href="#/sessions">Book a Biofield Tuning session ${I.right(18)}</a>
       <a class="linkrow" href="${SITE}" target="_blank" rel="noopener">innerversepodcast.com ${I.right(18)}</a>
     </div>`;
   }
