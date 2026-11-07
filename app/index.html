@@ -676,6 +676,8 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 .seen .art{opacity:.55}
 .watchbtn{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 14px;margin:0 0 12px;border-radius:999px;border:1px solid var(--line);font-size:14px;font-weight:800;color:var(--muted)}
 .watchbtn.on{border-color:rgba(159,216,168,.5);background:rgba(159,216,168,.12);color:#9FD8A8}
+.homemark{margin-left:-6px}
+.homemark img{width:30px;height:30px;display:block}
 .bk-msg{padding:22px 4px;text-align:center;color:var(--muted);font-size:14.5px}
 </style>
 </head>
@@ -706,7 +708,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-11-07c';
+const VERSION = '2026-11-07d';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -2371,6 +2373,11 @@ async function openEpisode(kind, slug) {
 }
 function bindBack() {
   const b = $('#epBack'); if (!b) return;
+  // one tap home from any episode or music page (build 2026-11-07d, Chance: "a quick one click back to home button at the top, can just be the logo emblem")
+  if (!b.nextElementSibling || !b.nextElementSibling.classList.contains('homemark')) {
+    b.insertAdjacentHTML('afterend', `<button class="iconbtn homemark" aria-label="Home"><img src="${S.member ? PLUS_LOGO : LOGO}" alt=""></button>`);
+    b.nextElementSibling.addEventListener('click', () => goTab('home'));
+  }
   b.addEventListener('click', () => {
     if (NAV.length > 1) { history.back(); return; }
     const t = lastTabHash[S.tab] || '#/'; history.replaceState(null, '', t); NAV = [t]; route();
