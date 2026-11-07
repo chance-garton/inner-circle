@@ -662,6 +662,13 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 .bk-go .btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
 .bk-go .note{text-align:center;margin:10px 0 0;font-size:12.5px;color:var(--muted)}
 .bk-alt{display:flex;flex-direction:column;gap:2px;margin-top:20px}
+.tu-home{display:grid;grid-template-columns:96px 1fr auto;gap:14px;align-items:center;padding:12px 12px 12px 12px;border-radius:18px;background:radial-gradient(90% 120% at 100% 0%,rgba(59,116,204,.22),transparent 65%),var(--card);border:1px solid rgba(143,181,240,.22)}
+.tu-home img{width:96px;height:96px;border-radius:14px;object-fit:cover}
+.tu-home .tx{min-width:0;display:flex;flex-direction:column;gap:4px}
+.tu-home .eyebrow{font-size:11px}
+.tu-home .t{font-family:var(--display);font-weight:600;font-size:18px;line-height:1.2}
+.tu-home .nx{font-size:13px;font-weight:700;color:var(--gold-lit)}
+.tu-home .go{color:var(--muted)}
 .bk-msg{padding:22px 4px;text-align:center;color:var(--muted);font-size:14.5px}
 </style>
 </head>
@@ -692,7 +699,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-11-07a';
+const VERSION = '2026-11-07b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1673,6 +1680,7 @@ function renderHome() {
     ${promoCard()}
     ${S.member ? '' : `<div class="sec">${plusPitch(true)}</div>`}
     ${songsRow()}
+    ${tuneHomeCard()}
     ${firsts.length ? `<div class="sec"><div class="sechead"><h2 class="h2">Good first episodes</h2></div><div class="hscroll">${firsts.map(tile).join('')}</div></div>` : ''}
     ${['InnerVerse', 'Inner Whirled', 'Vibe Rant', 'Astro-Herbalism'].map(showRow).join('')}
   </div>`;
@@ -1922,6 +1930,15 @@ const TQUOTES = [
 function tuneRow(t) {
   return `<a class="tu-row${t.id === 'bundle-3' ? ' best' : ''}" href="#/book?type=${t.id}"><img src="${TIMG[t.img]}" alt="" loading="lazy"><span><span class="n">${esc(t.name)}</span><span class="d">${esc(t.tag)}</span></span><span class="pr">${t.was ? `<s>${t.was}</s>` : ''}${t.price}</span></a>`;
 }
+// Home's link to Sessions (build 2026-11-07b, Chance: "link to sessions page from home screen of the app"); the next
+// opening is read once per launch from the same slots call the Book screen uses, and filled in when it arrives
+function tuneHomeCard() {
+  let list = [], ready = false; try { list = bkAll().list; ready = true; } catch (e) {} // BK is declared further down; Home can draw before it exists
+  const nxt = list.find(x => Date.parse(x) > Date.now());
+  if (ready && !nxt && !Object.keys(BK.slots).length) bkLoad('tuning-45').then(() => { const el = $('#tuNext'); const n = bkAll().list.find(x => Date.parse(x) > Date.now()); if (el && n) el.textContent = 'Next opening ' + bkWhen(n); });
+  return `<div class="sec"><a class="tu-home" href="#/sessions"><img src="${TIMG.full}" alt="" loading="lazy"><span class="tx"><span class="eyebrow">Biofield Tuning</span><span class="t">Feel lighter, clearer, and more like yourself again</span><span class="nx" id="tuNext">${nxt ? 'Next opening ' + esc(bkWhen(nxt)) : 'One-to-one over Zoom'}</span></span><span class="go">${I.right(20)}</span></a></div>`;
+}
+function bkWhen(iso) { return new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
 function renderTune() {
   const v = $('#tune'); if (v.dataset.done) return; v.dataset.done = '1';
   v.innerHTML = `<header class="hdr"><div class="row"><h1>Sessions</h1></div></header>
