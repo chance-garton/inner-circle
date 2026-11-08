@@ -2,6 +2,26 @@
   "about": "Original songs made for InnerVerse episodes. The app orders songs by their episode's release date, newest first, and keeps one episode's songs in the order listed here (track order); keep this file in the same order so it reads the way the app shows it. id names the song (and its files and share page, songs/<id>/); episode is the episode's FREE slug (the /episodes/<slug> address); art is the square cover's Squarespace CDN address (Chance sends one per batch), a square image in this folder, or empty to fall back to the episode's thumbnail. After any change here, run: python3 songs/build.py",
   "songs": [
     {
+      "id": "does-christianity-need-the-devil-dawn-of-discernment",
+      "episode": "does-christianity-need-the-devil",
+      "episodeTitle": "Does Christianity NEED the Devil? Chance Garton & Dawn Lester",
+      "title": "Dawn of Discernment",
+      "file": "does-christianity-need-the-devil-dawn-of-discernment.mp3",
+      "art": "https://images.innerversepodcast.com/sq/chance-garton-innerverse-site-main-data-images-incoming-does-christianity-need-the-devil/no-devil-no-priests-music-cover/orig.jpg",
+      "seconds": 197,
+      "added": "2026-11-08"
+    },
+    {
+      "id": "does-christianity-need-the-devil-no-devil-no-priest",
+      "episode": "does-christianity-need-the-devil",
+      "episodeTitle": "Does Christianity NEED the Devil? Chance Garton & Dawn Lester",
+      "title": "No Devil, No Priest",
+      "file": "does-christianity-need-the-devil-no-devil-no-priest.mp3",
+      "art": "https://images.innerversepodcast.com/sq/chance-garton-innerverse-site-main-data-images-incoming-does-christianity-need-the-devil/no-devil-no-priests-music-cover/orig.jpg",
+      "seconds": 208,
+      "added": "2026-11-08"
+    },
+    {
       "id": "inner-whirled-32-galatea",
       "episode": "inner-whirled-32",
       "episodeTitle": "Exposing the Astrological Errors of Fomenko's New Chronology",
