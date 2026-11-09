@@ -259,6 +259,30 @@ async function route(req, env, url, path, okOrigin) {
       const room = env.ROOM.get(env.ROOM.idFromName('lounge'));
       return room.fetch(new Request('https://room/' + (path.endsWith('start') ? 'super-start' : 'super-confirm'), { method: 'POST', body: JSON.stringify({ uid: who.uid, email: who.email, body }) }));
     }
+    // From the website (episode pages, the home page): anyone can send one; a signed-in member's
+    // chat name is used, a visitor may give a name or none. It posts into the episode's room (or
+    // Inner Circle Chat from the home page) and shows on that page's public list.
+    if ((path === '/api/super/web-start' || path === '/api/super/web-confirm') && req.method === 'POST') {
+      if (!okOrigin || !origin) return json({ error: 'origin not allowed' }, 403);
+      let body = {}; try { body = await req.json(); } catch (e) { /* empty */ }
+      const who = bearer(req) ? await verify(bearer(req), env) : null;
+      const room = env.ROOM.get(env.ROOM.idFromName('lounge'));
+      return room.fetch(new Request('https://room/' + (path.endsWith('start') ? 'super-web-start' : 'super-confirm'), { method: 'POST', body: JSON.stringify({
+        uid: who && who.entitled ? who.uid : '', email: who && who.entitled ? who.email : '', body, web: true, ip: req.headers.get('CF-Connecting-IP') || '' }) }));
+    }
+    if (path === '/api/super/list' && req.method === 'GET') {
+      const page = String(url.searchParams.get('page') || '');
+      if (!/^(home|ep:[a-z0-9-]{1,140})$/.test(page)) return json({ error: 'bad page' }, 400);
+      const cache = caches.default, key = new Request('https://cache.local/super-list/' + page);
+      let hit = await cache.match(key);
+      if (!hit) {
+        const room = env.ROOM.get(env.ROOM.idFromName('lounge'));
+        const r = await room.fetch(new Request('https://room/super-list', { method: 'POST', body: JSON.stringify({ page }) }));
+        hit = new Response(await r.text(), { status: r.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=30' } });
+        if (r.ok) await cache.put(key, hit.clone());
+      }
+      return hit;
+    }
     if (path === '/api/super/webhook' && req.method === 'POST') {
       const raw = await req.text();
       if (!env.STRIPE_WEBHOOK_SECRET || !(await stripeSigOk(raw, req.headers.get('Stripe-Signature') || '', env.STRIPE_WEBHOOK_SECRET))) return json({ error: 'bad signature' }, 400);
@@ -266,7 +290,7 @@ async function route(req, env, url, path, okOrigin) {
       const o = ev && ev.data && ev.data.object;
       if (ev.type === 'checkout.session.completed' && o && o.metadata && o.metadata.ivc === 'super') {
         const room = env.ROOM.get(env.ROOM.idFromName('lounge'));
-        await room.fetch(new Request('https://room/super-confirm', { method: 'POST', body: JSON.stringify({ uid: o.metadata.uid, body: { sid: o.id }, hook: true }) }));
+        await room.fetch(new Request('https://room/super-confirm', { method: 'POST', body: JSON.stringify({ uid: o.metadata.uid || '', body: { sid: o.id }, hook: true }) }));
       }
       return json({ ok: true });
     }
@@ -345,6 +369,8 @@ export class Room {
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN sup TEXT DEFAULT ''"); } catch (e) { /* already there (2026-11-09, Super Chat) */ }
     this.sql.exec(`CREATE TABLE IF NOT EXISTS supers (sid TEXT PRIMARY KEY, uid TEXT, room TEXT, amount INTEGER, text TEXT,
       created INTEGER, status TEXT DEFAULT 'open', msg_id INTEGER DEFAULT 0)`);
+    try { this.sql.exec("ALTER TABLE supers ADD COLUMN name TEXT DEFAULT ''"); } catch (e) { /* already there */ }
+    try { this.sql.exec("ALTER TABLE supers ADD COLUMN src TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     this.sql.exec('CREATE TABLE IF NOT EXISTS link_previews (url TEXT PRIMARY KEY, data TEXT, fetched INTEGER)');
     // who has had a message on screen (only the count is ever shown, never the names)
     this.sql.exec('CREATE TABLE IF NOT EXISTS views (msg_id INTEGER, uid TEXT, PRIMARY KEY (msg_id, uid)) WITHOUT ROWID');
@@ -688,6 +714,8 @@ export class Room {
     }
     if (path === '/super-start') return this.superStart(await req.json());
     if (path === '/super-confirm') return this.superConfirm(await req.json());
+    if (path === '/super-web-start') return this.superStart(await req.json());
+    if (path === '/super-list') return this.superList(await req.json());
     if (path === '/lib-get' || path === '/lib-set') {
       const { uid, body } = await req.json(); const now = Date.now();
       if (path === '/lib-set') {
@@ -1455,10 +1483,23 @@ export class Room {
     return this.shapeAll(this.all("SELECT * FROM messages WHERE room = ? AND deleted = 0 AND sup != '' AND created > ? ORDER BY id DESC LIMIT 20", room || '', now - 61 * 60 * 1000))
       .filter(m => m.sup && m.sup.until > now);
   }
-  async superStart({ uid, email, body }) {
-    const me = this.member(uid);
-    if (!me || me.banned || !me.profile_done || !me.rules_ok) return json({ error: 'Finish joining the chat first.' }, 403);
-    if (me.muted_until > Date.now()) return json({ error: 'You are muted for now. Try again later.' }, 403);
+  async superStart({ uid, email, body, web, ip }) {
+    let me = uid ? this.member(uid) : null;
+    if (web) {
+      // a visitor, or a member without a chat profile yet, sends under the name they give (or none)
+      if (me && (me.banned || !me.profile_done)) me = null;
+      if (me && me.muted_until > Date.now()) return json({ error: 'You are muted in the chat for now. Try again later.' }, 403);
+      const now = Date.now(), k = 'ip:' + (ip || 'x'), list = (this.rate.get(k) || []).filter(t => now - t < 10 * 60 * 1000);
+      if (list.length >= 8) { this.rate.set(k, list); return json({ error: 'Too many tries. Please wait a few minutes.' }, 429); }
+      list.push(now); this.rate.set(k, list);
+      if (!me) { uid = 'web'; email = ''; }
+    } else {
+      if (!me || me.banned || !me.profile_done || !me.rules_ok) return json({ error: 'Finish joining the chat first.' }, 403);
+      if (me.muted_until > Date.now()) return json({ error: 'You are muted for now. Try again later.' }, 403);
+    }
+    const name = uid === 'web' ? clean(body && body.name, 40) : '';
+    if (web && body && body.page === 'home') body.room = 'main';
+    else if (web) body.room = String(body && body.page || '');
     if (!this.superOn()) return json({ error: 'Super Chat is not switched on yet.' }, 503);
     const amount = Math.round(Number(body && body.amount));
     if (!Number.isFinite(amount) || amount < SUP_MIN || amount > SUP_MAX) return json({ error: `Pick an amount from ${money(SUP_MIN)} to ${money(SUP_MAX)}.` }, 400);
@@ -1478,37 +1519,53 @@ export class Room {
           customer_email: email && /@/.test(email) ? email : undefined,
           line_items: { 0: { quantity: 1, price_data: { currency: 'usd', unit_amount: amount, product_data: { name: 'Super Chat', description: 'InnerVerse Inner Circle, ' + title } } } },
           payment_intent_data: { description: 'Inner Circle Super Chat', metadata: { ivc: 'super', uid } },
-          metadata: { ivc: 'super', uid, room: rk.key },
+          metadata: { ivc: 'super', uid, room: rk.key, from: web ? 'website' : 'chat' },
         });
         sid = s.id; cs = s.client_secret;
       } catch (e) { return json({ error: 'Payment could not start. Please try again.' }, 502); }
     }
-    this.sql.exec('INSERT OR REPLACE INTO supers (sid, uid, room, amount, text, created) VALUES (?, ?, ?, ?, ?, ?)', sid, uid, rk.key, amount, text, now);
+    this.sql.exec('INSERT OR REPLACE INTO supers (sid, uid, room, amount, text, created, name, src) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', sid, uid, rk.key, amount, text, now, name, web ? 'web' : '');
     return json({ sid, clientSecret: cs, publishableKey: this.env.STRIPE_PUBLISHABLE_KEY || '', fake });
   }
-  async superConfirm({ uid, body, hook }) {
+  async superConfirm({ uid, body, hook, web }) {
     const sid = String(body && body.sid || '');
     const p = /^(cs_(test|live)_|fake_)[A-Za-z0-9_-]{6,200}$/.test(sid) ? this.one('SELECT * FROM supers WHERE sid = ?', sid) : null;
-    if (!p || (p.uid !== uid)) return json({ error: 'not found' }, 404);
+    // the session id is the proof for a website Super Chat (a visitor has no sign-in); the chat's own need the member
+    if (!p || (!web && !hook && p.uid !== uid) || (web && p.src !== 'web')) return json({ error: 'not found' }, 404);
     if (p.status === 'posted') return json({ ok: true, id: p.msg_id });
     if (sid.startsWith('fake_')) { if (this.env.DEV_AUTH !== '1' || this.env.STRIPE_SECRET_KEY) return json({ error: 'not found' }, 404); }
     else {
       let s; try { s = await stripe(this.env, 'GET', 'checkout/sessions/' + sid); } catch (e) { return json({ error: 'Could not check the payment yet.' }, 502); }
-      if (s.payment_status !== 'paid' || (s.metadata || {}).uid !== uid || s.amount_total !== p.amount) return json({ pending: true });
+      if (s.payment_status !== 'paid' || (s.metadata || {}).uid !== p.uid || s.amount_total !== p.amount) return json({ pending: true });
       // the webhook and the page can both arrive; the row check below keeps it to one post
       const again = this.one('SELECT status, msg_id FROM supers WHERE sid = ?', sid);
       if (again.status === 'posted') return json({ ok: true, id: again.msg_id });
     }
     const now = Date.now(), mins = supMinutes(p.amount);
     const sup = { a: p.amount, until: mins ? now + mins * 60 * 1000 : 0 };
+    if (p.src === 'web') sup.web = 1;
+    if (p.uid === 'web') sup.n = p.name || '';
     const row = this.one("INSERT INTO messages (uid, text, image, reply_to, created, mentions, preview, room, sup) VALUES (?, ?, '', NULL, ?, '[]', '', ?, ?) RETURNING *", p.uid, p.text, now, p.room, JSON.stringify(sup));
     this.sql.exec("UPDATE supers SET status = 'posted', msg_id = ? WHERE sid = ?", row.id, sid);
     const m = this.shape(row);
-    const first = this.engage(p.uid, p.room);
+    const author = p.uid === 'web' ? { uid: 'web', name: p.name || 'Someone', avatar: '' } : this.member(p.uid);
+    const first = p.uid !== 'web' && this.engage(p.uid, p.room);
     this.broadcast({ t: 'msg', m, people: this.peopleFor([m]) });
     if (first) this.toUser(p.uid, await this.roomsFor(p.uid));
-    this.state.waitUntil(this.pushOut(m, this.member(p.uid)));
+    this.state.waitUntil(this.pushOut(m, author));
     return json({ ok: true, id: row.id });
+  }
+  // the public list on a website page: only Super Chats sent from the website (what members send inside
+  // the chat stays in the chat), newest 12, with the name to show and whether Chance thanked it
+  async superList({ page }) {
+    const rk = page === 'home' ? { key: '' } : await this.roomKey(page, '');
+    if (!rk) return json({ items: [] });
+    const rows = this.all("SELECT id, uid, text, created, sup FROM messages WHERE room = ? AND deleted = 0 AND sup LIKE '%\"web\":1%' ORDER BY id DESC LIMIT 12", rk.key);
+    const items = rows.map(r => {
+      const sp = safeObj(r.sup) || {}, mem = r.uid !== 'web' ? this.member(r.uid) : null;
+      return { id: r.id, name: mem ? mem.name || 'A member' : (sp.n || ''), member: !!mem, amount: sp.a, text: r.text, created: r.created, thanked: !!sp.th };
+    });
+    return json({ items });
   }
   async pushTo(uid, obj) {
     try {

@@ -15,7 +15,10 @@ MOD_EMAILS = "jenngarton77@gmail.com"
 # Local testing only: lets "dev." tokens sign in. Must stay "0" when deployed.
 DEV_AUTH = "0"
 # Sites allowed to talk to this Worker (the page lives on GitHub Pages).
-ALLOWED_ORIGINS = "https://circle.innerversepodcast.com"
+ALLOWED_ORIGINS = "https://circle.innerversepodcast.com,https://www.innerversepodcast.com"
+# Super Chat (2026-11-09). The publishable key is public by design; the secret key and the
+# webhook signing secret are Worker secrets set in the dashboard, never here.
+STRIPE_PUBLISHABLE_KEY = "pk_live_cmpv6GbhX2L8cuo2SvVumGpV"
 
 [[durable_objects.bindings]]
 name = "ROOM"
