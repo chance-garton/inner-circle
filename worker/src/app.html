@@ -731,6 +731,41 @@ button.tchip{cursor:pointer;font:inherit;font-weight:700;font-size:12.5px;backgr
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--card);border:1px solid rgba(233,238,246,0.22);border-radius:12px;padding:10px 16px;font-size:14px;z-index:30;box-shadow:0 14px 36px rgba(0,0,0,0.55);max-width:calc(100% - 32px)}
 .lightbox img{max-width:min(1100px,100%);max-height:calc(100dvh - 60px);border-radius:12px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---- Super Chat (2026-11-09) */
+.bub.sup{--sc:#3B74CC;padding:0;overflow:hidden;background:color-mix(in srgb,var(--sc) 16%,#151E33)!important;border:1px solid color-mix(in srgb,var(--sc) 60%,transparent)!important;box-shadow:0 0 0 1px color-mix(in srgb,var(--sc) 25%,transparent),0 6px 22px color-mix(in srgb,var(--sc) 22%,transparent)!important;min-width:220px}
+.bub.sup .supband{display:flex;align-items:center;gap:8px;padding:8px 13px;background:var(--sc);color:#0A0F1C}
+.bub.sup .supband .who{margin:0;flex:1;min-width:0}
+.bub.sup .supband .who button{color:#0A0F1C!important;font-weight:800}
+.bub.sup .supamt{font-weight:900;font-size:17px;letter-spacing:.3px;flex:none;font-variant-numeric:tabular-nums}
+.bub.sup .supkey{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:.75;flex:none}
+.bub.sup .supbody{padding:8px 13px 9px}
+.bub.sup .supbody:empty{display:none}
+.supthx{display:flex;align-items:center;gap:6px;margin:0 13px 9px;font-size:13px;color:var(--ink);font-weight:600}
+.supthx .h{color:#F2998A}
+.supthank{margin:0 13px 10px;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid color-mix(in srgb,var(--sc) 70%,transparent);color:var(--ink);font-weight:700;font-size:13px;background:rgba(10,15,28,0.35)}
+.supthank:hover{background:rgba(10,15,28,0.6)}
+#supbar:empty{display:none}
+#supbar{display:flex;gap:8px;overflow-x:auto;padding:8px 14px;scrollbar-width:none;flex:none;border-bottom:1px solid var(--line)}
+#supbar::-webkit-scrollbar{display:none}
+.ctop #supbar{border:0;padding:0 10px 8px}
+.supchip{--sc:#3B74CC;flex:none;display:flex;align-items:center;gap:7px;padding:4px 12px 4px 4px;border-radius:999px;background:var(--sc);color:#0A0F1C;font-weight:800;font-size:13.5px;position:relative;overflow:hidden}
+.supchip .av{border-radius:50%;overflow:hidden;display:flex}
+.supchip .left{position:absolute;left:0;bottom:0;height:3px;background:rgba(10,15,28,0.45)}
+.supbtn{color:var(--gold)!important}
+.supsheet{padding:6px 18px 18px;display:flex;flex-direction:column;gap:14px}
+.supamts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.supamts button{--sc:#3B74CC;padding:12px 6px;border-radius:12px;border:1px solid color-mix(in srgb,var(--sc) 55%,transparent);background:color-mix(in srgb,var(--sc) 12%,transparent);color:var(--ink);font-weight:800;font-size:17px}
+.supamts button[aria-pressed=true]{background:var(--sc);color:#0A0F1C}
+.supcustom{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:0 12px;height:48px}
+.supcustom span{color:var(--muted);font-weight:700}
+.supcustom input{flex:1;background:transparent;border:0;outline:0;font-size:17px;font-weight:700;min-width:0}
+.supnote{font-size:13px;color:var(--muted);line-height:1.45}
+.supmsg{width:100%;box-sizing:border-box;min-height:84px;resize:vertical;border:1px solid var(--line);border-radius:12px;background:rgba(10,15,28,0.4);padding:10px 12px;font-size:15px;line-height:1.45}
+#supGo:disabled{opacity:.5}
+.supcustom[hidden],.supsheet[hidden]{display:none}
+#supPay{min-height:120px;border-radius:12px;overflow:hidden;background:#fff}
+#supPay:empty{display:none}
 </style>
 </head>
 <body>
@@ -2166,7 +2201,7 @@ function onEvent(m) {
       S.connected = true; S.retry = 0;
       setTimeout(() => { sendWs({ t: 'notify', level: notifyLevel() }); sendWs({ t: 'away', on: away() }); }, 0);
       S.me = m.me; S.people[m.me.uid] = m.me; mergePeople(m.people); setQuick();
-      S.messages = m.messages; S.pins = m.pins; S.online = m.online; S.signs = m.signs; if (Array.isArray(m.reactions) && m.reactions.length) DEFAULT_QUICK = m.reactions; setQuick();
+      S.messages = m.messages; S.pins = m.pins; S.supers = m.supers || []; S.superOn = !!m.superOn; S.online = m.online; S.signs = m.signs; if (Array.isArray(m.reactions) && m.reactions.length) DEFAULT_QUICK = m.reactions; setQuick();
       S.oldestDone = 'done' in m ? !!m.done : m.messages.length < 50;
       startAtPlace(m.lastRead);
       S.where = m.where || {}; setRoom(m.room || { key: '', title: 'Inner Circle Chat' }); S.loadingRoom = false;
@@ -2196,6 +2231,7 @@ function onEvent(m) {
       if (m.cid) ackPending(m.cid, m.m.id);
       if ((m.m.room || '') !== S.room) { otherRoomMsg(m.m); return; }
       if (m.m.kind === 'room') setTimeout(() => sendQuiet({ t: 'rooms' }), 400);
+      if (m.m.sup) supAdd(m.m);
       if (S.messages.some(x => x.id === m.m.id)) return;
       S.messages.push(m.m);
       delete S.typing[m.m.uid];
@@ -2219,6 +2255,7 @@ function onEvent(m) {
       return;
     }
     case 'update': {
+      if (m.m.sup || (S.supers || []).some(x => x.id === m.m.id)) { if (m.m.deleted) { S.supers = S.supers.filter(x => x.id !== m.m.id); if (S.view === 'chat') renderSupbar(); } else if ((m.m.room || '') === S.room) supAdd(m.m); }
       const i = S.messages.findIndex(x => x.id === m.m.id);
       if (i >= 0) { if (m.m.deleted) S.messages.splice(i, 1); else S.messages[i] = m.m; if (S.view === 'chat') renderMessages(false); }
       if (m.m.deleted) {
@@ -2276,7 +2313,7 @@ function onEvent(m) {
     case 'roomload': {
       mergePeople(m.people);
       setRoom(m.room);
-      S.messages = m.messages || []; S.pins = m.pins || []; S.oldestDone = !!m.done; S.loadingOlder = false; S.typing = {};
+      S.messages = m.messages || []; S.pins = m.pins || []; S.supers = m.supers || []; S.oldestDone = !!m.done; S.loadingOlder = false; S.typing = {};
       S.reply = null; S.editMsg = null; S.stick = true; S.anc = null; S.loadingRoom = false;
       startAtPlace(m.lastRead);
       S.seenSent = new Set(); S.seenQueue = new Set();
@@ -2684,6 +2721,7 @@ function renderChat() {
       </div>
       ${S.roomInfo.live && S.me && S.me.role === 'host' ? `<div class="livebar"><b>${S.roomInfo.open ? '<span class="livedot"></span> Live' : 'Live room'}</b><span style="flex:1">When the episode is posted, tie this room to it.</span><button class="btn2 sm" id="liveTie">Tie to episode</button>${S.roomInfo.open ? '<button class="btn2 sm" id="liveEnd">End</button>' : ''}</div>` : ''}
       <div id="pinbar"></div>
+      <div id="supbar"></div>
       </div>
       <div class="msgs" id="msgs" aria-live="polite"></div>
       <div class="cbot" id="cbot">
@@ -2694,6 +2732,7 @@ function renderChat() {
       <div id="tsbar"></div>
       <div class="compose">
         <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
+        ${S.superOn && !isSaved(S.room) ? `<button class="ibtn supbtn" id="supBtn" aria-label="Super Chat" title="Super Chat">${COIN(22)}</button>` : ''}
         <label class="sr" for="field">${isSaved(S.room) ? 'Write a note to yourself' : S.roomInfo.live ? 'Message the live room' : S.room ? 'Talk about this episode' : 'Message the Inner Circle'}</label>
         <div class="fwrap"><textarea id="field" class="field" rows="1" maxlength="2000" placeholder="${isSaved(S.room) ? 'Note to yourself' : S.roomInfo.live ? 'Message the live room' : S.room ? 'Talk about this episode' : 'Message'}"></textarea>
           <div class="fins"><button class="ibtn" id="epBtn" aria-label="Link an episode" title="Link an episode">${P('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',{s:21})}</button><button class="ibtn" id="emoBtn" aria-label="Emoji" title="Emoji">${P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',{s:21})}</button></div></div>
@@ -2704,7 +2743,8 @@ function renderChat() {
       <button class="unseen" id="unseenBtn" aria-label="Unseen messages" title="Go to the oldest unseen message (right-click or hold to clear)">${I.down(18)}<span id="unseenN">0</span></button>
     </main>
   </div>`;
-  renderSide(); renderHeadCounts(); plAfterRender(); renderPinbar(); renderMessages(true); renderReply(); renderConn();
+  renderSide(); renderHeadCounts(); plAfterRender(); renderPinbar(); renderSupbar(); renderMessages(true);
+  if ($('#supBtn')) $('#supBtn').onclick = openSuper; renderReply(); renderConn();
   wireComposer(); wireBars();
   const box = $('#msgs');
   box.addEventListener('scroll', () => {
@@ -2786,6 +2826,111 @@ function renderSide() {
   $('#editMe').onclick = editProfile;
 }
 function editProfile() { S.editing = true; S.draft = null; S.view = 'profile'; render(); }
+
+
+// ---- Super Chat (2026-11-09): a paid message that stands out by amount and rides the spotlight row
+// a while. Kept in step with SUP_TIERS in worker.js. [from cents, colour, spotlight minutes]
+const SUP_TIERS = [[10000, '#E2557A', 60], [5000, '#EE8A3C', 30], [2500, '#D8AA3C', 15], [1000, '#4FBF8A', 5], [500, '#3FB6C9', 1], [0, '#5B8FE0', 0]];
+const supTier = c => SUP_TIERS.find(t => c >= t[0]) || SUP_TIERS[SUP_TIERS.length - 1];
+const money = c => '$' + (c % 100 ? (c / 100).toFixed(2) : String(c / 100));
+const COIN = s => P('<circle cx="12" cy="12" r="9"/><path d="M14.8 9.2c-.5-.9-1.6-1.4-2.8-1.4-1.6 0-2.8.8-2.8 2s1.2 1.7 2.8 2.1 2.8.9 2.8 2.1-1.2 2-2.8 2c-1.3 0-2.4-.6-2.9-1.5"/><path d="M12 6v1.8M12 16.2V18"/>', { s });
+function supNote(c) { const m = supTier(c)[2]; return m ? `Stays in the spotlight at the top of the room for ${m === 60 ? 'an hour' : m === 1 ? 'a minute' : m + ' minutes'}.` : 'Shows as a highlighted card in the chat.'; }
+function renderSupbar() {
+  const bar = $('#supbar'); if (!bar) return;
+  const now = Date.now();
+  S.supers = (S.supers || []).filter(m => m.sup && m.sup.until > now && (m.room || '') === S.room);
+  S.supers.sort((a, b) => b.sup.a - a.sup.a || b.id - a.id);
+  bar.innerHTML = S.supers.map(m => {
+    const t = supTier(m.sup.a), total = t[2] * 60000 || 1, left = Math.max(0, Math.min(1, (m.sup.until - now) / total));
+    return `<button class="supchip" data-supgo="${m.id}" style="--sc:${t[1]}" title="${esc(person(m.uid).name)}, ${money(m.sup.a)}">${avatar(m.uid, 26)}<span>${money(m.sup.a)}</span><span class="left" style="width:${(left * 100).toFixed(1)}%"></span></button>`;
+  }).join('');
+  hydrateMedia(bar);
+  bar.querySelectorAll('[data-supgo]').forEach(b => b.onclick = () => {
+    const id = Number(b.dataset.supgo), el = document.querySelector(`#msgs [data-id="${id}"]`);
+    if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); }
+    else sendWs({ t: 'thread', id });
+  });
+}
+setInterval(() => { if (S.view === 'chat' && (S.supers || []).length) renderSupbar(); }, 15000);
+function supAdd(m) {
+  if (!m || !m.sup) return;
+  S.supers = (S.supers || []).filter(x => x.id !== m.id);
+  if (!m.deleted && m.sup.until > Date.now()) S.supers.unshift(m);
+  S.supers.sort((a, b) => b.sup.a - a.sup.a || b.id - a.id);
+  if (S.view === 'chat') renderSupbar();
+}
+let stripeJs = null;
+function loadStripe() {
+  if (window.Stripe) return Promise.resolve(window.Stripe);
+  if (stripeJs) return stripeJs;
+  stripeJs = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://js.stripe.com/v3/'; sc.onload = () => ok(window.Stripe); sc.onerror = () => { stripeJs = null; no(new Error('stripe')); }; document.head.appendChild(sc); });
+  return stripeJs;
+}
+function openSuper() {
+  if (isSaved(S.room)) return;
+  const presets = [500, 1000, 2500, 5000, 10000];
+  let amt = 1000, checkout = null, busy = false;
+  const room = S.room;
+  const o = overlay(`<div id="supSheet"><div style="padding:16px 12px 6px 18px;display:flex;align-items:center;gap:10px"><span style="color:var(--gold);display:flex">${COIN(24)}</span><h2 class="h1" style="font-size:22px;flex:1">Super Chat</h2><button class="ibtn" id="supX" aria-label="Close">${I.close()}</button></div>
+    <div class="supsheet" id="supForm">
+      <div class="supnote" style="font-size:14px;color:var(--ink)">Support the show and send a message that stands out${S.room ? ' in this room' : ''}.</div>
+      <div class="supamts">${presets.map(c => `<button data-amt="${c}" style="--sc:${supTier(c)[1]}">${money(c)}</button>`).join('')}<button data-amt="custom" style="--sc:#5B8FE0;font-size:14px">Other</button></div>
+      <label class="supcustom" id="supCustom" hidden><span>$</span><input id="supIn" type="number" inputmode="decimal" min="3" max="500" step="1" placeholder="Any amount from 3 to 500" aria-label="Amount in dollars"></label>
+      <div class="supnote" id="supWhat"></div>
+      <textarea class="supmsg" id="supText" maxlength="300" placeholder="Add a message (optional)"></textarea>
+      <button class="btn1" id="supGo" style="width:100%">Continue</button>
+      <div class="supnote" style="font-size:12px">Paid securely through Stripe. Super Chats are tips to InnerVerse, not tax deductible, and are not refundable once posted.</div>
+    </div>
+    <div class="supsheet" id="supPayWrap" hidden><div class="supnote" id="supPayNote"></div><div id="supPay"></div></div></div>`, true, 'Super Chat');
+  o.firstElementChild.style.width = 'min(480px, 100%)';
+  const close = () => { try { checkout && checkout.destroy(); } catch (e) {} closeOverlay(); };
+  $('#supX').onclick = close;
+  const draw = () => {
+    o.querySelectorAll('[data-amt]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.amt === 'custom' ? !$('#supCustom').hidden : !$('#supCustom').hidden ? false : Number(b.dataset.amt) === amt)));
+    const ok = amt >= 300 && amt <= 50000;
+    $('#supWhat').textContent = ok ? `${money(amt)}. ${supNote(amt)}` : 'Pick an amount from $3 to $500.';
+    $('#supGo').disabled = !ok;
+    $('#supGo').textContent = ok ? `Continue with ${money(amt)}` : 'Continue';
+  };
+  o.querySelectorAll('[data-amt]').forEach(b => b.onclick = () => {
+    if (b.dataset.amt === 'custom') { $('#supCustom').hidden = false; $('#supIn').focus(); amt = Math.round(Number($('#supIn').value || 0) * 100); }
+    else { $('#supCustom').hidden = true; amt = Number(b.dataset.amt); }
+    draw();
+  });
+  $('#supIn').oninput = () => { amt = Math.round(Number($('#supIn').value || 0) * 100); draw(); };
+  draw();
+  const confirmPaid = async (sid, tries) => {
+    for (let i = 0; i < (tries || 8); i++) {
+      const j = await fetch(API + '/api/super/confirm', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ sid }) }).then(r => r.json()).catch(() => ({}));
+      if (j.ok) return true;
+      await new Promise(r => setTimeout(r, 1500));
+    }
+    return false;
+  };
+  $('#supGo').onclick = async () => {
+    if (busy) return; busy = true; $('#supGo').disabled = true; $('#supGo').textContent = 'One moment…';
+    const text = $('#supText').value.trim();
+    const j = await fetch(API + '/api/super/start', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: amt, text, room: room || 'main' }) }).then(r => r.json()).catch(() => ({ error: 'Could not reach the chat. Check your connection.' }));
+    busy = false;
+    if (!j.sid) { toast(j.error || 'Payment could not start.'); draw(); return; }
+    if (j.fake) { if (await confirmPaid(j.sid, 1)) { close(); toast('Super Chat sent. Thank you!'); } else { toast('Could not post it.'); draw(); } return; }
+    $('#supForm').hidden = true; $('#supPayWrap').hidden = false;
+    $('#supPayNote').textContent = `${money(amt)} Super Chat${text ? ': “' + text.slice(0, 80) + (text.length > 80 ? '…' : '') + '”' : ''}`;
+    $('#supPay').innerHTML = `<div style="padding:30px;display:flex;justify-content:center">${loaderHtml()}</div>`;
+    try {
+      const Stripe = await loadStripe();
+      const stripe = Stripe(j.publishableKey);
+      checkout = await stripe.initEmbeddedCheckout({ fetchClientSecret: async () => j.clientSecret, onComplete: async () => {
+        $('#supPayNote').textContent = 'Paid. Posting your Super Chat…';
+        const done = await confirmPaid(j.sid);
+        close();
+        toast(done ? 'Super Chat sent. Thank you!' : 'Paid. Your Super Chat will appear in a moment.');
+      } });
+      $('#supPay').innerHTML = '';
+      checkout.mount('#supPay');
+    } catch (e) { toast('The payment form did not load. Please try again.'); close(); }
+  };
+}
 
 function renderPinbar() {
   const bar = $('#pinbar'); if (!bar) return;
@@ -2893,6 +3038,14 @@ function msgHtml(m, i, list) {
   else if (textEnd) body = body.replace('\u0001', `<span class="mtsp" style="width:${(m.pinned ? 16 : 0) + (m.edited ? 44 : 0) + (vw ? 34 : 0) + 58}px"></span>`) + `<span class="mt abs">${metaIn}</span>`;
   else body += `<div class="mtrow"><span class="mt">${metaIn}</span></div>`;
   const av = last ? `<button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile" title="${esc(p.name)}">${avatar(m.uid, 36)}</button>` : '<span class="gap"></span>';
+  if (m.sup) {
+    const t = supTier(m.sup.a), host = S.me && S.me.role === 'host';
+    const by = m.sup.by ? person(m.sup.by).name || 'Chance' : '';
+    const thx = m.sup.th ? `<div class="supthx"><span class="h">♥</span>${mine ? `${esc(by)} thanked you` : `Thanked by ${esc(by)}`}</div>` : host ? `<button class="supthank" data-thank="${m.id}">♥ Thank ${esc(p.name)}</button>` : '';
+    const band = `<div class="supband"><div class="who"><button data-who="${esc(m.uid)}" title="View profile">${esc(p.name)}</button></div><span class="supkey">Super Chat</span><span class="supamt">${money(m.sup.a)}</span></div>`;
+    out += `<div class="row${mine ? ' me' : ''} first last" data-id="${m.id}"><button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile">${avatar(m.uid, 36)}</button><div class="stack"><div class="bub sup" data-press="${m.id}" style="--sc:${t[1]}">${band}<div class="supbody">${body}</div>${thx}${rx}</div></div></div>`;
+    return out;
+  }
   out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}${last ? ' last' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub${mentionedMe(m) ? ' mentioned' : ''}" data-press="${m.id}">${head}${body}${rx}</div></div></div>`;
   return out;
 }
@@ -3036,6 +3189,8 @@ document.addEventListener('click', e => {
   if (pl && pl.closest('#msgs,#thread')) { e.preventDefault(); playInline(pl); return; }
   const og = e.target.closest('[data-orig]');
   if (og && og.closest('#msgs,#thread')) { e.preventDefault(); sendWs({ t: 'thread', id: Number(og.dataset.orig) }); return; }
+  const th = e.target.closest('[data-thank]');
+  if (th && th.closest('#msgs,#thread')) { e.preventDefault(); th.disabled = true; sendWs({ t: 'thank', id: Number(th.dataset.thank) }); return; }
   const t = e.target.closest('[data-react],[data-replyto],[data-who],[data-goto],[data-zoom],[data-thread]');
   if (!t || !t.closest('#msgs,#thread')) return;
   if (t.dataset.react && Date.now() - (S.reactHeld || 0) < 700) return; // that tap was a press and hold
@@ -3447,7 +3602,7 @@ function openActions(id, x, y) {
     <button class="mi" data-a="reply">${I.reply()}Reply</button>
     ${savable && !inSaved ? `<button class="mi" data-a="save">${I.bookmark()}Save</button>` : ''}
     ${savable ? `<button class="mi" data-a="forward">${I.forward()}Forward</button>` : ''}
-    ${mine && !isJoin && !m.fwd && S.messages.some(x => x.id === id) ? `<button class="mi" data-a="edit">${I.edit()}Edit</button>` : ''}
+    ${mine && !isJoin && !m.fwd && !m.sup && S.messages.some(x => x.id === id) ? `<button class="mi" data-a="edit">${I.edit()}Edit</button>` : ''}
     ${m.text ? `<button class="mi" data-a="copy">${I.copy()}Copy</button>` : ''}
     ${!isJoin || m.replies ? `<button class="mi" data-a="thread">${threadIcon}View thread</button>` : ''}
     ${(mod || inSaved) && !isJoin ? `<button class="mi" data-a="pin">${I.pin()}${m.pinned ? 'Unpin' : 'Pin'}</button>` : ''}
