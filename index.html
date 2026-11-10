@@ -412,6 +412,8 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .unfurl .ue{font-size:10.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);line-height:1.2}
 .unfurl .ue.free{color:var(--lapis-lit)}
 .epfind{padding:4px 16px 10px}
+.seg.pkseg{margin:0 16px 8px}.seg.pkseg button{flex:1;height:38px}
+.eprow.songrow img,.eprow.songrow .sgph{width:58px;height:58px;border-radius:8px;object-fit:cover;flex:none;background:rgba(233,238,246,0.06)}.songrow .sgph{display:block}
 .epfind input{width:100%;box-sizing:border-box;background:rgba(10,15,28,0.55);border:1px solid rgba(233,238,246,0.2);border-radius:999px;color:var(--ink);font:inherit;font-size:15px;padding:10px 16px;outline:none}
 .epfind input:focus{border-color:var(--lapis-lit)}
 .eplist{max-height:min(60vh,520px);overflow-y:auto;overscroll-behavior:contain;padding:0 8px 12px;-webkit-overflow-scrolling:touch}
@@ -515,7 +517,7 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .compose{display:flex;align-items:flex-end;gap:8px;padding:10px 14px 12px;border-top:1px solid var(--line);background:var(--surface);flex:none}
 .compose .ibtn{color:var(--muted)}
 .field{flex:1;min-width:0;min-height:46px;max-height:160px;border-radius:14px;background:var(--card);border:1px solid var(--line);padding:12px 15px;font-size:15px;line-height:1.4;outline:none;resize:none}
-.field::placeholder{color:#8794AA}
+.field::placeholder{color:#8794AA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .send{width:46px;height:46px;border-radius:50%;background:var(--gold);color:var(--on-gold);display:flex;align-items:center;justify-content:center;flex:none}
 .send[disabled]{opacity:.45}
 .jump{position:absolute;right:18px;bottom:84px;width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid rgba(233,238,246,0.2);display:none;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(0,0,0,0.4)}
@@ -1651,9 +1653,9 @@ function unfurlHtml(e, kind, slug, tag) {
 // Chance: "if you paste a music link from the app into a chat, a music player embeds to the chat where you pasted it".
 // Inside the home-screen app the play button hands the song to the app's own player (lock screen, queue);
 // on the website the card plays it here with one shared audio element.
-let SONGS_P = null; const SONGS_BY = {};
+let SONGS_P = null; const SONGS_BY = {}, SONG_ORDER = {};
 function loadSongs() {
-  if (!SONGS_P) SONGS_P = fetch(SONGS_URL + 'songs.json', { cache: 'no-cache' }).then(r => r.json()).then(j => { (j.songs || []).forEach(x => { if (x && x.id) SONGS_BY[x.id] = x; }); }).catch(() => { SONGS_P = null; });
+  if (!SONGS_P) SONGS_P = fetch(SONGS_URL + 'songs.json', { cache: 'no-cache' }).then(r => r.json()).then(j => { (j.songs || []).forEach((x, i) => { if (x && x.id) { SONGS_BY[x.id] = x; SONG_ORDER[x.id] = i; } }); }).catch(() => { SONGS_P = null; });
   return SONGS_P || Promise.resolve();
 }
 const SP = { a: null, id: '', appId: '', appOn: false };
@@ -2737,8 +2739,8 @@ function renderChat() {
         <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
         ${S.superOn && !isSaved(S.room) ? `<button class="ibtn supbtn" id="supBtn" aria-label="Super Chat" title="Super Chat">${COIN(22)}</button>` : ''}
         <label class="sr" for="field">${isSaved(S.room) ? 'Write a note to yourself' : S.roomInfo.live ? 'Message the live room' : S.room ? 'Talk about this episode' : 'Message the Inner Circle'}</label>
-        <div class="fwrap"><textarea id="field" class="field" rows="1" maxlength="2000" placeholder="${isSaved(S.room) ? 'Note to yourself' : S.roomInfo.live ? 'Message the live room' : S.room ? 'Talk about this episode' : 'Message'}"></textarea>
-          <div class="fins"><button class="ibtn" id="epBtn" aria-label="Link an episode" title="Link an episode">${P('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',{s:21})}</button><button class="ibtn" id="emoBtn" aria-label="Emoji" title="Emoji">${P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',{s:21})}</button></div></div>
+        <div class="fwrap"><textarea id="field" class="field" rows="1" maxlength="2000" placeholder="${isSaved(S.room) ? 'Note to self' : 'Message'}"></textarea>
+          <div class="fins"><button class="ibtn" id="epBtn" aria-label="Share an episode or song" title="Share an episode or song">${P('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',{s:21})}</button><button class="ibtn" id="emoBtn" aria-label="Emoji" title="Emoji">${P('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><path d="M9 9.5h.01M15 9.5h.01"/>',{s:21})}</button></div></div>
         <button class="send" id="sendBtn" aria-label="Send">${I.up(21)}</button>
       </div>
       </div>
@@ -3398,7 +3400,7 @@ function wireComposer() {
       const ins = (pre && !/\s$/.test(pre) ? ' ' : '') + url + (post && !/^\s/.test(post) ? ' ' : '');
       f.value = pre + ins + post; f.selectionStart = f.selectionEnd = a + ins.length;
       f.dispatchEvent(new Event('input')); f.focus();
-    });
+    }, true);
   };
   $('#imgBtn').onclick = () => { if (S.editMsg) { toast('Finish editing first.'); return; } pickImage(); };
   f.addEventListener('paste', e => { const it = [...((e.clipboardData && e.clipboardData.files) || [])].find(x => /^image\//.test(x.type)); if (it && !S.editMsg) { e.preventDefault(); attachImage(it); } });
@@ -3439,27 +3441,55 @@ function rankEpisodes(list, q) {
     return { x, sc };
   }).filter(Boolean).sort((a, b) => b.sc - a.sc).map(r => r.x);
 }
-function pickEpisode(done) {
-  const o = overlay(`<div class="emohead"><span>Link an episode</span><button class="ibtn" id="epClose" aria-label="Close the episode list">${I.close()}</button></div>
-    <div class="epfind"><input type="search" id="epQ" placeholder="Search episodes, guests, subjects" aria-label="Search episodes" autocomplete="off" enterkeyhint="search"></div>
-    <div class="eplist" id="epList" role="list"><div class="eplmsg">Loading episodes...</div></div>`, true, 'Link an episode');
+function pickEpisode(done, withMusic) {
+  let mode = 'video'; if (withMusic) { try { mode = localStorage.getItem('ivc_pick_mode') === 'music' ? 'music' : 'video'; } catch (e) {} }
+  const o = overlay(`<div class="emohead"><span>${withMusic ? 'Share' : 'Link an episode'}</span><button class="ibtn" id="epClose" aria-label="Close the list">${I.close()}</button></div>
+    ${withMusic ? `<div class="seg pkseg" role="tablist" aria-label="What to share"><button type="button" role="tab" data-m="video">Video</button><button type="button" role="tab" data-m="music">Music</button></div>` : ''}
+    <div class="epfind"><input type="search" id="epQ" aria-label="Search" autocomplete="off" enterkeyhint="search"></div>
+    <div class="eplist" id="epList" role="list"><div class="eplmsg">Loading...</div></div>`, true, withMusic ? 'Share an episode or song' : 'Link an episode');
   o.querySelector('#epClose').onclick = () => closeOverlay();
   const q = o.querySelector('#epQ'), box = o.querySelector('#epList');
-  let all = [], shown = 60;
+  let all = [], songs = [], shown = 60, ready = false;
   const fmt = d => { if (!d) return ''; const t = new Date(d + 'T12:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); };
-  const draw = () => {
+  const drawVideo = () => {
     const hits = rankEpisodes(all, q.value.trim());
     if (!hits.length) { box.innerHTML = '<div class="eplmsg">No episodes match that.</div>'; return; }
     box.innerHTML = hits.slice(0, shown).map((x, i) => {
       const isPlus = x.kind === 'plus', meta = epMeta(x.e, isPlus);
       return `<button type="button" class="eprow" role="listitem" data-i="${i}"><img src="${esc(thumbAt(x.e.thumb, 300))}" alt="" loading="lazy">
-        <span class="epr"><span class="ue${isPlus ? '' : ' free'}">${isPlus ? 'Plus+' : 'Free'}${x.e.date ? ' · ' + esc(fmt(x.e.date)) : ''}</span><span class="ut">${esc(epTitle(x.e))}</span>${meta ? `<span class="um">${meta}</span>` : ''}</span></button>`;
+        <span class="epr"><span class="ue${isPlus ? '' : ' free'}">${isPlus ? 'Plus+' : 'Free'}${x.e.date ? ' \u00b7 ' + esc(fmt(x.e.date)) : ''}</span><span class="ut">${esc(epTitle(x.e))}</span>${meta ? `<span class="um">${meta}</span>` : ''}</span></button>`;
     }).join('') + (hits.length > shown ? '<button type="button" class="btn2 sm epmore" id="epMore">Show more</button>' : '');
     box.querySelectorAll('.eprow').forEach(b => b.onclick = () => { const x = hits[Number(b.dataset.i)]; closeOverlay(); done(x.e.url || (SITE + '/' + x.kind + '/' + x.slug)); });
     const more = box.querySelector('#epMore'); if (more) more.onclick = () => { shown += 60; draw(); };
   };
+  const drawMusic = () => {
+    const words = q.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const hits = songs.filter(x => { const h = (x.title + ' ' + (x.episodeTitle || '')).toLowerCase(); return words.every(w => h.includes(w)); });
+    if (!hits.length) { box.innerHTML = '<div class="eplmsg">No songs match that.</div>'; return; }
+    box.innerHTML = hits.slice(0, shown).map((x, i) => {
+      const a = songArt(x);
+      return `<button type="button" class="eprow songrow" role="listitem" data-i="${i}">${a ? `<img src="${esc(a)}" alt="" loading="lazy">` : '<span class="sgph"></span>'}
+        <span class="epr"><span class="ue">Music</span><span class="ut">${esc(x.title)}</span><span class="um">${esc(x.episodeTitle || '')}</span></span></button>`;
+    }).join('') + (hits.length > shown ? '<button type="button" class="btn2 sm epmore" id="epMore">Show more</button>' : '');
+    box.querySelectorAll('.eprow').forEach(b => b.onclick = () => { const x = hits[Number(b.dataset.i)]; closeOverlay(); done(SONGS_URL + x.id + '/'); });
+    const more = box.querySelector('#epMore'); if (more) more.onclick = () => { shown += 60; draw(); };
+  };
+  const draw = () => { if (!ready) return; if (mode === 'music') drawMusic(); else drawVideo(); };
+  const setMode = m => {
+    mode = m; shown = 60; box.scrollTop = 0;
+    if (withMusic) { try { localStorage.setItem('ivc_pick_mode', m); } catch (e) {} }
+    o.querySelectorAll('.pkseg button').forEach(b => { const on = b.dataset.m === m; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    q.placeholder = m === 'music' ? 'Search songs and episodes' : 'Search episodes, guests, subjects';
+    draw();
+  };
+  o.querySelectorAll('.pkseg button').forEach(b => b.onclick = () => setMode(b.dataset.m));
   let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { shown = 60; box.scrollTop = 0; draw(); }, 120); });
-  loadIndexes().then(ix => { all = episodeList(ix); draw(); }).catch(() => { box.innerHTML = '<div class="eplmsg">The episode list could not load. Check your connection.</div>'; });
+  setMode(mode);
+  Promise.all([loadIndexes(), withMusic ? loadSongs() : Promise.resolve()]).then(([ix]) => {
+    all = episodeList(ix);
+    if (withMusic) songs = Object.values(SONGS_BY).sort((a, b) => (SONG_ORDER[a.id] ?? 1e9) - (SONG_ORDER[b.id] ?? 1e9));
+    ready = true; draw();
+  }).catch(() => { box.innerHTML = '<div class="eplmsg">The list could not load. Check your connection.</div>'; });
   if (matchMedia('(hover: hover)').matches) setTimeout(() => q.focus(), 50);
 }
 
