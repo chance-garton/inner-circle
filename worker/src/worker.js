@@ -1487,10 +1487,10 @@ export class Room {
 
   // ---- Super Chat
   superOn() { return !!this.env.STRIPE_SECRET_KEY || this.env.DEV_AUTH === '1'; }
+  // Every Super Chat in the room stays in the row, newest first (Chance, 2026-11-10: no timer).
   supersFor(room) {
-    const now = Date.now();
-    return this.shapeAll(this.all("SELECT * FROM messages WHERE room = ? AND deleted = 0 AND sup != '' AND created > ? ORDER BY id DESC LIMIT 20", room || '', now - 61 * 60 * 1000))
-      .filter(m => m.sup && m.sup.until > now);
+    return this.shapeAll(this.all("SELECT * FROM messages WHERE room = ? AND deleted = 0 AND sup != '' ORDER BY id DESC LIMIT 60", room || ''))
+      .filter(m => m.sup);
   }
   async superStart({ uid, email, body, web, ip }) {
     let me = uid ? this.member(uid) : null;
