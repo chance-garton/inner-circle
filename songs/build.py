@@ -17,6 +17,7 @@ import html, io, json, os, shutil, sys, urllib.request
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 BASE = 'https://circle.innerversepodcast.com/songs/'
+AUDIO = 'https://audio.innerversepodcast.com/songs/'  # the mp3s live in the innerverse-audio R2 bucket (2026-11-10), not in this repo
 SITE = 'https://www.innerversepodcast.com'
 INDEX = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/refs/heads/main/episodes-index.json'
 
@@ -196,7 +197,7 @@ def main():
         page = PAGE.format(
             title=html.escape(s['title']), id=html.escape(sid),
             desc=html.escape(f'An original InnerVerse song from the episode {ep_title}.'),
-            url=f'{BASE}{sid}/', art=html.escape(art), art_img=img_tag(art, 750, 'art', 'Art for ' + s['title']), logo=LOGO, audio=f'{BASE}{html.escape(s["file"])}',
+            url=f'{BASE}{sid}/', art=html.escape(art), art_img=img_tag(art, 750, 'art', 'Art for ' + s['title']), logo=LOGO, audio=f'{AUDIO}{html.escape(s["file"])}',
             ep_title=html.escape(ep_title), ep_url=f'{SITE}/episodes/{html.escape(s["episode"])}',
             length=f' · {clock(s["seconds"])}' if s.get('seconds') else '', more=more, site=SITE)
         os.makedirs(os.path.join(ROOT, sid), exist_ok=True)

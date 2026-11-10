@@ -1024,6 +1024,7 @@ const epUrl = ep => `${SITE}/${ep.kind}/${ep.slug}`;
 // an InnerVerse Music link (the share page circle.../songs/<id>/ or the app's #/songs/<id>) plays right in the chat (Chance, 2026-10-24)
 const SONG_RE = /circle\.innerversepodcast\.com\/(?:app\/?#\/)?songs\/([a-z0-9-]+)/i;
 const SONGS_URL = 'https://circle.innerversepodcast.com/songs/';
+const SONG_AUDIO = 'https://audio.innerversepodcast.com/songs/'; // the song mp3s live in R2 since 2026-11-10
 function songStrip(text) { return String(text || '').replace(/(?:https?:\/\/)?circle\.innerversepodcast\.com\/(?:app\/?#\/)?songs\/[a-z0-9-]+\/?/gi, '').trim(); }
 function songFrom(text) { const m = String(text || '').match(SONG_RE); return m ? m[1].toLowerCase() : ''; }
 function secs(h, m, s) { return (Number(h) || 0) * 3600 + Number(m) * 60 + Number(s); }
@@ -1687,7 +1688,7 @@ function songToggle(id) {
     SP.a.addEventListener('ended', () => { SP.a.currentTime = 0; songCardsSync(); });
   }
   if (SP.id === id) { SP.a.paused ? SP.a.play().catch(() => {}) : SP.a.pause(); return; }
-  SP.id = id; SP.a.src = SONGS_URL + x.file; SP.a.play().catch(() => {});
+  SP.id = id; SP.a.src = SONG_AUDIO + x.file; SP.a.play().catch(() => {});
   try { if (typeof PL !== 'undefined' && PL.playing) PL.mode === 'audio' ? PL.audio.pause() : PL.vid && PL.vid.pause(); } catch (e) {}
   document.querySelectorAll('.sng .sbar input').forEach(r => { if (r.closest('.sng').dataset.sc !== id) { r.value = 0; r.parentNode.querySelector('.scur').textContent = '0:00'; } });
 }

@@ -708,12 +708,13 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-11-07d';
+const VERSION = '2026-11-10a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
 const SITE = 'https://www.innerversepodcast.com';
-const SONGS = location.origin + '/songs/'; // the episode songs: songs.json plus one mp3 per song, public, in this repo
+const SONGS = location.origin + '/songs/'; // the episode songs: songs.json, share pages and covers, public, in this repo
+const SONG_AUDIO = 'https://audio.innerversepodcast.com/songs/'; // the song mp3s, in the innerverse-audio R2 bucket since 2026-11-10 (off GitHub Pages)
 const TOKEN_KEY = 'ivc_token'; // shared with the Inner Circle page on this address
 const LOGO = 'https://images.innerversepodcast.com/sq/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-electric-logo-2026/w300.webp';
 const PLUS_LOGO = 'https://images.innerversepodcast.com/sq/c3607ade-e087-4b27-af0f-e0913f4dc3d0/plus-asset/w300.webp';
@@ -1020,7 +1021,7 @@ function playSong(s) {
   if (cur && cur.key === 's:' + s.id && aud.src && !isSilent()) { togglePlay(); return; }
   unlockAudio();
   playEpisode({ key: 's:' + s.id, kind: 's', slug: s.episode, title: s.title, show: songEpTitle(s),
-    thumb: songArtUrl(s, 500), chapters: [], plus: false, offset: 0, audio: { url: SONGS + s.file } }, 0);
+    thumb: songArtUrl(s, 500), chapters: [], plus: false, offset: 0, audio: { url: SONG_AUDIO + s.file } }, 0);
 }
 // one song ends: the next one on the list starts, like a playlist
 // Shuffle (Chance, 2026-10-19): a shuffled order of every song, kept until shuffle is turned off;
