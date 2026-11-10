@@ -3,3 +3,6 @@ worker/node_modules/
 worker/.wrangler/
 worker/package.json
 worker/package-lock.json
+
+# song mp3s live in R2 (audio.innerversepodcast.com/songs/) since 2026-11-10; new ones go in songs/incoming/ and the Songs to R2 workflow moves them
+songs/*.mp3
