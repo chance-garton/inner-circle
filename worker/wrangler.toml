@@ -1,6 +1,8 @@
 name = "innerverse-circle"
 main = "src/worker.js"
 compatibility_date = "2024-11-01"
+# Keep the variables set in the dashboard (HOST_EMAILS, MOD_EMAILS) on a wrangler deploy.
+keep_vars = true
 
 # The app page is bundled into the Worker as plain text.
 rules = [{ type = "Text", globs = ["**/*.html"], fallthrough = true }]
@@ -8,10 +10,8 @@ rules = [{ type = "Text", globs = ["**/*.html"], fallthrough = true }]
 [vars]
 # The existing members' Worker that issues and checks Plus+ sessions.
 AUTH_URL = "https://innerverse-plus.chance-5da.workers.dev"
-# Accounts that get the Host role (comma separated, lower case).
-HOST_EMAILS = "chance@innerversepodcast.com,chancegarton@gmail.com"
-# Moderators set by email when they log in (Chance, 2026-10-08: Jennifer Garton).
-MOD_EMAILS = "jenngarton77@gmail.com"
+# HOST_EMAILS and MOD_EMAILS (who gets the Host and moderator roles, comma separated, lower case)
+# are set in the Worker's settings in the Cloudflare dashboard, not here.
 # Local testing only: lets "dev." tokens sign in. Must stay "0" when deployed.
 DEV_AUTH = "0"
 # Sites allowed to talk to this Worker (the page lives on GitHub Pages).
