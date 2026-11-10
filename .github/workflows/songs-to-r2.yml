@@ -1,0 +1,77 @@
+# Puts InnerVerse Music mp3s in the innerverse-audio R2 bucket (public at https://audio.innerversepodcast.com/songs/)
+# so the songs never weigh down this GitHub Pages site again.
+#
+# New songs: commit them to songs/incoming/ together with their songs.json entries. This runs on that push,
+# uploads and checks each file, then removes it from the repo (it stays in git history only).
+# Manual run (Actions tab): source "incoming" or "existing" (songs/*.mp3, used once for the 2026-11-10 move);
+# replace "yes" only to swap in a corrected file under a name already in the bucket.
+#
+# Secrets (added by Chance, the same values the innerverse-site repo uses): R2_ACCOUNT_ID,
+# R2_AUDIO_ACCESS_KEY_ID, R2_AUDIO_SECRET_ACCESS_KEY.
+name: Songs to R2
+
+on:
+  push:
+    branches: [main]
+    paths: ['songs/incoming/**']
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'incoming (songs/incoming) or existing (songs/*.mp3)'
+        required: true
+        default: incoming
+      replace:
+        description: 'yes only to replace a file already in the bucket at a different size'
+        required: false
+        default: 'no'
+
+concurrency:
+  group: songs-to-r2
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install boto3
+        run: pip install -q boto3
+
+      - name: Upload and check
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_AUDIO_ACCESS_KEY_ID: ${{ secrets.R2_AUDIO_ACCESS_KEY_ID }}
+          R2_AUDIO_SECRET_ACCESS_KEY: ${{ secrets.R2_AUDIO_SECRET_ACCESS_KEY }}
+          REPLACE: ${{ inputs.replace }}
+        run: python3 songs/upload_r2.py "${{ inputs.source || 'incoming' }}"
+
+      - name: Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: songs-r2-report
+          path: songs-r2-report.json
+          if-no-files-found: ignore
+
+      # only after every file uploaded and checked (a failure above stops the job before this)
+      - name: Remove the uploaded songs from the repo
+        if: ${{ (inputs.source || 'incoming') == 'incoming' }}
+        run: |
+          shopt -s nullglob
+          files=(songs/incoming/*.mp3)
+          if [ ${#files[@]} -eq 0 ]; then echo "nothing to remove"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+          git rm -q "${files[@]}"
+          git commit -q -m "Songs: moved ${#files[@]} mp3(s) to R2 (audio.innerversepodcast.com/songs/)"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          exit 1
