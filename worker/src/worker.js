@@ -931,10 +931,15 @@ export class Room {
       } else {
         this.sql.exec('UPDATE members SET email = ?, source = ? WHERE uid = ?', who.email, who.source, who.uid);
       }
-      if (hosts.includes(who.email)) this.sql.exec("UPDATE members SET role = 'host' WHERE uid = ?", who.uid);
+      // Roles follow the email, so they are only given on a Plus+ (Memberful) sign-in, where the email is
+      // confirmed by the emailed link or code; a Patreon sign-in reports an email the patron typed (2026-11-10).
+      const trusted = who.source === 'memberful';
+      if (trusted && hosts.includes(who.email)) this.sql.exec("UPDATE members SET role = 'host' WHERE uid = ?", who.uid);
+      // The Host identity cannot be entered through any other door.
+      if (!trusted && (hosts.includes(who.email) || (m && m.role === 'host'))) { this.send(ws, { t: 'denied', why: 'signed-out' }); return ws.close(4003, 'signed out'); }
       // people named in MOD_EMAILS become moderators on login (take them off the list to revoke for good)
       const mods = String(this.env.MOD_EMAILS || '').toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
-      if (mods.includes(who.email) && !hosts.includes(who.email)) this.sql.exec("UPDATE members SET role = 'mod' WHERE uid = ? AND role = 'member'", who.uid);
+      if (trusted && mods.includes(who.email) && !hosts.includes(who.email)) this.sql.exec("UPDATE members SET role = 'mod' WHERE uid = ? AND role = 'member'", who.uid);
       m = this.member(who.uid);
       if (m.banned) { this.send(ws, { t: 'denied', why: 'removed' }); return ws.close(4003, 'removed'); }
       const rk = (msg.room ? await this.roomKey(msg.room, who.uid) : null) || { key: '' };
@@ -1056,9 +1061,13 @@ export class Room {
       }
 
       case 'pin': {
-        if (!this.isMod(me) && !isPrivate(att.room || '')) return;
-        if (!this.canSee(this.one('SELECT room FROM messages WHERE id = ?', msg.id), me.uid)) return;
-        if (!isPrivate(att.room || '')) { const pr = this.one('SELECT uid, pinned FROM messages WHERE id = ? AND deleted = 0', msg.id); if (pr && !!pr.pinned !== !!msg.on) this.log(me.uid, msg.on ? 'pin' : 'unpin', pr.uid, msg.id, {}); }
+        // Pinning follows the room the MESSAGE is in, not the room this screen is in (2026-11-10): a member may
+        // pin inside their own Saved messages only; everywhere else it takes a moderator, and it is logged.
+        const prow = this.one('SELECT room FROM messages WHERE id = ?', msg.id);
+        if (!this.canSee(prow, me.uid)) return;
+        const ownSaved = isPrivate(prow.room || ''); // canSee has already shown it is this member's own
+        if (!this.isMod(me) && !ownSaved) return;
+        if (!ownSaved) { const pr = this.one('SELECT uid, pinned FROM messages WHERE id = ? AND deleted = 0', msg.id); if (pr && !!pr.pinned !== !!msg.on) this.log(me.uid, msg.on ? 'pin' : 'unpin', pr.uid, msg.id, {}); }
         this.sql.exec('UPDATE messages SET pinned = ? WHERE id = ? AND deleted = 0', msg.on ? 1 : 0, msg.id);
         const row = this.one('SELECT * FROM messages WHERE id = ?', msg.id);
         if (!row) return;
