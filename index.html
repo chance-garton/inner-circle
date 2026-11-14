@@ -438,6 +438,25 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .attach .ax{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;background:rgba(10,15,28,0.8);color:var(--ink);display:flex;align-items:center;justify-content:center}
 .attach .ast{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,15,28,0.55);font-size:11px;font-weight:700;color:var(--ink);text-align:center;padding:4px}
 .attachnote{font-size:13px;color:var(--muted);line-height:1.4}
+/* photo albums (2026-11-14, Chance: several photos in one message, laid out compact like Telegram) */
+.attachbar.multi{flex-direction:column;align-items:stretch;gap:6px}
+.attrow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.attrow::-webkit-scrollbar{display:none}
+.attachbar.multi .attach{width:64px;height:64px}
+.attadd{width:64px;height:64px;flex:none;border-radius:10px;border:1.5px dashed rgba(216,170,60,0.55);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:26px;line-height:1}
+.alb{position:relative;width:300px;max-width:100%;margin-top:4px;border-radius:12px;overflow:hidden}
+.alb img{position:absolute;display:block;object-fit:cover;cursor:zoom-in;background:rgba(233,238,246,0.06);border-radius:3px}
+.bub .alb + .txt{margin-top:6px}
+.bub.hasalb{padding:3px 3px 7px}
+.bub.hasalb > :not(.alb){margin-left:9px;margin-right:9px}
+.bub.hasalb > .alb{margin-top:0;border-radius:15px}
+.bub.hasalb > :not(.alb) + .alb{margin-top:5px}
+.attrow::after{content:"";flex:none;width:6px}
+@media (min-width:861px){.alb{width:340px}}
+.lbnav{position:fixed;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(10,15,28,0.7);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:24px;z-index:21}
+.lbnav.prev{left:12px}.lbnav.next{right:12px}
+.lbcount{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);font-size:13px;font-weight:700;color:var(--ink);background:rgba(10,15,28,0.7);padding:4px 12px;border-radius:999px;z-index:21}
+@media (hover:none){.lbnav{display:none}}
 .joined{align-self:center;display:flex;align-items:center;gap:7px;margin:10px 0;padding:5px 14px 5px 6px;border-radius:999px;background:rgba(216,170,60,0.09);border:1px solid rgba(216,170,60,0.3);font-size:13.5px;color:var(--muted);flex-wrap:wrap;justify-content:center}
 .joined button{display:inline-flex;align-items:center;gap:7px;color:var(--gold)}
 .joined .time{margin-left:4px}
@@ -777,7 +796,7 @@ button.tchip{cursor:pointer;font:inherit;font-weight:700;font-size:12.5px;backgr
 </head>
 <body>
 <div id="app"></div>
-<input type="file" id="filepick" accept="image/png,image/jpeg,image/gif,image/webp" class="sr" tabindex="-1" aria-hidden="true">
+<input type="file" id="filepick" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="sr" tabindex="-1" aria-hidden="true">
 <script>
 (function(){
 'use strict';
@@ -2169,7 +2188,7 @@ const CLOCK_ICON = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" 
 function pendHtml() {
   return S.pending.filter(p => (p.o.room || '') === S.room).map(p => {
     const t = p.o.text || '';
-    return `<div class="row me first pend" data-cid="${esc(p.cid)}"><span class="gap"></span><div class="stack"><div class="bub">${t ? `<div class="txt">${esc(t)}</div>` : ''}${p.o.image ? '<div class="txt">\u{1F4F7} Photo</div>' : ''}${p.failed ? `<button class="pst fail" data-retry="${esc(p.cid)}">Not sent yet. Tap to try again</button>` : `<span class="pst">${CLOCK_ICON} Sending\u2026</span>`}</div></div></div>`;
+    return `<div class="row me first pend" data-cid="${esc(p.cid)}"><span class="gap"></span><div class="stack"><div class="bub">${t ? `<div class="txt">${esc(t)}</div>` : ''}${p.o.image ? `<div class="txt">\u{1F4F7} ${p.o.images ? p.o.images.length + ' photos' : 'Photo'}</div>` : ''}${p.failed ? `<button class="pst fail" data-retry="${esc(p.cid)}">Not sent yet. Tap to try again</button>` : `<span class="pst">${CLOCK_ICON} Sending\u2026</span>`}</div></div></div>`;
   }).join('');
 }
 function renderPending(toBottom) {
@@ -3036,7 +3055,8 @@ function msgHtml(m, i, list) {
       const rk = m.reply.kind || ((findMsg(m.reply.id) || {}).kind);
       body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b><span class="qt">${m.reply.deleted ? 'Message deleted' : rk === 'join' ? 'joined the chat' : esc((m.reply.text || (m.reply.image ? 'Photo' : '')).replace(/\s+/g, ' ').slice(0, 200))}</span></button>`;
     }
-    if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
+    if (m.images && m.images.length > 1) body += albumHtml(m.images, p.name);
+    else if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
     // a song link shows only its player: the link text and any link preview are left out (Chance, 2026-10-24: "it needs only do the player itself")
     const sid = m.text && !epFrom(m.text) ? songFrom(m.text) : '';
     const shownText = sid ? songStrip(m.text) : m.text;
@@ -3062,7 +3082,7 @@ function msgHtml(m, i, list) {
     out += `<div class="row${mine ? ' me' : ''} first last" data-id="${m.id}">${visitor ? supAv(36) : `<button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile">${avatar(m.uid, 36)}</button>`}<div class="stack"><div class="bub sup" data-press="${m.id}" style="--sc:${t[1]}">${band}${from}<div class="supbody">${body}</div>${thx}${rx}</div></div></div>`;
     return out;
   }
-  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}${last ? ' last' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub${mentionedMe(m) ? ' mentioned' : ''}" data-press="${m.id}">${head}${body}${rx}</div></div></div>`;
+  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}${last ? ' last' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub${mentionedMe(m) ? ' mentioned' : ''}${m.images && m.images.length > 1 ? ' hasalb' : ''}" data-press="${m.id}">${head}${body}${rx}</div></div></div>`;
   return out;
 }
 
@@ -3220,7 +3240,7 @@ document.addEventListener('click', e => {
     if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); }
     else sendWs({ t: 'thread', id: Number(t.dataset.goto) });
   }
-  else if (t.dataset.zoom && t.src) openLightbox(t.src);
+  else if (t.dataset.zoom && t.src) { const al = t.closest('.alb'); if (al) { const ims = [...al.querySelectorAll('img')]; openLightbox(ims.map(x => x.src || ''), ims.indexOf(t), ims.map(x => x.dataset.key || '')); } else openLightbox(t.src); }
 });
 // right-click on a computer, press and hold on a phone: the message menu
 document.addEventListener('contextmenu', e => {
@@ -3410,7 +3430,7 @@ function wireComposer() {
     }, true);
   };
   $('#imgBtn').onclick = () => { if (S.editMsg) { toast('Finish editing first.'); return; } pickImage(); };
-  f.addEventListener('paste', e => { const it = [...((e.clipboardData && e.clipboardData.files) || [])].find(x => /^image\//.test(x.type)); if (it && !S.editMsg) { e.preventDefault(); attachImage(it); } });
+  f.addEventListener('paste', e => { const its = [...((e.clipboardData && e.clipboardData.files) || [])].filter(x => /^image\//.test(x.type)); if (its.length && !S.editMsg) { e.preventDefault(); attachImages(its); } });
   renderAttach();
   function send() {
     const text = f.value.trim();
@@ -3420,12 +3440,15 @@ function wireComposer() {
       if (sendWs({ t: 'edit', id: S.editMsg, text, mentions: findMentions(text), nopreview: (clientLink(text) && S.lpOff === clientLink(text)) || songFrom(text) ? true : undefined })) { S.editMsg = null; f.value = S.editDraft || ''; S.editDraft = ''; grow(); renderReply(); }
       return;
     }
-    const at = S.attach;
-    if (at && !at.key) { toast(at.failed ? 'That image did not upload. Remove it or pick it again.' : 'The image is still uploading. One moment.'); if (!at.failed) at.sendWhenReady = true; return; }
-    if (!text && !at) return;
+    const ats = S.attach || [];
+    const bad = ats.find(a => a.failed);
+    if (bad) { toast(ats.length > 1 ? 'One image did not upload. Remove it or pick it again.' : 'That image did not upload. Remove it or pick it again.'); return; }
+    if (ats.some(a => !a.key || !a.w)) { toast(ats.length > 1 ? 'The images are still uploading. One moment.' : 'The image is still uploading. One moment.'); S.attachSend = true; return; }
+    if (!text && !ats.length) return;
     const lk = clientLink(text);
-    queueSend({ text, image: at ? at.key : undefined, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: at || (lk && S.lpOff === lk) || /circle\.innerversepodcast\.com\/(?:app|songs)/i.test(text) ? true : undefined });
-    if (at) clearAttach();
+    const images = ats.length > 1 ? ats.map(a => ({ k: a.key, w: a.w || 1, h: a.h || 1 })) : undefined;
+    queueSend({ text, image: ats.length ? ats[0].key : undefined, images, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: ats.length || (lk && S.lpOff === lk) || /circle\.innerversepodcast\.com\/(?:app|songs)/i.test(text) ? true : undefined });
+    if (ats.length) clearAttach();
     f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); S.lpOff = ''; linkPreview(''); tsBar('');
   }
 }
@@ -3505,29 +3528,53 @@ function pickEpisode(done, withMusic) {
 function pickImage() {
   const input = $('#filepick');
   input.value = '';
-  input.onchange = () => { const file = input.files && input.files[0]; if (file) attachImage(file); };
+  input.onchange = () => { const files = input.files ? [...input.files] : []; if (files.length) attachImages(files); };
   input.click();
 }
-function attachImage(file) {
-  if (!/^image\/(png|jpeg|gif|webp)$/.test(file.type)) { toast('Images only (png, jpg, gif or webp).'); return; }
-  if (file.size > 8 * 1024 * 1024) { toast('That image is over 8 MB.'); return; }
-  clearAttach();
-  const at = { url: URL.createObjectURL(file), key: '', failed: false, sendWhenReady: false };
-  S.attach = at; renderAttach();
-  fetch(API + '/api/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': file.type }, body: file })
-    .then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Upload failed'); return j.key; })
-    .then(key => { if (S.attach !== at) return; at.key = key; renderAttach(); if (at.sendWhenReady) { const b = $('#sendBtn'); b && b.click(); } })
-    .catch(e => { if (S.attach !== at) return; at.failed = true; renderAttach(); toast(e.message || 'Upload failed'); });
+// several images go out as one album (2026-11-14, Chance: "multiple in one message ... like telegram does"); up to 10
+const ALBUM_MAX = 10;
+function attachImages(files) {
+  S.attach = S.attach || [];
+  let room = ALBUM_MAX - S.attach.length, skipped = 0;
+  for (const file of files) {
+    if (!/^image\/(png|jpeg|gif|webp)$/.test(file.type)) { toast('Images only (png, jpg, gif or webp).'); continue; }
+    if (file.size > 8 * 1024 * 1024) { toast('An image over 8 MB was left out.'); continue; }
+    if (room <= 0) { skipped++; continue; }
+    room--; attachImage(file);
+  }
+  if (skipped) toast(`Up to ${ALBUM_MAX} images in one message.`);
   const fld = $('#field'); fld && fld.focus();
 }
-function clearAttach() { if (S.attach) { try { URL.revokeObjectURL(S.attach.url); } catch (e) {} } S.attach = null; renderAttach(); }
+function attachImage(file) {
+  const at = { url: URL.createObjectURL(file), key: '', failed: false, w: 0, h: 0 };
+  S.attach = S.attach || []; S.attach.push(at); renderAttach();
+  const im = new Image(); im.onload = () => { at.w = im.naturalWidth || 1; at.h = im.naturalHeight || 1; attachMaybeSend(); }; im.onerror = () => { at.w = at.h = 1; attachMaybeSend(); }; im.src = at.url;
+  fetch(API + '/api/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': file.type }, body: file })
+    .then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Upload failed'); return j.key; })
+    .then(key => { if (!(S.attach || []).includes(at)) return; at.key = key; renderAttach(); attachMaybeSend(); })
+    .catch(e => { if (!(S.attach || []).includes(at)) return; at.failed = true; S.attachSend = false; renderAttach(); toast(e.message || 'Upload failed'); });
+}
+function attachMaybeSend() {
+  const l = S.attach || [];
+  if (S.attachSend && l.length && l.every(a => a.key && a.w)) { S.attachSend = false; const b = $('#sendBtn'); b && b.click(); }
+}
+function removeAttach(at) { try { URL.revokeObjectURL(at.url); } catch (e) {} S.attach = (S.attach || []).filter(a => a !== at); if (!S.attach.length) S.attach = null; renderAttach(); attachMaybeSend(); }
+function clearAttach() { for (const a of S.attach || []) { try { URL.revokeObjectURL(a.url); } catch (e) {} } S.attach = null; S.attachSend = false; renderAttach(); }
 function renderAttach() {
   const box = $('#attachbar'); if (!box) return;
-  const at = S.attach;
-  if (!at) { box.innerHTML = ''; box.className = ''; return; }
-  box.className = 'attachbar';
-  box.innerHTML = `<div class="attach"><img src="${esc(at.url)}" alt="Image to send">${at.key ? '' : `<span class="ast">${at.failed ? 'Not uploaded' : 'Uploading\u2026'}</span>`}<button class="ax" id="attachX" aria-label="Remove the image">${I.close(14)}</button></div><span class="attachnote">${at.failed ? 'Upload failed. Remove it and try again.' : 'Add a message if you like, then send.'}</span>`;
-  $('#attachX').onclick = () => clearAttach();
+  const l = S.attach || [];
+  if (!l.length) { box.innerHTML = ''; box.className = ''; return; }
+  const one = a => `<div class="attach"><img src="${esc(a.url)}" alt="Image to send">${a.key ? '' : `<span class="ast">${a.failed ? 'Not uploaded' : 'Uploading…'}</span>`}<button class="ax" aria-label="Remove the image">${I.close(14)}</button></div>`;
+  const failed = l.some(a => a.failed);
+  if (l.length === 1) {
+    box.className = 'attachbar';
+    box.innerHTML = `${one(l[0])}<span class="attachnote">${failed ? 'Upload failed. Remove it and try again.' : 'Add a message if you like, then send. Tap the image button to add more.'}</span>`;
+  } else {
+    box.className = 'attachbar multi';
+    box.innerHTML = `<div class="attrow">${l.map(one).join('')}${l.length < ALBUM_MAX ? '<button class="attadd" aria-label="Add more images">+</button>' : ''}</div><span class="attachnote">${failed ? 'One upload failed. Remove it and try again.' : `${l.length} photos, sent as one message.`}</span>`;
+    const add = box.querySelector('.attadd'); if (add) add.onclick = () => pickImage();
+  }
+  box.querySelectorAll('.ax').forEach((b, i) => { b.onclick = () => removeAttach(l[i]); });
   stickDown();
 }
 
@@ -3838,9 +3885,67 @@ function showReports(m) {
   o.querySelectorAll('[data-rok]').forEach(b => b.onclick = () => { sendWs({ t: 'resolve', id: Number(b.dataset.rok) }); b.closest('div[style]').remove(); });
 }
 
-function openLightbox(src) {
+// one image, or an album to page through: arrows on a computer, a sideways swipe on a phone
+function openLightbox(src, at, keys) {
+  const list = Array.isArray(src) ? src : [src];
+  let i = Math.max(0, at || 0);
   const s = document.createElement('div'); s.className = 'scrim lightbox'; s.id = 'ovl';
-  s.innerHTML = `<img src="${esc(src)}" alt="">`; s.onclick = closeOverlay; closeOverlay(); document.body.appendChild(s);
+  const many = list.length > 1;
+  s.innerHTML = `<img alt="">${many ? '<span class="lbcount"></span><button class="lbnav prev" aria-label="Previous photo">‹</button><button class="lbnav next" aria-label="Next photo">›</button>' : ''}`;
+  const img = s.querySelector('img');
+  const show = () => {
+    const u = list[i];
+    if (u) img.src = u;
+    else if (keys && keys[i]) { const p = mediaCache.get(keys[i]); if (p) p.then(x => { img.src = x; }); }
+    if (many) s.querySelector('.lbcount').textContent = `${i + 1} of ${list.length}`;
+  };
+  const go = d => { i = (i + d + list.length) % list.length; show(); };
+  const key = e => { if (!document.body.contains(s)) { document.removeEventListener('keydown', key); return; } if (e.key === 'ArrowRight') go(1); else if (e.key === 'ArrowLeft') go(-1); };
+  s.onclick = e => { const n = e.target.closest('.lbnav'); if (n) { e.stopPropagation(); go(n.classList.contains('next') ? 1 : -1); return; } closeOverlay(); };
+  if (many) {
+    document.addEventListener('keydown', key);
+    let x0 = null, y0 = 0, moved = false;
+    s.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; moved = false; }, { passive: true });
+    s.addEventListener('touchmove', e => { if (x0 != null && Math.abs(e.touches[0].clientX - x0) > 12) moved = true; }, { passive: true });
+    s.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null; if (moved && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { e.preventDefault(); go(dx < 0 ? 1 : -1); } });
+  }
+  closeOverlay(); document.body.appendChild(s); show();
+}
+
+// the album mosaic: rows fitted to the photos' shapes, a tall first photo beside two when there are three
+function albumLayout(items) {
+  const G = 0.008, n = items.length;
+  const r = items.map(x => Math.min(2.4, Math.max(0.5, (x.w || 1) / (x.h || 1))));
+  if (n === 3 && r[0] < 0.9) {
+    const S2 = 1 / r[1] + 1 / r[2];
+    const wL = Math.min(0.66, ((1 - G) * S2 + G) / (1 / r[0] + S2)), wR = 1 - G - wL;
+    const H = Math.min(wL / r[0], 1.15), h1 = Math.max(0.2, Math.min(H - G - 0.2, (H - G) * (1 / r[1]) / S2));
+    return { H, cells: [{ x: 0, y: 0, w: wL, h: H }, { x: wL + G, y: 0, w: wR, h: h1 }, { x: wL + G, y: h1 + G, w: wR, h: H - h1 - G }] };
+  }
+  // best split into rows of 1 to 4 photos, each row aiming at a pleasant height
+  const T = n <= 2 ? 0.62 : n <= 4 ? 0.5 : 0.36, rowH = (a, b) => { let sr = 0; for (let k = a; k < b; k++) sr += r[k]; return (1 - G * (b - a - 1)) / sr; };
+  const best = [0], from = [0];
+  for (let j = 1; j <= n; j++) {
+    best[j] = Infinity;
+    for (let k = Math.max(0, j - 4); k < j; k++) {
+      const h = rowH(k, j), single = j - k === 1 && n > 2;
+      const c = best[k] + (h - T) * (h - T) + (single ? 0.08 : 0) + (h > 0.9 ? 1 : 0);
+      if (c < best[j]) { best[j] = c; from[j] = k; }
+    }
+  }
+  const rows = []; for (let j = n; j > 0; j = from[j]) rows.unshift([from[j], j]);
+  const cells = []; let y = 0;
+  for (const [a, b] of rows) {
+    const h = Math.min(rowH(a, b), 0.9); let x = 0;
+    let sr = 0; for (let k = a; k < b; k++) sr += r[k];
+    for (let k = a; k < b; k++) { const w = k === b - 1 ? 1 - x : (1 - G * (b - a - 1)) * r[k] / sr; cells.push({ x, y, w: Math.max(0, w), h }); x += w + G; }
+    y += h + G;
+  }
+  return { H: y - G, cells };
+}
+function albumHtml(items, who) {
+  const L = albumLayout(items), pc = v => (v * 100).toFixed(3) + '%';
+  return `<div class="alb" style="aspect-ratio:1 / ${L.H.toFixed(4)}">${items.map((x, i) => { const c = L.cells[i]; return `<img data-media="${esc(x.k)}" data-key="${esc(x.k)}" data-zoom="1" alt="Photo ${i + 1} of ${items.length} from ${esc(who)}" style="left:${pc(c.x)};top:${pc(c.y / L.H)};width:${pc(c.w)};height:${pc(c.h / L.H)}">`; }).join('')}</div>`;
 }
 
 // every icon button shows its name on hover

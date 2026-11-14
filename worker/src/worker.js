@@ -367,6 +367,8 @@ export class Room {
     // a check every half hour for a newly released episode, whose room is announced in the main chat
     state.blockConcurrencyWhile(async () => { try { if (!(await state.storage.getAlarm())) await state.storage.setAlarm(Date.now() + 60 * 1000); } catch (e) { /* no alarms here */ } });
     try { this.sql.exec("ALTER TABLE messages ADD COLUMN sup TEXT DEFAULT ''"); } catch (e) { /* already there (2026-11-09, Super Chat) */ }
+    // photo albums (2026-11-14): up to 10 images in one message as JSON [{k, w, h}]; `image` keeps the first for older pages
+    try { this.sql.exec("ALTER TABLE messages ADD COLUMN images TEXT DEFAULT ''"); } catch (e) { /* already there */ }
     this.sql.exec(`CREATE TABLE IF NOT EXISTS supers (sid TEXT PRIMARY KEY, uid TEXT, room TEXT, amount INTEGER, text TEXT,
       created INTEGER, status TEXT DEFAULT 'open', msg_id INTEGER DEFAULT 0)`);
     try { this.sql.exec("ALTER TABLE supers ADD COLUMN name TEXT DEFAULT ''"); } catch (e) { /* already there */ }
@@ -454,7 +456,7 @@ export class Room {
         // Telegram style: the room as the title, "Name: message" as the text (the phone trims it to fit)
         const name = author.name || 'A member';
         const text = (m.text || '').replace(/\s+/g, ' ').trim();
-        const body = m.kind === 'join' ? `${name} joined the chat` : m.sup ? `${name} sent a ${money(m.sup.a)} Super Chat${text ? ': ' + text : ''}`.slice(0, 600) : `${name}: ${m.image ? '\u{1F4F7} Photo' + (text ? ' ' : '') : ''}${text}`.slice(0, 600);
+        const body = m.kind === 'join' ? `${name} joined the chat` : m.sup ? `${name} sent a ${money(m.sup.a)} Super Chat${text ? ': ' + text : ''}`.slice(0, 600) : `${name}: ${m.image ? '\u{1F4F7} ' + (m.images && m.images.length > 1 ? m.images.length + ' photos' : 'Photo') + (text ? ' ' : '') : ''}${text}`.slice(0, 600);
         const img = typeof author.avatar === 'string' && author.avatar.startsWith('img:') ? author.avatar.slice(4) : '';
         let title = m.kind === 'join' ? 'New member' : roomTitle, text2 = m.kind === 'join' ? `${name} just joined the Inner Circle` : body, url = roomUrl, av = img;
         if (m.kind === 'room') { const ri = this.roomInfo(m.text, await this.eps()); title = 'Inner Circle'; text2 = `New episode room: ${trimTo(ri.title, 140)}`; url = '/app/#/chat?room=' + encodeURIComponent(m.text); av = ''; }
@@ -738,7 +740,7 @@ export class Room {
       const msgs = this.shapeAll(this.all("SELECT * FROM messages WHERE room = ? AND deleted = 0 AND COALESCE(kind, '') = '' ORDER BY id DESC LIMIT 500", savedKey(uid)));
       const people = {};
       for (const m of msgs) for (const id of [m.uid, m.fwd && m.fwd.uid]) if (id && !people[id]) { const p = this.member(id); if (p) people[id] = { name: p.name || 'Member', avatar: p.avatar || '' }; }
-      return json({ items, messages: msgs.map(m => ({ id: m.id, uid: m.uid, text: m.text, image: m.image, created: m.created, fwd: m.fwd, preview: m.preview })), people, room: savedKey(uid) });
+      return json({ items, messages: msgs.map(m => ({ id: m.id, uid: m.uid, text: m.text, image: m.image, images: m.images, created: m.created, fwd: m.fwd, preview: m.preview })), people, room: savedKey(uid) });
     }
     if (path === '/subscribe' || path === '/unsubscribe' || path === '/test' || path === '/unfurl') {
       const { uid, body } = await req.json();
@@ -859,6 +861,7 @@ export class Room {
       room: row.room || '',
       fwd: row.fwd ? safeObj(row.fwd) : null,
       sup: row.sup ? safeObj(row.sup) : null,
+      images: !row.deleted && row.images ? safeArr(row.images) : null,
       info: (row.kind === 'room' && this.epx) || row.kind === 'live' ? this.roomInfo(row.text, this.epx || { free: new Map(), plus: new Map(), plusByFree: new Map(), list: [] }) : undefined,
     };
   }
@@ -1006,7 +1009,8 @@ export class Room {
         if (me.muted_until > now && !toSaved) return this.send(ws, { t: 'error', what: 'send', text: 'You are muted for now. Try again later.' });
         if (!toSaved && this.limited(me.uid)) return this.send(ws, { t: 'error', what: 'send', text: 'Easy there. A few seconds between messages, please.' });
         const text = clean(msg.text, MAX_TEXT, true);
-        const image = typeof msg.image === 'string' && /^circle\/[0-9a-f-]{36}\.(png|jpg|gif|webp)$/.test(msg.image) ? msg.image : '';
+        const album = albumFrom(msg.images);
+        const image = album.length ? album[0].k : typeof msg.image === 'string' && MEDIA_KEY.test(msg.image) ? msg.image : '';
         if (!text && !image) return;
         // the room the message was written in (a message waiting to send keeps its room)
         const rk = 'room' in msg ? await this.roomKey(msg.room, me.uid) : { key: att.room || '' };
@@ -1021,7 +1025,7 @@ export class Room {
         // a link gets its preview card (left off if the sender closed it); fetched now if not seen before
         const link = msg.nopreview || image ? '' : firstLink(text);
         const cached = link ? this.cachedPreview(link) : undefined;
-        const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created, mentions, preview, room) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *', me.uid, text, image, reply, now, JSON.stringify(mentions), cached ? JSON.stringify(cached) : '', room);
+        const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created, mentions, preview, room, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *', me.uid, text, image, reply, now, JSON.stringify(mentions), cached ? JSON.stringify(cached) : '', room, album.length ? JSON.stringify(album) : '');
         if (link && cached === undefined) this.state.waitUntil(this.fillPreview(row.id, link));
         const m = this.shape(row);
         const first = this.engage(me.uid, room);
@@ -1445,8 +1449,8 @@ export class Room {
         if (toSaved && f.id && this.one("SELECT 1 AS x FROM messages WHERE room = ? AND deleted = 0 AND fwd LIKE ?", room, '%"id":' + f.id + ',%')) {
           return this.send(ws, { t: 'saved', already: true, to: room, cid: clean(msg.cid, 40) });
         }
-        const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created, mentions, preview, room, fwd) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?) RETURNING *',
-          me.uid, src.text || '', src.image || '', now, '[]', src.preview || '', room, JSON.stringify(f));
+        const row = this.one('INSERT INTO messages (uid, text, image, reply_to, created, mentions, preview, room, fwd, images) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?) RETURNING *',
+          me.uid, src.text || '', src.image || '', now, '[]', src.preview || '', room, JSON.stringify(f), src.images || '');
         const m = this.shape(row);
         const first = this.engage(me.uid, room);
         this.broadcast({ t: 'msg', m, cid: clean(msg.cid, 40), people: this.peopleFor([m]) });
@@ -1702,4 +1706,16 @@ function savedKey(uid) { return 'saved:' + uid; }
 function isPrivate(key) { return typeof key === 'string' && key.startsWith('saved:'); }
 function ownerOf(key) { return isPrivate(key) ? key.slice(6) : ''; }
 function safeObj(s) { try { const o = JSON.parse(s || 'null'); return o && typeof o === 'object' && !Array.isArray(o) ? o : null; } catch (e) { return null; } }
+// photo albums (2026-11-14): a member's list of uploaded images with their sizes, 2 to 10 kept
+const MEDIA_KEY = /^circle\/[0-9a-f-]{36}\.(png|jpg|gif|webp)$/;
+function albumFrom(v) {
+  if (!Array.isArray(v)) return [];
+  const out = [];
+  for (const x of v.slice(0, 10)) {
+    if (!x || typeof x.k !== 'string' || !MEDIA_KEY.test(x.k)) continue;
+    const w = Math.round(Number(x.w)), h = Math.round(Number(x.h));
+    out.push({ k: x.k, w: w > 0 && w < 40000 ? w : 1, h: h > 0 && h < 40000 ? h : 1 });
+  }
+  return out.length > 1 ? out : [];
+}
 function safeArr(s) { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
