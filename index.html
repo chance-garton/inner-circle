@@ -457,6 +457,11 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .lbnav.prev{left:12px}.lbnav.next{right:12px}
 .lbcount{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);font-size:13px;font-weight:700;color:var(--ink);background:rgba(10,15,28,0.7);padding:4px 12px;border-radius:999px;z-index:21}
 @media (hover:none){.lbnav{display:none}}
+.lbx{position:fixed;top:calc(12px + env(safe-area-inset-top));right:12px;width:36px;height:36px;border-radius:50%;background:rgba(10,15,28,0.7);color:var(--ink);display:flex;align-items:center;justify-content:center;z-index:22}
+.lightbox{touch-action:none;background:rgba(5,8,15,0.94)}
+.lightbox img{transition:transform .2s ease;transform-origin:center center;cursor:zoom-in}
+.lightbox.zoomed img{cursor:grab}
+.lightbox.drag img{transition:none}
 .joined{align-self:center;display:flex;align-items:center;gap:7px;margin:10px 0;padding:5px 14px 5px 6px;border-radius:999px;background:rgba(216,170,60,0.09);border:1px solid rgba(216,170,60,0.3);font-size:13.5px;color:var(--muted);flex-wrap:wrap;justify-content:center}
 .joined button{display:inline-flex;align-items:center;gap:7px;color:var(--gold)}
 .joined .time{margin-left:4px}
@@ -3891,7 +3896,7 @@ function openLightbox(src, at, keys) {
   let i = Math.max(0, at || 0);
   const s = document.createElement('div'); s.className = 'scrim lightbox'; s.id = 'ovl';
   const many = list.length > 1;
-  s.innerHTML = `<img alt="">${many ? '<span class="lbcount"></span><button class="lbnav prev" aria-label="Previous photo">‹</button><button class="lbnav next" aria-label="Next photo">›</button>' : ''}`;
+  s.innerHTML = `<img alt=""><button class="lbx" aria-label="Close">${I.close(18)}</button>${many ? '<span class="lbcount"></span><button class="lbnav prev" aria-label="Previous photo">‹</button><button class="lbnav next" aria-label="Next photo">›</button>' : ''}`;
   const img = s.querySelector('img');
   const show = () => {
     const u = list[i];
@@ -3899,16 +3904,65 @@ function openLightbox(src, at, keys) {
     else if (keys && keys[i]) { const p = mediaCache.get(keys[i]); if (p) p.then(x => { img.src = x; }); }
     if (many) s.querySelector('.lbcount').textContent = `${i + 1} of ${list.length}`;
   };
-  const go = d => { i = (i + d + list.length) % list.length; show(); };
+  // zoom: pinch, double tap or double-click; drag to look around while zoomed (2026-11-14, Chance)
+  let sc = 1, tx = 0, ty = 0;
+  const apply = (extra) => { img.style.transform = extra || (sc === 1 && !tx && !ty ? '' : `translate(${tx}px,${ty}px) scale(${sc})`); s.classList.toggle('zoomed', sc > 1); };
+  const clampPan = () => { const mx = Math.max(0, (img.offsetWidth * sc - innerWidth) / 2 + 20), my = Math.max(0, (img.offsetHeight * sc - innerHeight) / 2 + 20); tx = Math.max(-mx, Math.min(mx, tx)); ty = Math.max(-my, Math.min(my, ty)); };
+  const resetZoom = () => { sc = 1; tx = ty = 0; apply(); };
+  const zoomAt = (cx, cy, to) => { const r = img.getBoundingClientRect(), ox = cx - (r.left + r.width / 2), oy = cy - (r.top + r.height / 2), k = to / sc; tx = tx * k - ox * (k - 1); ty = ty * k - oy * (k - 1); sc = to; if (sc <= 1) { sc = 1; tx = ty = 0; } clampPan(); apply(); };
+  img.addEventListener('dblclick', e => { e.stopPropagation(); zoomAt(e.clientX, e.clientY, sc > 1 ? 1 : 2.5); });
+  s.addEventListener('wheel', e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); s.classList.add('drag'); zoomAt(e.clientX, e.clientY, Math.min(5, Math.max(1, sc * (e.deltaY < 0 ? 1.12 : 0.89)))); clearTimeout(s._wt); s._wt = setTimeout(() => s.classList.remove('drag'), 150); }, { passive: false });
+  let mdrag = null;
+  img.addEventListener('mousedown', e => { if (sc <= 1) return; e.preventDefault(); mdrag = { x: e.clientX - tx, y: e.clientY - ty }; s.classList.add('drag'); });
+  s.addEventListener('mousemove', e => { if (!mdrag) return; tx = e.clientX - mdrag.x; ty = e.clientY - mdrag.y; clampPan(); apply(); });
+  s.addEventListener('mouseup', () => { mdrag = null; s.classList.remove('drag'); });
+  const go = d => { i = (i + d + list.length) % list.length; resetZoom(); show(); };
   const key = e => { if (!document.body.contains(s)) { document.removeEventListener('keydown', key); return; } if (e.key === 'ArrowRight') go(1); else if (e.key === 'ArrowLeft') go(-1); };
-  s.onclick = e => { const n = e.target.closest('.lbnav'); if (n) { e.stopPropagation(); go(n.classList.contains('next') ? 1 : -1); return; } closeOverlay(); };
-  if (many) {
-    document.addEventListener('keydown', key);
-    let x0 = null, y0 = 0, moved = false;
-    s.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; moved = false; }, { passive: true });
-    s.addEventListener('touchmove', e => { if (x0 != null && Math.abs(e.touches[0].clientX - x0) > 12) moved = true; }, { passive: true });
-    s.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null; if (moved && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { e.preventDefault(); go(dx < 0 ? 1 : -1); } });
-  }
+  s.onclick = e => { if (e.target.closest('.lbx')) { e.stopPropagation(); closeOverlay(); return; } if (e.target === img) return; const n = e.target.closest('.lbnav'); if (n) { e.stopPropagation(); go(n.classList.contains('next') ? 1 : -1); return; } closeOverlay(); };
+  if (many) document.addEventListener('keydown', key);
+  // swipe sideways for the next photo, swipe down to close, pinch to zoom (2026-11-14, Chance)
+  let x0 = null, y0 = 0, mode = '', pinch = null, pan0 = null, lastTap = 0;
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const mid = t => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
+  s.addEventListener('touchstart', e => {
+    if (e.target.closest('.lbx,.lbnav')) return;
+    if (e.touches.length === 2) { x0 = null; mode = 'pinch'; s.classList.add('drag'); const m = mid(e.touches); pinch = { d: dist(e.touches), sc, tx, ty, m }; return; }
+    if (e.touches.length !== 1) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; mode = sc > 1 ? 'pan' : ''; pan0 = { tx, ty };
+  }, { passive: true });
+  s.addEventListener('touchmove', e => {
+    if (mode === 'pinch' && pinch && e.touches.length === 2) {
+      e.preventDefault();
+      const m = mid(e.touches), k = Math.min(5, Math.max(0.8, pinch.sc * dist(e.touches) / pinch.d)) / pinch.sc;
+      const r0x = pinch.m.x - innerWidth / 2, r0y = pinch.m.y - innerHeight / 2;
+      sc = pinch.sc * k; tx = pinch.tx * k - (r0x - pinch.tx) * (k - 1) + (m.x - pinch.m.x); ty = pinch.ty * k - (r0y - pinch.ty) * (k - 1) + (m.y - pinch.m.y);
+      apply(); return;
+    }
+    if (x0 == null) return;
+    const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
+    if (mode === 'pan') { e.preventDefault(); s.classList.add('drag'); tx = pan0.tx + dx; ty = pan0.ty + dy; clampPan(); apply(); return; }
+    if (!mode && (Math.abs(dx) > 12 || Math.abs(dy) > 12)) mode = Math.abs(dy) > Math.abs(dx) ? (dy > 0 ? 'down' : 'none') : (many ? 'side' : 'none');
+    if (mode === 'down') { e.preventDefault(); s.classList.add('drag'); apply(`translateY(${dy}px) scale(${Math.max(0.85, 1 - dy / 1500)})`); s.style.background = `rgba(5,8,15,${Math.max(0.2, 0.94 - dy / 500)})`; }
+  }, { passive: false });
+  s.addEventListener('touchend', e => {
+    if (mode === 'pinch') {
+      if (e.touches.length) return; // wait for both fingers
+      s.classList.remove('drag'); pinch = null; mode = '';
+      if (sc < 1.05) resetZoom(); else { clampPan(); apply(); }
+      return;
+    }
+    if (x0 == null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+    s.classList.remove('drag');
+    if (mode === 'pan') { mode = ''; return; }
+    if (mode === 'down') { e.preventDefault(); if (dy > 90) { closeOverlay(); return; } apply(); s.style.background = ''; }
+    else if (mode === 'side' && Math.abs(dx) > 50) { e.preventDefault(); go(dx < 0 ? 1 : -1); }
+    else if (!mode && e.target === img) { // a tap on the photo: two quick taps zoom in or out
+      const t = Date.now();
+      if (t - lastTap < 300) { e.preventDefault(); lastTap = 0; zoomAt(e.changedTouches[0].clientX, e.changedTouches[0].clientY, sc > 1 ? 1 : 2.5); } else lastTap = t;
+    }
+    mode = '';
+  });
   closeOverlay(); document.body.appendChild(s); show();
 }
 
