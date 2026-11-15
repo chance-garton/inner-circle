@@ -438,6 +438,23 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .attach .ax{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;background:rgba(10,15,28,0.8);color:var(--ink);display:flex;align-items:center;justify-content:center}
 .attach .ast{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,15,28,0.55);font-size:11px;font-weight:700;color:var(--ink);text-align:center;padding:4px}
 .attachnote{font-size:13px;color:var(--muted);line-height:1.4}
+/* batch 1 (2026-11-15): upload rings, reorder, swipe to reply, double tap heart, drop zone */
+.prog{position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:rgba(10,15,28,0.6);pointer-events:none}
+.prog::before{content:"";position:absolute;inset:3px;border-radius:50%;background:conic-gradient(var(--gold) calc(var(--p,0) * 1%),rgba(233,238,246,0.22) 0);-webkit-mask:radial-gradient(circle,transparent 8px,#000 9px);mask:radial-gradient(circle,transparent 8px,#000 9px)}
+.attach{transition:transform .15s}
+.attach img{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
+.attach.dragging{z-index:3;box-shadow:0 8px 20px rgba(0,0,0,0.5);transition:none}
+.alb .pcell{position:absolute;overflow:hidden;border-radius:3px}
+.alb .pcell img{position:absolute;inset:0;width:100%;height:100%;border-radius:0;cursor:default}
+.alb.one{width:240px}
+.row{transition:transform .2s ease}
+.row.swr{transition:none}
+.pend .bub.hasalb{opacity:1}
+.msgs{overflow-x:hidden}
+.swrep{position:absolute;right:-46px;top:50%;width:34px;height:34px;border-radius:50%;background:rgba(216,170,60,0.18);color:var(--gold);display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(-50%) scale(.6);pointer-events:none}
+.heartpop{position:absolute;left:50%;top:50%;font-size:44px;line-height:1;transform:translate(-50%,-50%) scale(.2);opacity:0;animation:hpop .75s ease-out forwards;pointer-events:none;z-index:5}
+@keyframes hpop{30%{transform:translate(-50%,-50%) scale(1.15);opacity:1}100%{transform:translate(-50%,-70%) scale(1);opacity:0}}
+body.dropping::after{content:"Drop photos to add them";position:fixed;inset:12px;border:2px dashed var(--gold);border-radius:18px;background:rgba(10,15,28,0.8);display:flex;align-items:center;justify-content:center;color:var(--gold);font-weight:700;font-size:18px;z-index:90;pointer-events:none}
 /* photo albums (2026-11-14, Chance: several photos in one message, laid out compact like Telegram) */
 .attachbar.multi{flex-direction:column;align-items:stretch;gap:6px}
 .attrow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
@@ -2157,15 +2174,33 @@ window.addEventListener('online', () => { if (S.token && !S.denied) { S.retry = 
 // on reconnect, so a dead connection never swallows what someone typed
 S.pending = (() => { try { const a = JSON.parse(load('ivc_pending') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } })();
 S.ackedIds = new Set();
-function savePending() { store('ivc_pending', S.pending.length ? JSON.stringify(S.pending.map(p => ({ cid: p.cid, uid: p.uid, o: p.o, at: p.at, tried: !!p.tried }))) : null); }
-function queueSend(o) {
+function savePending() { const keep = S.pending.filter(p => !p.up); store('ivc_pending', keep.length ? JSON.stringify(keep.map(p => ({ cid: p.cid, uid: p.uid, o: p.o, at: p.at, tried: !!p.tried }))) : null); }
+function queueSend(o, up) {
   const cid = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   const p = { cid, uid: S.me && S.me.uid, o: Object.assign({ room: S.room || '' }, o, { t: 'send', cid }), at: Date.now(), tried: false };
+  if (up && up.length) { p.up = up; up.forEach(a => { a.pend = p; }); }
   S.pending.push(p); savePending(); renderPending(true);
+  if (p.up) { pendUploadDone(p); return; } // goes as soon as every photo is up (at once if they already are)
   armFail(p); trySend(p);
+}
+function pendUploadDone(p, err) {
+  if (!S.pending.includes(p) || !p.up) return;
+  if (err) { // the photos go back into the message box to try again, with the words
+    S.pending.splice(S.pending.indexOf(p), 1); savePending();
+    p.up.forEach(a => { a.pend = null; });
+    S.attach = (S.attach || []).concat(p.up).slice(0, ALBUM_MAX);
+    const f = $('#field'); if (f && !f.value && p.o.text) { f.value = p.o.text; f.dispatchEvent(new Event('input')); }
+    renderAttach(); renderPending(false); toast((err && err.message) || 'A photo did not upload. Try again.'); return;
+  }
+  if (!p.up.every(a => a.key && a.w)) return;
+  const ups = p.up; delete p.up;
+  p.local = ups.map(a => ({ u: a.local || a.url, w: a.w, h: a.h }));
+  p.o.image = ups[0].key; if (ups.length > 1) p.o.images = ups.map(a => ({ k: a.key, w: a.w || 1, h: a.h || 1 }));
+  savePending(); renderPending(false); armFail(p); trySend(p);
 }
 function armFail(p) { clearTimeout(p.failT); p.failed = false; p.failT = setTimeout(() => { if (S.pending.includes(p)) { p.failed = true; renderPending(false); } }, 20000); }
 function trySend(p) {
+  if (p.up) return; // still uploading its photos
   if (!S.connected || !S.ws || S.ws.readyState !== 1) { if (!S.ws || S.ws.readyState > 1) { S.retry = 0; connect(); } return; } // goes out on reconnect
   p.tried = true; savePending();
   try { S.ws.send(JSON.stringify(p.o)); } catch (e) { connect(); return; }
@@ -2191,14 +2226,24 @@ function flushPending() {
     return true;
   });
   savePending(); renderPending(true);
-  S.pending.forEach(p => { if (!p.failT) armFail(p); trySend(p); });
+  S.pending.forEach(p => { if (p.up) return; if (!p.failT) armFail(p); trySend(p); });
 }
 const CLOCK_ICON = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 function pendHtml() {
   return S.pending.filter(p => (p.o.room || '') === S.room).map(p => {
     const t = p.o.text || '';
-    return `<div class="row me first pend" data-cid="${esc(p.cid)}"><span class="gap"></span><div class="stack"><div class="bub">${t ? `<div class="txt">${esc(t)}</div>` : ''}${p.o.image ? `<div class="txt">\u{1F4F7} ${p.o.images ? p.o.images.length + ' photos' : 'Photo'}</div>` : ''}${p.failed ? `<button class="pst fail" data-retry="${esc(p.cid)}">Not sent yet. Tap to try again</button>` : `<span class="pst">${CLOCK_ICON} Sending\u2026</span>`}</div></div></div>`;
+    const pics = p.up ? p.up.map(a => ({ u: a.url, w: a.w || 1, h: a.h || 1, a })) : p.local || null;
+    const ph = pics ? pendPics(pics) : p.o.image ? `<div class="txt">\u{1F4F7} ${p.o.images ? p.o.images.length + ' photos' : 'Photo'}</div>` : '';
+    return `<div class="row me first pend" data-cid="${esc(p.cid)}"><span class="gap"></span><div class="stack"><div class="bub${pics ? ' hasalb' : ''}">${ph}${t ? `<div class="txt">${esc(t)}</div>` : ''}${p.failed ? `<button class="pst fail" data-retry="${esc(p.cid)}">Not sent yet. Tap to try again</button>` : `<span class="pst">${CLOCK_ICON} Sending\u2026</span>`}</div></div></div>`;
   }).join('');
+}
+// a message on its way with photos shows the photos themselves, each with its upload ring (2026-11-15)
+function pendPics(pics) {
+  const pc = v => (v * 100).toFixed(3) + '%';
+  const cell = (x, c, H) => `<div class="pcell" style="left:${pc(c.x)};top:${pc(c.y / H)};width:${pc(c.w)};height:${pc(c.h / H)}"><img src="${esc(x.u)}" alt="">${x.a ? progHtml(x.a) : ''}</div>`;
+  if (pics.length === 1) { const x = pics[0], H = Math.min(1.25, Math.max(0.45, x.h / x.w)); return `<div class="alb one" style="aspect-ratio:1 / ${H.toFixed(4)}">${cell(x, { x: 0, y: 0, w: 1, h: H }, H)}</div>`; }
+  const L = albumLayout(pics);
+  return `<div class="alb" style="aspect-ratio:1 / ${L.H.toFixed(4)}">${pics.map((x, i) => cell(x, L.cells[i], L.H)).join('')}</div>`;
 }
 function renderPending(toBottom) {
   const el = $('#pend'); if (!el) { if (S.view === 'chat' && $('#msgs')) renderMessages(true); return; }
@@ -3331,6 +3376,82 @@ document.addEventListener('touchstart', e => {
 document.addEventListener('touchmove', e => { if (!pressTimer || !pressXY) return; const t = e.touches[0]; if (Math.abs(t.clientX - pressXY[0]) + Math.abs(t.clientY - pressXY[1]) > 10) { clearTimeout(pressTimer); pressTimer = null; } }, { passive: true });
 ['touchend', 'touchcancel'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(pressTimer); pressTimer = null; }, { passive: true }));
 
+// swipe a message to the left to reply, and double tap a message for a quick heart (2026-11-15, Telegram habits on phones).
+// A swipe to the right still opens the Rooms list; neither starts while a menu is open.
+let SR = null, TAP = null, lastTapMsg = { id: 0, t: 0 };
+const SR_SKIP = 'input,textarea,[contenteditable],.sbar,.lp.vid,iframe,.hscroll';
+document.addEventListener('touchstart', e => {
+  SR = null; TAP = null;
+  if (e.touches.length !== 1 || S.view !== 'chat' || !e.target.closest) return;
+  const b = e.target.closest('#msgs [data-press], #thread [data-press]');
+  if (!b || e.target.closest(SR_SKIP) || $('#ovl:not(.thread)') && !b.closest('#thread')) return;
+  const t = e.touches[0]; TAP = { x: t.clientX, y: t.clientY, t: Date.now() };
+  const row = b.closest('.row'); if (!row || !b.closest('#msgs')) return;
+  SR = { row, id: Number(b.dataset.press), x0: t.clientX, y0: t.clientY, go: false, d: 0, buzz: false };
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  const r = SR; if (!r) return;
+  const t = e.touches[0], dx = t.clientX - r.x0, dy = t.clientY - r.y0;
+  if (!r.go) {
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    if (!(dx < 0 && Math.abs(dx) > Math.abs(dy) * 1.2) || $('#ovl')) { SR = null; return; }
+    r.go = true; clearTimeout(pressTimer); pressTimer = null;
+    r.ic = document.createElement('span'); r.ic.className = 'swrep'; r.ic.innerHTML = I.reply(18);
+    r.row.appendChild(r.ic); r.row.classList.add('swr');
+  }
+  e.preventDefault();
+  r.d = Math.max(-110, Math.min(0, t.clientX - r.x0));
+  const shown = r.d < -60 ? -60 + (r.d + 60) * 0.35 : r.d; // it resists past the point where letting go replies
+  r.row.style.transform = `translateX(${shown}px)`;
+  const k = Math.min(1, -r.d / 60); r.ic.style.opacity = k; r.ic.style.transform = `translateY(-50%) scale(${0.6 + 0.4 * k})`;
+  if (!r.buzz && r.d <= -60) { r.buzz = true; haptic(10); } else if (r.d > -60) r.buzz = false;
+}, { passive: false });
+const srEnd = () => {
+  const r = SR; SR = null; if (!r || !r.go) return;
+  r.row.classList.remove('swr'); r.row.style.transform = '';
+  const ic = r.ic; if (ic) { ic.style.opacity = 0; setTimeout(() => ic.remove(), 220); }
+  if (r.d <= -60) startReply(r.id);
+};
+document.addEventListener('touchcancel', srEnd, { passive: true });
+document.addEventListener('touchend', e => {
+  const swiped = SR && SR.go; srEnd();
+  const tp = TAP; TAP = null;
+  if (swiped || !tp || S.view !== 'chat' || e.changedTouches.length !== 1 || !e.target.closest) return;
+  const c = e.changedTouches[0];
+  if (Math.abs(c.clientX - tp.x) + Math.abs(c.clientY - tp.y) > 12 || Date.now() - tp.t > 350) { lastTapMsg.t = 0; return; }
+  const b = e.target.closest('#msgs [data-press], #thread [data-press]');
+  if (!b || e.target.closest('button,a,img,.alb,.tchip,.sbar,iframe,.lp')) { lastTapMsg.t = 0; return; }
+  const id = Number(b.dataset.press), now = Date.now();
+  if (lastTapMsg.id === id && now - lastTapMsg.t < 320) { e.preventDefault(); lastTapMsg.t = 0; quickHeart(id, b); }
+  else lastTapMsg = { id, t: now };
+}, { passive: false });
+const HEART = '❤️';
+function quickHeart(id, bub) {
+  const m = findMsg(id); if (!m || m.deleted) return;
+  const had = m.reacts && m.reacts[HEART] && S.me && m.reacts[HEART].includes(S.me.uid);
+  sendWs({ t: 'react', id, kind: HEART }); haptic(8);
+  if (had) return; // a second double tap takes the heart away, quietly
+  const h = document.createElement('span'); h.className = 'heartpop'; h.textContent = HEART;
+  bub.appendChild(h); setTimeout(() => h.remove(), 800);
+}
+
+// drop photos onto the chat on a computer to add them to the message box (2026-11-15)
+let dropDepth = 0;
+const dropFiles = e => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
+const dropOk = () => S.view === 'chat' && $('#field');
+document.addEventListener('dragenter', e => { if (!dropFiles(e) || !dropOk()) return; e.preventDefault(); dropDepth++; document.body.classList.add('dropping'); });
+document.addEventListener('dragover', e => { if (!dropFiles(e) || !dropOk()) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+document.addEventListener('dragleave', e => { if (!dropFiles(e)) return; dropDepth = Math.max(0, dropDepth - 1); if (!dropDepth) document.body.classList.remove('dropping'); });
+document.addEventListener('drop', e => {
+  if (!dropFiles(e)) return;
+  dropDepth = 0; document.body.classList.remove('dropping');
+  if (!dropOk()) return;
+  e.preventDefault();
+  if (S.editMsg) { toast('Finish editing first.'); return; }
+  const fs = [...e.dataTransfer.files].filter(f => /^image\//.test(f.type));
+  if (fs.length) attachImages(fs); else toast('Only photos can be dropped here.');
+});
+
 // press and hold (phone) or right-click (computer) on a reaction: who reacted, Telegram style. The
 // list pops up where the reaction is, over a blurred chat, with the emoji big and animated above it.
 function showReactors(id, first, chip) {
@@ -3395,13 +3516,17 @@ function cancelEdit() {
   S.editDraft = ''; renderReply();
 }
 
+const draftKey = () => 'ivc_draft:' + (S.room || 'main');
 function wireComposer() {
   const f = $('#field');
   const grow = () => { f.style.height = 'auto'; f.style.height = Math.min(f.scrollHeight, 160) + 'px'; };
-  const saved = load('ivc_draft'); if (saved) { f.value = saved; grow(); }
+  // each room keeps its own unsent draft (2026-11-15); the old single draft moves to the main chat
+  let saved = load(draftKey());
+  if (!saved && !S.room) { saved = load('ivc_draft'); if (saved) { store(draftKey(), saved); store('ivc_draft', null); } }
+  if (saved && !S.editMsg) { f.value = saved; grow(); }
   let lastTyping = 0;
   f.addEventListener('input', () => {
-    grow(); if (!S.editMsg) store('ivc_draft', f.value || null);
+    grow(); if (!S.editMsg) store(draftKey(), f.value || null);
     clearTimeout(S.lpTimer); S.lpTimer = setTimeout(() => linkPreview(f.value), 450);
     tsBar(f.value);
     if (Date.now() - lastTyping > 2500 && f.value.trim()) { lastTyping = Date.now(); sendQuiet({ t: 'typing' }); }
@@ -3425,7 +3550,7 @@ function wireComposer() {
     o.querySelector('#emoHost').appendChild(emojiPicker(u => {
       const a = f.selectionStart ?? f.value.length, b = f.selectionEnd ?? f.value.length;
       f.value = f.value.slice(0, a) + u + f.value.slice(b); f.selectionStart = f.selectionEnd = a + u.length;
-      grow(); if (!S.editMsg) store('ivc_draft', f.value); sendWs({ t: 'used', e: u });
+      grow(); if (!S.editMsg) store(draftKey(), f.value); sendWs({ t: 'used', e: u });
     }));
   };
   $('#epBtn').onclick = () => {
@@ -3452,13 +3577,12 @@ function wireComposer() {
     const ats = S.attach || [];
     const bad = ats.find(a => a.failed);
     if (bad) { toast(ats.length > 1 ? 'One image did not upload. Remove it or pick it again.' : 'That image did not upload. Remove it or pick it again.'); return; }
-    if (ats.some(a => !a.key || !a.w)) { toast(ats.length > 1 ? 'The images are still uploading. One moment.' : 'The image is still uploading. One moment.'); S.attachSend = true; return; }
     if (!text && !ats.length) return;
     const lk = clientLink(text);
-    const images = ats.length > 1 ? ats.map(a => ({ k: a.key, w: a.w || 1, h: a.h || 1 })) : undefined;
-    queueSend({ text, image: ats.length ? ats[0].key : undefined, images, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: ats.length || (lk && S.lpOff === lk) || /circle\.innerversepodcast\.com\/(?:app|songs)/i.test(text) ? true : undefined });
-    if (ats.length) clearAttach();
-    f.value = ''; store('ivc_draft', null); grow(); S.reply = null; renderReply(); S.lpOff = ''; linkPreview(''); tsBar('');
+    // photos go into the chat straight away with an upload ring on each, and the message posts once they are up (2026-11-15)
+    queueSend({ text, reply_to: S.reply || undefined, mentions: findMentions(text), nopreview: ats.length || (lk && S.lpOff === lk) || /circle\.innerversepodcast\.com\/(?:app|songs)/i.test(text) ? true : undefined }, ats.length ? ats.slice() : null);
+    if (ats.length) { S.attach = null; renderAttach(); }
+    f.value = ''; store(draftKey(), null); grow(); S.reply = null; renderReply(); S.lpOff = ''; linkPreview(''); tsBar('');
   }
 }
 
@@ -3541,50 +3665,134 @@ function pickImage() {
   input.click();
 }
 // several images go out as one album (2026-11-14, Chance: "multiple in one message ... like telegram does"); up to 10
-const ALBUM_MAX = 10;
+const ALBUM_MAX = 10, IMG_MAX_EDGE = 2560;
+let attSeq = 0;
 function attachImages(files) {
   S.attach = S.attach || [];
   let room = ALBUM_MAX - S.attach.length, skipped = 0;
   for (const file of files) {
-    if (!/^image\/(png|jpeg|gif|webp)$/.test(file.type)) { toast('Images only (png, jpg, gif or webp).'); continue; }
-    if (file.size > 8 * 1024 * 1024) { toast('An image over 8 MB was left out.'); continue; }
+    if (!/^image\//.test(file.type)) { toast('Images only.'); continue; }
+    if (file.size > 60 * 1024 * 1024) { toast('An image over 60 MB was left out.'); continue; }
     if (room <= 0) { skipped++; continue; }
     room--; attachImage(file);
   }
   if (skipped) toast(`Up to ${ALBUM_MAX} images in one message.`);
   const fld = $('#field'); fld && fld.focus();
 }
+// a photo is shrunk on the phone before it uploads (at most 2560px on its long side) and redrawn, which also
+// drops the location and other camera details a photo carries (2026-11-15); a GIF goes as it is, to keep moving
+function shrinkImage(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const w0 = im.naturalWidth || 1, h0 = im.naturalHeight || 1;
+      if (file.type === 'image/gif') { URL.revokeObjectURL(url); res({ blob: file, type: 'image/gif', w: w0, h: h0 }); return; }
+      const k = Math.min(1, IMG_MAX_EDGE / Math.max(w0, h0)), w = Math.max(1, Math.round(w0 * k)), h = Math.max(1, Math.round(h0 * k));
+      const draw = white => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); if (white) { g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); } g.drawImage(im, 0, 0, w, h); return c; };
+      const out = (c, type, q) => new Promise(r => c.toBlob(r, type, q));
+      (async () => {
+        let blob = null, type = 'image/jpeg';
+        if (file.type === 'image/png') { blob = await out(draw(false), 'image/png'); type = 'image/png'; }
+        if (!blob || blob.size > 3 * 1024 * 1024) { const c = draw(true); blob = await out(c, 'image/jpeg', 0.86); type = 'image/jpeg'; if (blob && blob.size > 8 * 1024 * 1024) blob = await out(c, 'image/jpeg', 0.7); }
+        URL.revokeObjectURL(url);
+        if (!blob) throw new Error('That image could not be read.');
+        res({ blob, type, w, h });
+      })().catch(e => { URL.revokeObjectURL(url); rej(e); });
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('That image could not be read.')); };
+    im.src = url;
+  });
+}
+function uploadBlob(blob, type, onProg) {
+  return new Promise((res, rej) => {
+    const x = new XMLHttpRequest();
+    x.open('POST', API + '/api/upload');
+    x.setRequestHeader('Authorization', 'Bearer ' + S.token); x.setRequestHeader('Content-Type', type);
+    x.upload.onprogress = e => { if (e.lengthComputable) onProg(e.loaded / e.total); };
+    x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} if (x.status >= 200 && x.status < 300 && j.key) res(j.key); else rej(new Error(j.error || 'Upload failed')); };
+    x.onerror = () => rej(new Error('Upload failed. Check your connection.'));
+    x.send(blob);
+  });
+}
 function attachImage(file) {
-  const at = { url: URL.createObjectURL(file), key: '', failed: false, w: 0, h: 0 };
+  const at = { id: 'a' + (++attSeq), url: URL.createObjectURL(file), key: '', failed: false, w: 0, h: 0, prog: 0, pend: null };
   S.attach = S.attach || []; S.attach.push(at); renderAttach();
-  const im = new Image(); im.onload = () => { at.w = im.naturalWidth || 1; at.h = im.naturalHeight || 1; attachMaybeSend(); }; im.onerror = () => { at.w = at.h = 1; attachMaybeSend(); }; im.src = at.url;
-  fetch(API + '/api/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': file.type }, body: file })
-    .then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Upload failed'); return j.key; })
-    .then(key => { if (!(S.attach || []).includes(at)) return; at.key = key; renderAttach(); attachMaybeSend(); })
-    .catch(e => { if (!(S.attach || []).includes(at)) return; at.failed = true; S.attachSend = false; renderAttach(); toast(e.message || 'Upload failed'); });
+  shrinkImage(file).then(r => {
+    at.w = r.w; at.h = r.h; at.local = URL.createObjectURL(r.blob);
+    if (at.pend) renderPending(false);
+    if (r.blob.size > 8 * 1024 * 1024) throw new Error('That image is over 8 MB.');
+    return uploadBlob(r.blob, r.type, v => { at.prog = v; attProg(at); });
+  }).then(key => {
+    at.key = key; at.prog = 1;
+    mediaCache.set(key, Promise.resolve(at.local)); // the sent message shows the photo at once, no download
+    attDone(at);
+  }).catch(e => { at.failed = true; attDone(at, e); });
 }
-function attachMaybeSend() {
-  const l = S.attach || [];
-  if (S.attachSend && l.length && l.every(a => a.key && a.w)) { S.attachSend = false; const b = $('#sendBtn'); b && b.click(); }
+function attProg(at) { document.querySelectorAll(`[data-prog="${at.id}"]`).forEach(el => el.style.setProperty('--p', Math.round(at.prog * 100))); }
+function attDone(at, err) {
+  if (at.pend) { pendUploadDone(at.pend, err); return; }
+  if (!(S.attach || []).includes(at)) return;
+  if (err) { toast(err.message || 'Upload failed'); renderAttach(); return; }
+  document.querySelectorAll(`[data-prog="${at.id}"]`).forEach(el => el.remove()); // in place, so a drag to reorder is never cut short
 }
-function removeAttach(at) { try { URL.revokeObjectURL(at.url); } catch (e) {} S.attach = (S.attach || []).filter(a => a !== at); if (!S.attach.length) S.attach = null; renderAttach(); attachMaybeSend(); }
-function clearAttach() { for (const a of S.attach || []) { try { URL.revokeObjectURL(a.url); } catch (e) {} } S.attach = null; S.attachSend = false; renderAttach(); }
+function removeAttach(at) { try { URL.revokeObjectURL(at.url); } catch (e) {} S.attach = (S.attach || []).filter(a => a !== at); if (!S.attach.length) S.attach = null; renderAttach(); }
+function clearAttach() { for (const a of S.attach || []) { try { URL.revokeObjectURL(a.url); } catch (e) {} } S.attach = null; renderAttach(); }
+const progHtml = a => a.key || a.failed ? '' : `<span class="prog" data-prog="${a.id}" style="--p:${Math.round((a.prog || 0) * 100)}"></span>`;
 function renderAttach() {
   const box = $('#attachbar'); if (!box) return;
   const l = S.attach || [];
   if (!l.length) { box.innerHTML = ''; box.className = ''; return; }
-  const one = a => `<div class="attach"><img src="${esc(a.url)}" alt="Image to send">${a.key ? '' : `<span class="ast">${a.failed ? 'Not uploaded' : 'Uploading…'}</span>`}<button class="ax" aria-label="Remove the image">${I.close(14)}</button></div>`;
+  const one = a => `<div class="attach" data-aid="${a.id}"><img src="${esc(a.url)}" alt="Image to send" draggable="false">${a.failed ? '<span class="ast">Not uploaded</span>' : progHtml(a)}<button class="ax" aria-label="Remove the image">${I.close(14)}</button></div>`;
   const failed = l.some(a => a.failed);
   if (l.length === 1) {
     box.className = 'attachbar';
     box.innerHTML = `${one(l[0])}<span class="attachnote">${failed ? 'Upload failed. Remove it and try again.' : 'Add a message if you like, then send. Tap the image button to add more.'}</span>`;
   } else {
     box.className = 'attachbar multi';
-    box.innerHTML = `<div class="attrow">${l.map(one).join('')}${l.length < ALBUM_MAX ? '<button class="attadd" aria-label="Add more images">+</button>' : ''}</div><span class="attachnote">${failed ? 'One upload failed. Remove it and try again.' : `${l.length} photos, sent as one message.`}</span>`;
+    box.innerHTML = `<div class="attrow">${l.map(one).join('')}${l.length < ALBUM_MAX ? '<button class="attadd" aria-label="Add more images">+</button>' : ''}</div><span class="attachnote">${failed ? 'One upload failed. Remove it and try again.' : `${l.length} photos, sent as one message. Hold and drag to reorder.`}</span>`;
     const add = box.querySelector('.attadd'); if (add) add.onclick = () => pickImage();
+    wireReorder(box.querySelector('.attrow'));
   }
   box.querySelectorAll('.ax').forEach((b, i) => { b.onclick = () => removeAttach(l[i]); });
   stickDown();
+}
+// hold a thumbnail (or drag it with the mouse) to change the photos' order before sending (2026-11-15)
+function wireReorder(row) {
+  if (!row) return;
+  let d = null;
+  const place = x => {
+    const el = d.el; el.style.transform = `translateX(${x - d.x0}px) scale(1.08)`;
+    const r0 = el.getBoundingClientRect(), mid = r0.left + r0.width / 2;
+    const next = el.nextElementSibling, prev = el.previousElementSibling;
+    if (next && next.classList.contains('attach')) { const r = next.getBoundingClientRect(); if (mid > r.left + r.width / 2) { row.insertBefore(next, el); d.x0 += r.width + 8; el.style.transform = `translateX(${x - d.x0}px) scale(1.08)`; return; } }
+    if (prev && prev.classList.contains('attach')) { const r = prev.getBoundingClientRect(); if (mid < r.left + r.width / 2) { row.insertBefore(el, prev); d.x0 -= r.width + 8; el.style.transform = `translateX(${x - d.x0}px) scale(1.08)`; } }
+  };
+  const begin = () => { d.on = true; d.el.classList.add('dragging'); haptic(10); };
+  const finish = () => {
+    const dd = d; d = null; if (!dd) return; clearTimeout(dd.hold); if (!dd.on) return;
+    dd.el.classList.remove('dragging'); dd.el.style.transform = '';
+    const order = [...row.querySelectorAll('.attach')].map(x => x.dataset.aid);
+    S.attach = order.map(id => (S.attach || []).find(a => a.id === id)).filter(Boolean);
+    renderAttach();
+  };
+  row.addEventListener('touchstart', e => {
+    const el = e.target.closest('.attach'); if (!el || e.target.closest('.ax') || e.touches.length !== 1) return;
+    const t = e.touches[0]; d = { el, x0: t.clientX, y0: t.clientY, on: false };
+    d.hold = setTimeout(() => { if (d && d.el === el) begin(); }, 280);
+  }, { passive: true });
+  row.addEventListener('touchmove', e => {
+    if (!d) return; const t = e.touches[0];
+    if (!d.on) { if (Math.abs(t.clientX - d.x0) + Math.abs(t.clientY - d.y0) > 8) { clearTimeout(d.hold); d = null; } return; }
+    e.preventDefault(); place(t.clientX);
+  }, { passive: false });
+  row.addEventListener('touchend', finish); row.addEventListener('touchcancel', finish);
+  row.addEventListener('mousedown', e => {
+    const el = e.target.closest('.attach'); if (!el || e.target.closest('.ax') || e.button !== 0) return;
+    e.preventDefault(); d = { el, x0: e.clientX, y0: e.clientY, on: false, mouse: true };
+    const mm = ev => { if (!d) return; if (!d.on && Math.abs(ev.clientX - d.x0) > 5) begin(); if (d.on) place(ev.clientX); };
+    const mu = () => { removeEventListener('mousemove', mm); removeEventListener('mouseup', mu); finish(); };
+    addEventListener('mousemove', mm); addEventListener('mouseup', mu);
+  });
 }
 
 // ------------------------------------------------------------ overlays
