@@ -2,6 +2,26 @@
   "about": "Original songs made for InnerVerse episodes. The app orders songs by their episode's release date, newest first, and keeps one episode's songs in the order listed here (track order); keep this file in the same order so it reads the way the app shows it. id names the song (and its files and share page, songs/<id>/); episode is the episode's FREE slug (the /episodes/<slug> address); art is the square cover's Squarespace CDN address (Chance sends one per batch), a square image in this folder, or empty to fall back to the episode's thumbnail. After any change here, run: python3 songs/build.py",
   "songs": [
     {
+      "id": "astroherbalism-scorpio-boundary-medicine",
+      "episode": "astroherbalism-scorpio",
+      "episodeTitle": "Scorpio Herbs: Boundary Medicine of Death & Rebirth | Astro-Herbalism",
+      "title": "Boundary Medicine",
+      "file": "astroherbalism-scorpio-boundary-medicine.mp3",
+      "art": "https://images.innerversepodcast.com/sq/chance-garton-innerverse-site-main-data-images-incoming-astroherbalism-scorpio/scorpio-herbs-music-cover/orig.jpg",
+      "seconds": 198,
+      "added": "2026-11-15"
+    },
+    {
+      "id": "astroherbalism-scorpio-love-and-death",
+      "episode": "astroherbalism-scorpio",
+      "episodeTitle": "Scorpio Herbs: Boundary Medicine of Death & Rebirth | Astro-Herbalism",
+      "title": "Love and Death",
+      "file": "astroherbalism-scorpio-love-and-death.mp3",
+      "art": "https://images.innerversepodcast.com/sq/chance-garton-innerverse-site-main-data-images-incoming-astroherbalism-scorpio/scorpio-herbs-music-cover/orig.jpg",
+      "seconds": 218,
+      "added": "2026-11-15"
+    },
+    {
       "id": "does-christianity-need-the-devil-dawn-of-discernment",
       "episode": "does-christianity-need-the-devil",
       "episodeTitle": "Does Christianity NEED the Devil? Chance Garton & Dawn Lester",
