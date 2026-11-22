@@ -2,6 +2,26 @@
   "about": "Original songs made for InnerVerse episodes. The app orders songs by their episode's release date, newest first, and keeps one episode's songs in the order listed here (track order); keep this file in the same order so it reads the way the app shows it. id names the song (and its files and share page, songs/<id>/); episode is the episode's FREE slug (the /episodes/<slug> address); art is the square cover's Squarespace CDN address (Chance sends one per batch), a square image in this folder, or empty to fall back to the episode's thumbnail. After any change here, run: python3 songs/build.py",
   "songs": [
     {
+      "id": "what-is-biofield-tuning-biofield-fluency",
+      "episode": "what-is-biofield-tuning",
+      "episodeTitle": "Biofield Tuning Sessions & Tuning Fork Sound Healing Explained",
+      "title": "Biofield Fluency",
+      "file": "what-is-biofield-tuning-biofield-fluency.mp3",
+      "art": "https://images.innerversepodcast.com/sq/chance-garton-innerverse-site-main-data-images-incoming-what-is-biofield-tuning/biofield-tuning-song-cover/orig.jpg",
+      "seconds": 219,
+      "added": "2026-11-22"
+    },
+    {
+      "id": "what-is-biofield-tuning-mind-and-body",
+      "episode": "what-is-biofield-tuning",
+      "episodeTitle": "Biofield Tuning Sessions & Tuning Fork Sound Healing Explained",
+      "title": "Mind and Body",
+      "file": "what-is-biofield-tuning-mind-and-body.mp3",
+      "art": "https://images.innerversepodcast.com/sq/chance-garton-innerverse-site-main-data-images-incoming-what-is-biofield-tuning/biofield-tuning-song-cover/orig.jpg",
+      "seconds": 204,
+      "added": "2026-11-22"
+    },
+    {
       "id": "astroherbalism-scorpio-boundary-medicine",
       "episode": "astroherbalism-scorpio",
       "episodeTitle": "Scorpio Herbs: Boundary Medicine of Death & Rebirth | Astro-Herbalism",
