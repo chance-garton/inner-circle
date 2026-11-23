@@ -1480,6 +1480,40 @@ export class Room {
         return this.send(ws, { t: 'notice', text: 'Live room ended.' });
       }
 
+      case 'livedelete': { // host: delete an untied live room for everyone (2026-11-23, Chance: a room opened by mistake)
+        if (me.role !== 'host') return;
+        const lr = this.one("SELECT * FROM rooms WHERE key = ? AND tied = ''", String(msg.key || ''));
+        if (!lr) return this.send(ws, { t: 'error', text: 'That live room is already tied or gone.' });
+        if (this.one("SELECT 1 AS x FROM messages WHERE room = ? AND deleted = 0 AND COALESCE(sup, '') != '' LIMIT 1", lr.key)) {
+          return this.send(ws, { t: 'error', text: 'This room has a Super Chat in it, so it cannot be deleted. End it instead.' });
+        }
+        // everything in the room, its card in the main chat, and forwarded copies of it outside anyone's Saved messages
+        const gone = this.all("SELECT * FROM messages WHERE deleted = 0 AND (room = ? OR (kind = 'live' AND text = ?) OR fwd LIKE ?)", lr.key, lr.key, '%"room":"' + lr.key + '"%')
+          .filter(r => r.room === lr.key || !isPrivate(r.room || ''));
+        for (const r of gone) {
+          this.sql.exec('UPDATE messages SET deleted = 1, pinned = 0 WHERE id = ?', r.id);
+          this.sql.exec('DELETE FROM reactions WHERE msg_id = ?', r.id);
+        }
+        this.sql.exec('DELETE FROM room_state WHERE room = ?', lr.key);
+        this.sql.exec('DELETE FROM rooms WHERE key = ?', lr.key);
+        this.log(me.uid, 'room_delete', '', 0, { live: lr.key, title: lr.title, messages: gone.filter(r => r.room === lr.key).length });
+        for (const r of gone) if (r.room !== lr.key) this.broadcast({ t: 'update', m: this.shape(this.one('SELECT * FROM messages WHERE id = ?', r.id)) });
+        const x = this.epx || { free: new Map(), plus: new Map(), plusByFree: new Map(), list: [] };
+        for (const s of this.state.getWebSockets()) {
+          if (s.readyState !== 1) continue;
+          const a = s.deserializeAttachment();
+          if (a && a.uid && a.room === lr.key) { // anyone inside goes back to the main chat
+            s.serializeAttachment(Object.assign({}, a, { room: '' }));
+            const msgs = this.page(''), pins = this.pins('');
+            this.send(s, { t: 'roomload', room: this.roomInfo('', x), messages: msgs, pins, people: this.peopleFor(msgs.concat(pins)), done: msgs.length < PAGE });
+          }
+          this.send(s, { t: 'roomsdirty' });
+        }
+        this.broadcast({ t: 'pins', room: '', pins: this.pins('') });
+        this.presence();
+        return this.send(ws, { t: 'notice', text: 'Live room deleted.' });
+      }
+
       // Save (to the member's own Saved messages) or Forward (to any room they can post in) a copy of a
       // message. The copy keeps who first wrote it, where and when, and stays as it was (Chance, 2026-10-11).
       case 'save': {

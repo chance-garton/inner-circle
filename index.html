@@ -1462,6 +1462,7 @@ const LOG_TEXT = {
   title_add: (a, t, d) => `${a} gave ${t} the title "${d.title}"`,
   title_remove: (a, t, d) => `${a} took the title "${d.title}" from ${t}`,
   room_open: (a, t, d) => `${a} opened the live room "${d.title || ''}"`,
+  room_delete: (a, t, d) => `${a} deleted the live room "${d.title || ''}"${d.messages ? ' and its ' + d.messages + ' message' + (d.messages === 1 ? '' : 's') : ''}`,
   room_tie: (a, t, d) => `${d && a !== 'Someone' ? a : 'The release check'} tied the live room "${d.title || ''}" to its episode`,
 };
 function showModlog(r) {
@@ -2842,7 +2843,7 @@ function renderChat() {
         ${hostish ? `<button class="ibtn" id="repBtn" aria-label="Reports">${I.shield()}</button>` : ''}
         <a class="btn2 sm" href="/" target="ivcircle" id="popout" style="margin-left:4px">${P('<path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',{s:16})}Pop out</a>
       </div>
-      ${S.roomInfo.live && S.me && S.me.role === 'host' ? `<div class="livebar">${liveSoon(S.roomInfo) ? `<b style="color:var(--gold)">Coming up</b><span style="flex:1">Goes live ${esc(whenLabel(S.roomInfo.starts))}.</span>` : `<b>${S.roomInfo.open ? '<span class="livedot"></span> Live' : 'Live room'}</b><span style="flex:1">When the episode is posted, tie this room to it.</span>`}${S.roomInfo.open ? watchBtn() : ''}${S.roomInfo.open ? `<button class="btn2 sm" id="liveTime">${liveSoon(S.roomInfo) ? 'Change time' : 'Start time'}</button>` : ''}<button class="btn2 sm" id="liveTie">Tie to episode</button>${S.roomInfo.open ? '<button class="btn2 sm" id="liveEnd">End</button>' : ''}</div>`
+      ${S.roomInfo.live && S.me && S.me.role === 'host' ? `<div class="livebar">${liveSoon(S.roomInfo) ? `<b style="color:var(--gold)">Coming up</b><span style="flex:1">Goes live ${esc(whenLabel(S.roomInfo.starts))}.</span>` : `<b>${S.roomInfo.open ? '<span class="livedot"></span> Live' : 'Live room'}</b><span style="flex:1">When the episode is posted, tie this room to it.</span>`}${S.roomInfo.open ? watchBtn() : ''}${S.roomInfo.open ? `<button class="btn2 sm" id="liveTime">${liveSoon(S.roomInfo) ? 'Change time' : 'Start time'}</button>` : ''}<button class="btn2 sm" id="liveTie">Tie to episode</button>${S.roomInfo.open ? '<button class="btn2 sm" id="liveEnd">End</button>' : ''}<button class="btn2 sm" id="liveDel">Delete</button></div>`
         : S.roomInfo.live && S.roomInfo.open ? `<div class="livebar">${liveSoon(S.roomInfo) ? `<b style="color:var(--gold)">Coming up</b><span style="flex:1">Goes live ${esc(whenLabel(S.roomInfo.starts))}. The chat is open now.</span>` : `<b><span class="livedot"></span> Live</b><span style="flex:1">Watch the recording and chat here.</span>`}${watchBtn()}</div>` : ''}
       <div id="pinbar"></div>
       <div id="supbar"></div>
@@ -2891,6 +2892,7 @@ function renderChat() {
   if ($('#roomBack')) $('#roomBack').onclick = () => switchRoom('');
   if ($('#liveTie')) $('#liveTie').onclick = () => pickEpisode(url => { const mm = String(url).match(/\/(?:episodes|plus)\/([a-z0-9-]+)/); if (mm && confirm('Move this live room into that episode\'s room? The whole conversation goes with it.')) sendWs({ t: 'livetie', key: S.room, slug: mm[1] }); });
   if ($('#liveTime')) $('#liveTime').onclick = () => askLiveTime(S.roomInfo.title, S.room);
+  if ($('#liveDel')) $('#liveDel').onclick = () => { if (confirm('Delete this live room for everyone? Every message in it and its card in the main chat go away. This cannot be undone.')) sendWs({ t: 'livedelete', key: S.room }); };
   if ($('#liveEnd')) $('#liveEnd').onclick = () => { if (confirm('End the live room? It stays readable, and you can still tie it to the episode later.')) sendWs({ t: 'liveclose', key: S.room }); };
   if (isSaved(S.room)) $('#ptitle').onclick = null;
   const openEpPage = () => { const ri = S.roomInfo; const a = document.createElement('a'); a.href = ri.plus && S.me ? SITE + '/plus/' + ri.plus : SITE + '/episodes/' + ri.slug; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); };
