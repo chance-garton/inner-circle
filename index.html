@@ -286,6 +286,8 @@ html.iv-plus-member #iv-nav.iv-nav-v2 .iv-nav-join { display: none !important; }
 .livebadge{width:64px;height:36px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(242,153,138,0.12);border:1px solid rgba(242,153,138,0.4);font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:#F2998A}
 .livebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
 .livebar b{color:#F2998A;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px}
+.livedot.soon{background:transparent;border:2px solid var(--gold);box-shadow:none;animation:none}
+.livebadge.soon{background:rgba(216,170,60,0.1);border-color:rgba(216,170,60,0.45);color:var(--gold)}
 .liveform{display:flex;gap:8px;padding:6px 12px 2px}.liveform .finput{height:42px;font-size:14.5px}
 .person{display:flex;align-items:center;gap:11px;min-height:40px;padding:0 6px;border-radius:10px;font-size:14.5px;font-weight:600;width:100%}
 .person:hover{background:rgba(233,238,246,0.05)}
@@ -1051,6 +1053,34 @@ function signRow(p) {
   return `<span class="signs" title="${esc(label)}" aria-label="${esc(label)}">${parts.map(x => `<span>${P(SIGN_ICONS[x[0]], {s:13, w:2.2})}<span class="zg">${ZODIAC[x[1]]}\uFE0E</span></span>`).join('')}</span>`;
 }
 const fmtTime = t => new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+// scheduled live rooms (2026-11-23): a room opened ahead of a recording shows Coming up and its start time
+// (in the reader's own time) until then, instead of Live now
+const liveSoon = ri => !!(ri && ri.live && ri.open !== false && ri.starts && ri.starts > Date.now());
+function whenLabel(t) {
+  const d = new Date(t), now = new Date(), tmr = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  if (d.toDateString() === now.toDateString()) return 'today at ' + fmtTime(t);
+  if (d.toDateString() === tmr.toDateString()) return 'tomorrow at ' + fmtTime(t);
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + ' at ' + fmtTime(t);
+}
+const localInput = d => { const z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
+// the host is asked when a live room goes live: on opening one (title), or to change an open one's time (key)
+function askLiveTime(title, key) {
+  const def = new Date(Date.now() + 3600e3); def.setMinutes(0, 0, 0);
+  const cur = key && S.roomInfo.starts > Date.now() ? new Date(S.roomInfo.starts) : def;
+  overlay(`<div style="padding:22px 20px 18px;max-width:420px"><h2 class="h1" style="font-size:21px">When does it go live?</h2>
+    <p class="muted" style="margin:6px 0 14px">${esc(title)}</p>
+    <input id="liveAt" class="finput" type="datetime-local" value="${localInput(cur)}" aria-label="Go live time" style="height:46px;font-size:15px;width:100%">
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn1" id="liveSched">Go live at this time</button><button class="btn2" id="liveNow">Live now</button></div>
+    <p class="muted" style="font-size:12.5px;margin-top:12px;line-height:1.45">Until then the room shows as Coming up with its start time, and members get a second notice when it goes live.</p></div>`, false, 'Go live time');
+  const send = starts => { sendWs(key ? { t: 'livetime', key, starts } : { t: 'liveopen', title, starts }); closeOverlay(); };
+  $('#liveSched').onclick = () => {
+    const t = new Date($('#liveAt').value).getTime();
+    if (!t || isNaN(t)) return toast('Pick a day and time.');
+    if (t < Date.now() + 60000) return toast('That time has already passed. Pick a later one, or choose Live now.');
+    send(t);
+  };
+  $('#liveNow').onclick = () => send(0);
+}
 function dayLabel(t) {
   const d = new Date(t), now = new Date();
   const same = (a, b) => a.toDateString() === b.toDateString();
@@ -2406,7 +2436,7 @@ function onEvent(m) {
       return;
     }
     case 'roomsdirty': sendQuiet({ t: 'rooms' }); return;
-    case 'liveopened': toast('Live room open. Everyone has been told.'); switchRoom(m.key); return;
+    case 'liveopened': toast(m.starts ? `Room open. It goes live ${whenLabel(m.starts)}, and everyone has been told.` : 'Live room open. Everyone has been told.'); switchRoom(m.key); return;
     case 'roomfail': {
       S.loadingRoom = false; toast('That episode room could not be opened.');
       if (S.room) renderChat(); else if (S.view === 'chat') renderChat();
@@ -2414,8 +2444,13 @@ function onEvent(m) {
     }
     case 'rooms': {
       mergePeople(m.people); S.rooms = m;
+      const lv = (m.live || []).find(r => r.key === S.room);
+      if (lv && S.roomInfo.live && (lv.starts !== S.roomInfo.starts || lv.open !== S.roomInfo.open)) { S.roomInfo = Object.assign({}, S.roomInfo, lv); if (S.view === 'chat') renderChat(); }
       if (S.view === 'chat') { renderSide(); renderRoomBadge(); }
       if ($('#roomsSheet')) drawRooms();
+      clearTimeout(S.flipT);
+      const next = (m.live || []).filter(liveSoon).map(r => r.starts).sort((a, b) => a - b)[0];
+      if (next && next - Date.now() < 864e5) S.flipT = setTimeout(() => { if (S.view === 'chat') { renderChat(); renderSide(); } if ($('#roomsSheet')) drawRooms(); }, next - Date.now() + 500);
       return;
     }
   }
@@ -2472,24 +2507,27 @@ function otherRoomMsg(m) {
 function roomIntro(empty) {
   const ri = S.roomInfo;
   if (ri.saved || isSaved(ri.key)) return `<div class="roomintro">${savedIcon(56)}<b style="color:var(--ink);font-size:16px;display:block;margin-top:10px">Saved messages</b>Only you can see this room. Write notes to yourself here, or save anything someone shares: press and hold a message (right-click on a computer) and choose Save. ${empty ? '' : ''}</div>`;
-  if (ri.live) return `<div class="roomintro"><b style="color:var(--ink);font-size:16px">${esc(ri.title)}</b><br>${empty ? 'The live chat starts here. Say hello.' : 'The beginning of this live room.'}</div>`;
+  if (ri.live) return `<div class="roomintro"><b style="color:var(--ink);font-size:16px">${esc(ri.title)}</b><br>${liveSoon(ri) ? `Goes live ${esc(whenLabel(ri.starts))}. The chat is open now.` : empty ? 'The live chat starts here. Say hello.' : 'The beginning of this live room.'}</div>`;
   return `<div class="roomintro"><div data-unfurl="${ri.plus ? 'plus:' + esc(ri.plus) : 'episodes:' + esc(ri.slug || '')}"></div>${empty ? `No one has talked about this episode yet. Start the conversation.` : 'The beginning of the conversation about this episode.'}</div>`;
 }
 function lastLine(r) {
   if (r.saved && !r.last) return 'Notes to yourself and messages you save. Only you can see this.';
   if (r.saved) return r.last.image && !r.last.text ? 'Photo' : esc(r.last.text);
+  if (liveSoon(r) && !r.last) return 'Goes live ' + esc(whenLabel(r.starts));
   if (!r.last) return r.key ? 'No messages yet. Start the conversation.' : '';
   if (r.last.kind === 'room') return 'New episode room';
-  if (r.last.kind === 'live') return 'Live room opened';
+  if (r.last.kind === 'live') return liveSoon(r) ? 'Goes live ' + esc(whenLabel(r.starts)) : 'Live room opened';
   if (r.last.kind === 'join') return `${esc(person(r.last.uid).name || 'A member')} joined the chat`;
   return `${esc(person(r.last.uid).name || 'Member')}: ${r.last.image && !r.last.text ? 'Photo' : esc(r.last.text)}`;
 }
 function sideRooms() {
-  const row = r => `<button class="roomrow${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}"${r.key === S.room ? ' aria-current="page"' : ''} title="${esc(r.title)}">${r.saved ? savedIcon(40) : r.live ? '<span style="width:40px;display:flex;justify-content:center"><span class="livedot"></span></span>' : r.key ? (r.thumb ? `<img class="rth" src="${esc(thumbAt(r.thumb, 100))}" alt="">` : I.play()) : I.chat()}<span class="rn">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : ''}</button>`;
+  const row = r => `<button class="roomrow${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}"${r.key === S.room ? ' aria-current="page"' : ''} title="${esc(r.title)}">${r.saved ? savedIcon(40) : r.live ? `<span style="width:40px;display:flex;justify-content:center"><span class="livedot${liveSoon(r) ? ' soon' : ''}"></span></span>` : r.key ? (r.thumb ? `<img class="rth" src="${esc(thumbAt(r.thumb, 100))}" alt="">` : I.play()) : I.chat()}<span class="rn">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : ''}</button>`;
   const R = S.rooms;
   if (!R) return row({ key: '', title: 'Inner Circle Chat' }) + (S.room ? row(S.roomInfo) : '');
   let out = row(R.main) + row(R.saved || savedRoom());
-  if ((R.live || []).length) out += `<div class="rsec" style="color:#F2998A">Live now</div>` + R.live.map(row).join('');
+  const nowL = (R.live || []).filter(r => !liveSoon(r)), soonL = (R.live || []).filter(liveSoon);
+  if (nowL.length) out += `<div class="rsec" style="color:#F2998A">Live now</div>` + nowL.map(row).join('');
+  if (soonL.length) out += `<div class="rsec">Coming up</div>` + soonL.map(row).join('');
   if (R.newest.length) out += `<div class="rsec">New episodes</div>` + R.newest.map(row).join('');
   const cur = S.room && !isSaved(S.room) && !allRooms().some(r => r.key === S.room) ? [S.roomInfo] : [];
   if (R.mine.length || cur.length) out += `<div class="rsec">Your rooms</div>` + cur.concat(R.mine).map(row).join('');
@@ -2511,13 +2549,14 @@ function openRooms(focusSearch) {
 function drawRooms() {
   const box = $('#rbody'); if (!box) return;
   const q = ($('#rq') && $('#rq').value.trim()) || '';
-  const item = r => `<button class="ritem${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}">${r.saved ? savedIcon(56) : r.live ? `<span class="livebadge"><span class="livedot"></span>LIVE</span>` : r.key ? `<img class="rimg" src="${esc(thumbAt(r.thumb, 300))}" alt="" loading="lazy">` : `<span class="rlogo"><img src="${PLUS_LOGO}" alt=""></span>`}<span style="flex:1;min-width:0"><span class="rt">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span><span class="rl">${lastLine(r)}</span></span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : ''}</button>`;
+  const item = r => `<button class="ritem${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}">${r.saved ? savedIcon(56) : r.live ? (liveSoon(r) ? `<span class="livebadge soon">SOON</span>` : `<span class="livebadge"><span class="livedot"></span>LIVE</span>`) : r.key ? `<img class="rimg" src="${esc(thumbAt(r.thumb, 300))}" alt="" loading="lazy">` : `<span class="rlogo"><img src="${PLUS_LOGO}" alt=""></span>`}<span style="flex:1;min-width:0"><span class="rt">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span><span class="rl">${lastLine(r)}</span></span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : ''}</button>`;
   if (!q) {
     const R = S.rooms;
     if (!R) { box.innerHTML = `<div style="padding:20px">${loaderHtml()}</div>`; return; }
     const host = S.me && S.me.role === 'host';
     box.innerHTML = item(R.main) + item(R.saved || savedRoom())
-      + ((R.live || []).length ? `<div class="rhead" style="color:#F2998A">Live now</div>` + R.live.map(item).join('') : '')
+      + ((R.live || []).some(r => !liveSoon(r)) ? `<div class="rhead" style="color:#F2998A">Live now</div>` + R.live.filter(r => !liveSoon(r)).map(item).join('') : '')
+      + ((R.live || []).some(liveSoon) ? `<div class="rhead">Coming up</div>` + R.live.filter(liveSoon).map(item).join('') : '')
       + (host ? `<div class="liveform"><input id="liveName" class="finput" maxlength="80" placeholder="Open a live room, e.g. Dawn Lester recording" aria-label="Live room name"><button class="btn2 sm" id="liveGo">Open</button></div>` : '')
       + (R.newest.length ? `<div class="rhead">New episodes</div>` + R.newest.map(item).join('') : '')
       + `<div class="rhead">Your rooms</div>` + (R.mine.length ? R.mine.map(item).join('') : `<div class="rnote">Rooms you post or react in show up here. Search above for any episode, or tap Talk about this episode on an episode's page.</div>`);
@@ -2539,7 +2578,7 @@ function drawRooms() {
     return;
   }
   box.querySelectorAll('[data-goroom]').forEach(b => b.onclick = () => switchRoom(b.dataset.goroom));
-  const lg = $('#liveGo'); if (lg) { const go = () => { const v = $('#liveName').value.trim(); if (v) { sendWs({ t: 'liveopen', title: v }); closeOverlay(); } }; lg.onclick = go; $('#liveName').onkeydown = e => { if (e.key === 'Enter') go(); }; }
+  const lg = $('#liveGo'); if (lg) { const go = () => { const v = $('#liveName').value.trim(); if (v) askLiveTime(v); }; lg.onclick = go; $('#liveName').onkeydown = e => { if (e.key === 'Enter') go(); }; }
 }
 document.addEventListener('click', e => {
   const g = e.target.closest && e.target.closest('.msgs [data-goroom], #thread [data-goroom]'); if (!g) return;
@@ -2800,7 +2839,8 @@ function renderChat() {
         ${hostish ? `<button class="ibtn" id="repBtn" aria-label="Reports">${I.shield()}</button>` : ''}
         <a class="btn2 sm" href="/" target="ivcircle" id="popout" style="margin-left:4px">${P('<path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',{s:16})}Pop out</a>
       </div>
-      ${S.roomInfo.live && S.me && S.me.role === 'host' ? `<div class="livebar"><b>${S.roomInfo.open ? '<span class="livedot"></span> Live' : 'Live room'}</b><span style="flex:1">When the episode is posted, tie this room to it.</span><button class="btn2 sm" id="liveTie">Tie to episode</button>${S.roomInfo.open ? '<button class="btn2 sm" id="liveEnd">End</button>' : ''}</div>` : ''}
+      ${S.roomInfo.live && S.me && S.me.role === 'host' ? `<div class="livebar">${liveSoon(S.roomInfo) ? `<b style="color:var(--gold)">Coming up</b><span style="flex:1">Goes live ${esc(whenLabel(S.roomInfo.starts))}.</span>` : `<b>${S.roomInfo.open ? '<span class="livedot"></span> Live' : 'Live room'}</b><span style="flex:1">When the episode is posted, tie this room to it.</span>`}${S.roomInfo.open ? `<button class="btn2 sm" id="liveTime">${liveSoon(S.roomInfo) ? 'Change time' : 'Start time'}</button>` : ''}<button class="btn2 sm" id="liveTie">Tie to episode</button>${S.roomInfo.open ? '<button class="btn2 sm" id="liveEnd">End</button>' : ''}</div>`
+        : liveSoon(S.roomInfo) ? `<div class="livebar"><b style="color:var(--gold)">Coming up</b><span style="flex:1">Goes live ${esc(whenLabel(S.roomInfo.starts))}. The chat is open now.</span></div>` : ''}
       <div id="pinbar"></div>
       <div id="supbar"></div>
       </div>
@@ -2847,6 +2887,7 @@ function renderChat() {
   $('#roomsBtn').onclick = $('#roomsBtn2').onclick = openRooms;
   if ($('#roomBack')) $('#roomBack').onclick = () => switchRoom('');
   if ($('#liveTie')) $('#liveTie').onclick = () => pickEpisode(url => { const mm = String(url).match(/\/(?:episodes|plus)\/([a-z0-9-]+)/); if (mm && confirm('Move this live room into that episode\'s room? The whole conversation goes with it.')) sendWs({ t: 'livetie', key: S.room, slug: mm[1] }); });
+  if ($('#liveTime')) $('#liveTime').onclick = () => askLiveTime(S.roomInfo.title, S.room);
   if ($('#liveEnd')) $('#liveEnd').onclick = () => { if (confirm('End the live room? It stays readable, and you can still tie it to the episode later.')) sendWs({ t: 'liveclose', key: S.room }); };
   if (isSaved(S.room)) $('#ptitle').onclick = null;
   const openEpPage = () => { const ri = S.roomInfo; const a = document.createElement('a'); a.href = ri.plus && S.me ? SITE + '/plus/' + ri.plus : SITE + '/episodes/' + ri.slug; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); };
@@ -3081,7 +3122,7 @@ function msgHtml(m, i, list) {
     const day = !prev0 || new Date(prev0.created).toDateString() !== new Date(m.created).toDateString();
     const info = m.info || { title: 'Live room', live: true, open: true };
     const tied = !info.live;
-    return (day ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '') + `<div class="jwrap" data-id="${m.id}"><div class="roomnote"><span class="rk" style="${tied ? '' : 'color:#F2998A'}">${tied ? 'Live room, now the episode room' : (info.open ? '<span class="livedot"></span> Live now' : 'Live room')}</span>${tied && info.slug ? `<div data-goroom="${esc(m.text)}" style="width:100%">${unfurlHtml({ title: info.title, thumb: info.thumb, url: info.plus ? SITE + '/plus/' + info.plus : SITE + '/episodes/' + info.slug, shows: info.show ? [info.show] : [] }, info.plus ? 'plus' : 'episodes', info.plus || info.slug, 'div')}</div>` : `<b style="font-size:16px;text-align:center">${esc(info.title)}</b>`}<button class="btn2 sm" data-goroom="${esc(m.text)}">${I.chat(16)}${tied || !info.open ? 'Open the room' : 'Join the live chat'}</button><span class="time">${fmtTime(m.created)}</span></div></div>`;
+    return (day ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '') + `<div class="jwrap" data-id="${m.id}"><div class="roomnote"><span class="rk" style="${tied || liveSoon(info) ? '' : 'color:#F2998A'}">${tied ? 'Live room, now the episode room' : liveSoon(info) ? 'Coming up' : (info.open ? '<span class="livedot"></span> Live now' : 'Live room')}</span>${tied && info.slug ? `<div data-goroom="${esc(m.text)}" style="width:100%">${unfurlHtml({ title: info.title, thumb: info.thumb, url: info.plus ? SITE + '/plus/' + info.plus : SITE + '/episodes/' + info.slug, shows: info.show ? [info.show] : [] }, info.plus ? 'plus' : 'episodes', info.plus || info.slug, 'div')}</div>` : `<b style="font-size:16px;text-align:center">${esc(info.title)}</b>${!tied && liveSoon(info) ? `<span class="muted" style="font-size:13.5px">Goes live ${esc(whenLabel(info.starts))}</span>` : ''}`}<button class="btn2 sm" data-goroom="${esc(m.text)}">${I.chat(16)}${tied || !info.open || liveSoon(info) ? 'Open the room' : 'Join the live chat'}</button><span class="time">${fmtTime(m.created)}</span></div></div>`;
   }
   if (m.kind === 'join') {
     const jp = person(m.uid);

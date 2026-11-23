@@ -363,6 +363,10 @@ export class Room {
     // live rooms (2026-10-10): opened by the host before an episode exists (members watch the recording
     // together), then tied to the episode once its page is live; tying moves the whole conversation over
     this.sql.exec("CREATE TABLE IF NOT EXISTS rooms (key TEXT PRIMARY KEY, title TEXT, created INTEGER, created_by TEXT DEFAULT '', tied TEXT DEFAULT '', closed INTEGER DEFAULT 0)");
+    // scheduled live rooms (2026-11-23): when the room goes live (0 = it went live when opened), and whether
+    // members have been told it is live (rooms from before this default to told)
+    try { this.sql.exec('ALTER TABLE rooms ADD COLUMN starts INTEGER DEFAULT 0'); } catch (e) { /* already there */ }
+    try { this.sql.exec('ALTER TABLE rooms ADD COLUMN started INTEGER DEFAULT 1'); } catch (e) { /* already there */ }
     this.sql.exec('CREATE TABLE IF NOT EXISTS room_state (uid TEXT, room TEXT, engaged INTEGER DEFAULT 0, last_read INTEGER DEFAULT 0, PRIMARY KEY (uid, room)) WITHOUT ROWID');
     // a check every half hour for a newly released episode, whose room is announced in the main chat
     state.blockConcurrencyWhile(async () => { try { if (!(await state.storage.getAlarm())) await state.storage.setAlarm(Date.now() + 60 * 1000); } catch (e) { /* no alarms here */ } });
@@ -460,7 +464,7 @@ export class Room {
         const img = typeof author.avatar === 'string' && author.avatar.startsWith('img:') ? author.avatar.slice(4) : '';
         let title = m.kind === 'join' ? 'New member' : roomTitle, text2 = m.kind === 'join' ? `${name} just joined the Inner Circle` : body, url = roomUrl, av = img;
         if (m.kind === 'room') { const ri = this.roomInfo(m.text, await this.eps()); title = 'Inner Circle'; text2 = `New episode room: ${trimTo(ri.title, 140)}`; url = '/app/#/chat?room=' + encodeURIComponent(m.text); av = ''; }
-        if (m.kind === 'live') { const ri = this.roomInfo(m.text, await this.eps()); title = 'Inner Circle'; text2 = `Live now: ${trimTo(ri.title, 140)}`; url = '/app/#/chat?room=' + encodeURIComponent(m.text); av = ''; }
+        if (m.kind === 'live') { const ri = this.roomInfo(m.text, await this.eps()); title = 'Inner Circle'; text2 = ri.soon && !m.golive ? `Going live ${ctWhen(ri.starts)}: ${trimTo(ri.title, 140)}` : `Live now: ${trimTo(ri.title, 140)}`; url = '/app/#/chat?room=' + encodeURIComponent(m.text); av = ''; }
         const payload = JSON.stringify({ title, body: text2, tag: 'ivc-' + m.id, url, badge: bumped.get(s.uid), avatar: av });
         try {
           const r = await sendPush(s, payload, vapid);
@@ -535,7 +539,8 @@ export class Room {
     if (key.startsWith('live:')) {
       const lr = this.one('SELECT * FROM rooms WHERE key = ?', key);
       if (lr && lr.tied) return this.roomInfo(lr.tied, x);
-      return { key, title: lr ? lr.title : 'Live room', live: true, open: !!(lr && !lr.closed), slug: '', thumb: '', created: lr ? lr.created : 0 };
+      const starts = lr ? (lr.starts || 0) : 0;
+      return { key, title: lr ? lr.title : 'Live room', live: true, open: !!(lr && !lr.closed), slug: '', thumb: '', created: lr ? lr.created : 0, starts, soon: starts > Date.now() };
     }
     const slug = key.slice(3);
     const f = x.free.get(slug), p = x.plusByFree.get(slug) || x.plus.get(slug) || null;
@@ -655,9 +660,37 @@ export class Room {
     return true;
   }
 
+  // a scheduled live room reaching its start time (2026-11-23): its notices in the main chat turn to Live now,
+  // and members on "All messages" get a Live now push (it replaces the earlier "Going live" one on the phone)
+  goLive(key) {
+    const lr = this.one('SELECT * FROM rooms WHERE key = ?', key);
+    if (!lr || lr.started) return;
+    this.sql.exec('UPDATE rooms SET started = 1 WHERE key = ?', key);
+    if (lr.tied || lr.closed) return;
+    const notes = this.all("SELECT * FROM messages WHERE kind = 'live' AND text = ? AND deleted = 0 ORDER BY id", key);
+    for (const n of notes) this.broadcast({ t: 'update', m: this.shape(n) });
+    for (const s of this.state.getWebSockets()) this.send(s, { t: 'roomsdirty' });
+    const by = this.member(lr.created_by) || { uid: '', name: '', avatar: '' };
+    if (notes[0]) this.state.waitUntil(this.pushOut(Object.assign(this.shape(notes[0]), { golive: true }), by));
+  }
+  checkStarts() {
+    try {
+      for (const r of this.all('SELECT key FROM rooms WHERE started = 0 AND starts > 0 AND starts <= ?', Date.now() + 2000)) this.goLive(r.key);
+    } catch (e) { /* never in the way of a sign-in or the alarm */ }
+  }
+  // the alarm runs every half hour, or sooner when a scheduled live room starts before then
+  async wakeAt(t) {
+    try { const cur = await this.state.storage.getAlarm(); if (!cur || t < cur) await this.state.storage.setAlarm(t); } catch (e) { /* ok */ }
+  }
   async alarm() {
+    this.checkStarts();
     await this.announceNew();
-    try { await this.state.storage.setAlarm(Date.now() + 30 * 60 * 1000); } catch (e) { /* ok */ }
+    let next = Date.now() + 30 * 60 * 1000;
+    try {
+      const up = this.one("SELECT MIN(starts) AS t FROM rooms WHERE started = 0 AND starts > 0 AND tied = '' AND closed = 0");
+      if (up && up.t && up.t + 500 < next) next = Math.max(up.t + 500, Date.now() + 1000);
+    } catch (e) { /* keep the half-hour */ }
+    try { await this.state.storage.setAlarm(next); } catch (e) { /* ok */ }
   }
   where() {
     const w = {};
@@ -955,6 +988,7 @@ export class Room {
       const msgs = at.messages;
       const pins = this.pins(rk.key);
       if (!this.announcedAt || Date.now() - this.announcedAt > 10 * 60 * 1000) { this.announcedAt = Date.now(); this.state.waitUntil(this.announceNew()); }
+      this.checkStarts();
       this.send(ws, {
         t: 'init', me: this.meFor(who.uid), room: rk.key ? this.roomInfo(rk.key, await this.eps()) : this.roomInfo(''), roomfail: !!msg.room && msg.room !== 'main' && !rk.key,
         messages: msgs, lastRead: at.lastRead, done: at.done, pins, online: this.online(), where: this.where(),
@@ -1398,14 +1432,35 @@ export class Room {
         const title = clean(msg.title, 80);
         if (!title) return this.send(ws, { t: 'error', text: 'Give the live room a name.' });
         const key = 'live:' + Date.now().toString(36);
-        this.sql.exec('INSERT INTO rooms (key, title, created, created_by) VALUES (?, ?, ?, ?)', key, title, now, me.uid);
-        this.log(me.uid, 'room_open', '', 0, { live: key, title });
+        const starts = liveStart(msg.starts, now); // 0 = live now (2026-11-23: the host is asked when it goes live)
+        this.sql.exec('INSERT INTO rooms (key, title, created, created_by, starts, started) VALUES (?, ?, ?, ?, ?, ?)', key, title, now, me.uid, starts, starts ? 0 : 1);
+        this.log(me.uid, 'room_open', '', 0, { live: key, title, starts });
+        if (starts) await this.wakeAt(starts + 500);
         const row = this.one("INSERT INTO messages (uid, text, image, reply_to, created, kind, room) VALUES (?, ?, '', NULL, ?, 'live', '') RETURNING *", me.uid, key, now);
         const m = this.shape(row);
         this.broadcast({ t: 'msg', m, people: this.peopleFor([m]) });
         this.state.waitUntil(this.pushOut(m, this.member(me.uid)));
         for (const s of this.state.getWebSockets()) this.send(s, { t: 'roomsdirty' });
-        return this.send(ws, { t: 'liveopened', key });
+        return this.send(ws, { t: 'liveopened', key, starts });
+      }
+
+      case 'livetime': { // host: set or change when a live room goes live, or make it live now (starts 0)
+        if (me.role !== 'host') return;
+        const lr = this.one("SELECT * FROM rooms WHERE key = ? AND tied = ''", String(msg.key || ''));
+        if (!lr) return this.send(ws, { t: 'error', text: 'That live room is already tied or gone.' });
+        const starts = liveStart(msg.starts, now);
+        if (msg.starts && !starts) return this.send(ws, { t: 'error', text: 'That time has already passed. Pick a later one, or choose Live now.' });
+        this.log(me.uid, 'room_time', '', 0, { live: lr.key, title: lr.title, starts });
+        if (starts) {
+          this.sql.exec('UPDATE rooms SET starts = ?, started = 0 WHERE key = ?', starts, lr.key);
+          await this.wakeAt(starts + 500);
+        } else {
+          this.sql.exec('UPDATE rooms SET starts = 0 WHERE key = ?', lr.key);
+          if (!lr.started) this.goLive(lr.key); // members were told a time: tell them it is live now
+        }
+        for (const n of this.all("SELECT * FROM messages WHERE kind = 'live' AND text = ? AND deleted = 0", lr.key)) this.broadcast({ t: 'update', m: this.shape(n) });
+        for (const s of this.state.getWebSockets()) this.send(s, { t: 'roomsdirty' });
+        return this.send(ws, { t: 'notice', text: starts ? 'Start time set.' : 'The room is live now.' });
       }
 
       case 'livetie': { // host: tie a live room to its episode once the episode's page is live
@@ -1627,6 +1682,19 @@ function firstLink(text) {
 }
 const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 const unent = s => String(s || '').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (all, e) => e[0] === '#' ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : (ENT[e.toLowerCase()] ?? all));
+// a scheduled live room's start (2026-11-23): a time at least a minute ahead and within 60 days, else 0 (live now)
+const liveStart = (v, now) => { const t = Number(v); return Number.isFinite(t) && t > now + 60000 && t < now + 60 * 86400e3 ? Math.round(t) : 0; };
+// that start as a phone notification says it, in Chance's time (Central)
+function ctWhen(t) {
+  const tz = 'America/Chicago';
+  try {
+    const day = d => new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+    const time = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(t);
+    const that = day(t), when = that === day(Date.now()) ? 'today' : that === day(Date.now() + 86400e3) ? 'tomorrow'
+      : new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short', month: 'short', day: 'numeric' }).format(t);
+    return `${when} at ${time} CT`;
+  } catch (e) { return 'soon'; }
+}
 const trimTo = (s, n) => { s = unent(s).replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s; };
 const httpsUrl = (u, base) => { try { const x = new URL(unent(u).trim(), base); if (x.protocol === 'http:') x.protocol = 'https:'; return x.protocol === 'https:' ? x.href.slice(0, 800) : ''; } catch (e) { return ''; } };
 function ytId(u) {
