@@ -21,6 +21,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 }
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+/* thin dark scroll bars on desktop instead of the browser's white ones (2026-11-23) */
+html{scrollbar-color:rgba(255,255,255,.18) transparent}
+*{scrollbar-width:thin}
 /* feel like an app on phones: nothing gets highlighted or called out by a stray press, except where you type */
 @media (hover:none){html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
   input,textarea,[contenteditable="true"],emoji-picker{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}}
