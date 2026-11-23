@@ -1055,6 +1055,9 @@ function signRow(p) {
 const fmtTime = t => new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 // scheduled live rooms (2026-11-23): a room opened ahead of a recording shows Coming up and its start time
 // (in the reader's own time) until then, instead of Live now
+// the audience link for live recordings is always the same studio (Chance, 2026-11-23), so every open live room carries it
+const AUDIENCE_URL = 'https://riverside.com/studio/innerverse-2025';
+const watchBtn = () => `<a class="btn2 sm" href="${AUDIENCE_URL}" target="_blank" rel="noopener">${I.play ? I.play(14) : ''}Watch live</a>`;
 const liveSoon = ri => !!(ri && ri.live && ri.open !== false && ri.starts && ri.starts > Date.now());
 function whenLabel(t) {
   const d = new Date(t), now = new Date(), tmr = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -2839,8 +2842,8 @@ function renderChat() {
         ${hostish ? `<button class="ibtn" id="repBtn" aria-label="Reports">${I.shield()}</button>` : ''}
         <a class="btn2 sm" href="/" target="ivcircle" id="popout" style="margin-left:4px">${P('<path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',{s:16})}Pop out</a>
       </div>
-      ${S.roomInfo.live && S.me && S.me.role === 'host' ? `<div class="livebar">${liveSoon(S.roomInfo) ? `<b style="color:var(--gold)">Coming up</b><span style="flex:1">Goes live ${esc(whenLabel(S.roomInfo.starts))}.</span>` : `<b>${S.roomInfo.open ? '<span class="livedot"></span> Live' : 'Live room'}</b><span style="flex:1">When the episode is posted, tie this room to it.</span>`}${S.roomInfo.open ? `<button class="btn2 sm" id="liveTime">${liveSoon(S.roomInfo) ? 'Change time' : 'Start time'}</button>` : ''}<button class="btn2 sm" id="liveTie">Tie to episode</button>${S.roomInfo.open ? '<button class="btn2 sm" id="liveEnd">End</button>' : ''}</div>`
-        : liveSoon(S.roomInfo) ? `<div class="livebar"><b style="color:var(--gold)">Coming up</b><span style="flex:1">Goes live ${esc(whenLabel(S.roomInfo.starts))}. The chat is open now.</span></div>` : ''}
+      ${S.roomInfo.live && S.me && S.me.role === 'host' ? `<div class="livebar">${liveSoon(S.roomInfo) ? `<b style="color:var(--gold)">Coming up</b><span style="flex:1">Goes live ${esc(whenLabel(S.roomInfo.starts))}.</span>` : `<b>${S.roomInfo.open ? '<span class="livedot"></span> Live' : 'Live room'}</b><span style="flex:1">When the episode is posted, tie this room to it.</span>`}${S.roomInfo.open ? watchBtn() : ''}${S.roomInfo.open ? `<button class="btn2 sm" id="liveTime">${liveSoon(S.roomInfo) ? 'Change time' : 'Start time'}</button>` : ''}<button class="btn2 sm" id="liveTie">Tie to episode</button>${S.roomInfo.open ? '<button class="btn2 sm" id="liveEnd">End</button>' : ''}</div>`
+        : S.roomInfo.live && S.roomInfo.open ? `<div class="livebar">${liveSoon(S.roomInfo) ? `<b style="color:var(--gold)">Coming up</b><span style="flex:1">Goes live ${esc(whenLabel(S.roomInfo.starts))}. The chat is open now.</span>` : `<b><span class="livedot"></span> Live</b><span style="flex:1">Watch the recording and chat here.</span>`}${watchBtn()}</div>` : ''}
       <div id="pinbar"></div>
       <div id="supbar"></div>
       </div>
@@ -3122,7 +3125,7 @@ function msgHtml(m, i, list) {
     const day = !prev0 || new Date(prev0.created).toDateString() !== new Date(m.created).toDateString();
     const info = m.info || { title: 'Live room', live: true, open: true };
     const tied = !info.live;
-    return (day ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '') + `<div class="jwrap" data-id="${m.id}"><div class="roomnote"><span class="rk" style="${tied || liveSoon(info) ? '' : 'color:#F2998A'}">${tied ? 'Live room, now the episode room' : liveSoon(info) ? 'Coming up' : (info.open ? '<span class="livedot"></span> Live now' : 'Live room')}</span>${tied && info.slug ? `<div data-goroom="${esc(m.text)}" style="width:100%">${unfurlHtml({ title: info.title, thumb: info.thumb, url: info.plus ? SITE + '/plus/' + info.plus : SITE + '/episodes/' + info.slug, shows: info.show ? [info.show] : [] }, info.plus ? 'plus' : 'episodes', info.plus || info.slug, 'div')}</div>` : `<b style="font-size:16px;text-align:center">${esc(info.title)}</b>${!tied && liveSoon(info) ? `<span class="muted" style="font-size:13.5px">Goes live ${esc(whenLabel(info.starts))}</span>` : ''}`}<button class="btn2 sm" data-goroom="${esc(m.text)}">${I.chat(16)}${tied || !info.open || liveSoon(info) ? 'Open the room' : 'Join the live chat'}</button><span class="time">${fmtTime(m.created)}</span></div></div>`;
+    return (day ? `<div class="day">${esc(dayLabel(m.created))}</div>` : '') + `<div class="jwrap" data-id="${m.id}"><div class="roomnote"><span class="rk" style="${tied || liveSoon(info) ? '' : 'color:#F2998A'}">${tied ? 'Live room, now the episode room' : liveSoon(info) ? 'Coming up' : (info.open ? '<span class="livedot"></span> Live now' : 'Live room')}</span>${tied && info.slug ? `<div data-goroom="${esc(m.text)}" style="width:100%">${unfurlHtml({ title: info.title, thumb: info.thumb, url: info.plus ? SITE + '/plus/' + info.plus : SITE + '/episodes/' + info.slug, shows: info.show ? [info.show] : [] }, info.plus ? 'plus' : 'episodes', info.plus || info.slug, 'div')}</div>` : `<b style="font-size:16px;text-align:center">${esc(info.title)}</b>${!tied && liveSoon(info) ? `<span class="muted" style="font-size:13.5px">Goes live ${esc(whenLabel(info.starts))}</span>` : ''}`}<button class="btn2 sm" data-goroom="${esc(m.text)}">${I.chat(16)}${tied || !info.open || liveSoon(info) ? 'Open the room' : 'Join the live chat'}</button>${!tied && info.open ? watchBtn() : ''}<span class="time">${fmtTime(m.created)}</span></div></div>`;
   }
   if (m.kind === 'join') {
     const jp = person(m.uid);
