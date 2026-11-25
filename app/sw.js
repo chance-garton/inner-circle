@@ -1,6 +1,6 @@
 /* InnerVerse app: keeps the app opening fast and offline, and always picks up new versions.
    The page itself is fetched fresh first on every launch, so a pushed update shows on the next open. */
-const VERSION = 'iva-2026-11-10a';
+const VERSION = 'iva-2026-11-25a';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -46,7 +46,7 @@ self.addEventListener('fetch', e => {
   }
   if (url.origin === location.origin && url.pathname.indexOf('/app/') === 0) { e.respondWith(networkFirst(req, null, true)); return; }
   if (url.hostname === 'raw.githubusercontent.com' && /innerverse-data/.test(url.pathname)) { e.respondWith(networkFirst(req)); return; }
-  if (url.hostname === 'images.squarespace-cdn.com' || url.hostname === 'images.innerversepodcast.com') { e.respondWith(cacheFirst(req)); return; }
+  if (url.hostname === 'images.innerversepodcast.com') { e.respondWith(cacheFirst(req)); return; }
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') { e.respondWith(cacheFirst(req)); return; }
 });
 

@@ -708,7 +708,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-11-10a';
+const VERSION = '2026-11-25a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -744,7 +744,6 @@ function img(url, w) {
     if (s !== url) imgBack[s] = url;
     return s;
   }
-  if (/squarespace-cdn\.com/.test(url)) return url.split('?')[0] + '?format=' + (w || 500) + 'w';
   return url;
 }
 function parseJSON(s) { if (!s) return []; if (Array.isArray(s)) return s; try { const v = JSON.parse(s); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
@@ -2867,8 +2866,8 @@ let miniSwiped = false;
 })();
 
 // media session (lock screen and headphones)
-// Lock screen, CarPlay, AirPlay and car screens art (build 2026-10-21a). The phone skips the Squarespace CDN
-// copy (it can arrive as WebP, and was labelled with the wrong type and size), so a song uses the plain
+// Lock screen, CarPlay, AirPlay and car screens art (build 2026-10-21a). The phone wants a real JPEG of the
+// right type and size (a WebP copy will not do), so a song uses the plain
 // 600x600 JPEG songs/build.py writes beside its share page; the app icon is only the last resort.
 function lockArt() {
   const icon = { src: location.origin + location.pathname.replace(/[^/]*$/, '') + 'icons/icon-512.png', sizes: '512x512', type: 'image/png' };

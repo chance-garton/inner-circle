@@ -1705,7 +1705,6 @@ function stickDown() { const box = $('#msgs'); if (!box) return; if (S.stick) bo
 const mediaSize = new Map(); // rendered size of each image, so a redraw holds its space before it loads
 // an episode's card: thumbnail, Plus+ or free, show and length, title; one look for the chat, the composer and the picker
 function epEntry(ix, kind, slug) { return kind === 'plus' ? (ix.plus[slug] || ix.free[slug]) : (ix.free[slug] || ix.plus[slug]); }
-// Squarespace's image CDN makes a small copy when format= is the first query parameter (100, 300, 500, 750 wide)
 // our own image host (images.innerversepodcast.com): the small WebP for the width asked; if that size was never made, the plain address loads instead
 const IMG_BASE = 'https://images.innerversepodcast.com', IMG_WIDTHS = [300, 500, 750, 1000, 1500], imgBack = {};
 window.addEventListener('error', ev => { const el = ev.target; if (el && el.tagName === 'IMG' && imgBack[el.src]) { const o = imgBack[el.src]; delete imgBack[el.src]; el.src = o; } }, true);
@@ -1718,7 +1717,7 @@ const thumbAt = (u, w) => {
     if (s !== u) imgBack[s] = u;
     return s;
   }
-  return /images\.squarespace-cdn\.com/.test(u) && u.indexOf('?') < 0 ? u + '?format=' + w + 'w' : u;
+  return u;
 };
 const epTitle = e => String(e.title || '').replace(/\s*\(PLUS\)\s*$/i, '');
 function epMeta(e, isPlus) {

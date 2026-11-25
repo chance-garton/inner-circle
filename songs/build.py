@@ -8,7 +8,7 @@ share pages whose song is no longer listed.
 
 It also writes songs/<id>/cover.jpg: a 600x600 plain JPEG of the song's art that the app
 hands the phone for the lock screen, CarPlay, AirPlay and car screens. The phone ignores
-the Squarespace CDN copy (it can arrive as WebP), so this copy must be a real JPEG served
+WebP copies, so this copy must be a real JPEG served
 from this site. It is remade only when the art changes (songs/<id>/cover.src keeps the
 source address). Needs Pillow (pip install pillow); without it the pages still build and
 the lock screen shows the InnerVerse logo for new songs.
@@ -37,11 +37,11 @@ LOGO = IMG_BASE + '/sq/9a710a85-f780-4b67-a4c7-2b45690b6006/2025-electric-logo-2
 
 
 def full_art(art, w):
-    """A song's art as a full address: a link on our image host (the plain original), a Squarespace CDN
-    link (sized with ?format=) or a file in this folder. Share-card tags and the lock-screen cover use the
+    """A song's art as a full address: a link on our image host (the plain original), any other
+    full link as it is, or a file in this folder. Share-card tags and the lock-screen cover use the
     original; page pictures go through sized()."""
     if art.startswith('http'):
-        return art.split('?')[0] + f'?format={w}w' if 'squarespace-cdn.com' in art else art
+        return art
     return BASE + art
 
 
@@ -67,9 +67,9 @@ def img_tag(addr, w, cls='', alt=''):
 
 
 def thumb_at(thumb, w):
-    """An episode thumbnail at a width: our image host's original stays plain (sized() handles it), a
-    Squarespace one gets ?format=."""
-    return thumb if thumb.startswith(IMG_BASE + '/') else thumb + f'?format={w}w'
+    """An episode thumbnail: our image host's original stays plain (sized() handles it), and so does
+    any other address."""
+    return thumb
 
 
 def write_cover(sid, src):
