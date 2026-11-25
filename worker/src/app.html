@@ -1904,7 +1904,7 @@ async function plOpenRoom(then) {
     if (!f) { PL.data = { err: true }; plDraw(); return; }
     let pv = f['Plus Video URL'] || '';
     const pa = f['Plus Audio URL'] || '';
-    PL.plus = !!(pv || pa);
+    PL.plus = !!(f['Has Plus Video'] || pv || pa); // the data file says only whether a members' video exists
     // members' video address from the Worker (2026-11-25, rollout step 2); the public field is the fallback until step 4
     if (PL.plus && S.token) {
       try {
