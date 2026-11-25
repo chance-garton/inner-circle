@@ -2341,6 +2341,13 @@ function buildEp(kind, it, rec) {
   };
 }
 
+// members' video address from the Worker (2026-11-25, rollout step 2): only a signed-in
+// active member gets it. Null on any failure; until step 4 the public field is the fallback.
+function videoLink(slug) {
+  if (!S.token || !slug) return Promise.resolve(null);
+  return fetch(AUTH + '/video-link/' + encodeURIComponent(slug), { headers: { Authorization: 'Bearer ' + S.token }, cache: 'no-store' })
+    .then(r => r.ok ? r.json() : null).then(j => (j && typeof j === 'object') ? j : null).catch(() => null);
+}
 async function openEpisode(kind, slug) {
   const v = $('#ep');
   if (!S.lib) { epShown = ''; v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button></div></header><div class="loading"><div class="spin"></div></div>`; bindBack(); return; }
@@ -2361,6 +2368,7 @@ async function openEpisode(kind, slug) {
   if (kind === 'p' && !S.member) { renderLock(it); return; }
   v.innerHTML = `<header class="hdr"><div class="row"><button class="iconbtn" id="epBack" aria-label="Back">${I.back(24)}</button><span class="eptitle-mini">${esc(it.title)}</span></div></header><div class="loading"><div class="spin"></div></div>`;
   bindBack();
+  const vReq = kind === 'p' ? videoLink(slug) : null;
   let rec;
   try { rec = await episodeFile(it.file); }
   catch (e) {
@@ -2369,7 +2377,10 @@ async function openEpisode(kind, slug) {
     if (!rec) { $('.loading', v).outerHTML = `<div class="wrap"><div class="empty">This episode's page is not in the app yet.<br><br><a class="btn line" href="${SITE}/${kind === 'p' ? 'plus' : 'episodes'}/${esc(slug)}" target="_blank" rel="noopener">Open it on the website</a></div></div>`; return; }
   }
   if (my !== epReq) return;
+  const vl = vReq ? await vReq : null;
+  if (my !== epReq) return;
   EPV = buildEp(kind, it, rec);
+  if (EPV.plus && vl && vl.video) EPV.video = vl.video;
   renderEpisode();
 }
 function bindBack() {
