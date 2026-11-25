@@ -708,7 +708,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-11-25a';
+const VERSION = '2026-11-25b';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -2312,7 +2312,7 @@ function buildEp(kind, it, rec) {
     if (!pf.length && !pm.length) chapters = [];
     const key = audioKey(f['Plus Audio URL']);
     audio = key ? { plusKey: key } : null;
-    video = f['Plus Video URL'] || '';
+    video = ''; // filled from videoLink() in openEpisode
     themes = parseJSON(f['Core Themes JSON']).concat(parseJSON(f['Plus Core Themes JSON']).map(t => Object.assign({ m: true }, t)));
     quotes = parseJSON(f['Quotes JSON']).concat(parseJSON(f['Plus Quotes JSON']).map(q => Object.assign({ m: true }, q)));
   } else {
@@ -2340,8 +2340,8 @@ function buildEp(kind, it, rec) {
   };
 }
 
-// members' video address from the Worker (2026-11-25, rollout step 2): only a signed-in
-// active member gets it. Null on any failure; until step 4 the public field is the fallback.
+// members' video address from the Worker (2026-11-25): only a signed-in active member gets it.
+// Null on any failure; the public data file no longer carries it, so there is no fallback.
 function videoLink(slug) {
   if (!S.token || !slug) return Promise.resolve(null);
   return fetch(AUTH + '/video-link/' + encodeURIComponent(slug), { headers: { Authorization: 'Bearer ' + S.token }, cache: 'no-store' })

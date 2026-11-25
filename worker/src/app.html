@@ -1902,10 +1902,10 @@ async function plOpenRoom(then) {
     const f = d && (d.fields || d);
     PL.loading = false;
     if (!f) { PL.data = { err: true }; plDraw(); return; }
-    let pv = f['Plus Video URL'] || '';
+    let pv = '';
     const pa = f['Plus Audio URL'] || '';
-    PL.plus = !!(f['Has Plus Video'] || pv || pa); // the data file says only whether a members' video exists
-    // members' video address from the Worker (2026-11-25, rollout step 2); the public field is the fallback until step 4
+    PL.plus = !!(f['Has Plus Video'] || pa); // the data file says only whether a members' video exists
+    // members' video address from the Worker (2026-11-25), handed only to a signed-in active member
     if (PL.plus && S.token) {
       try {
         const r = await fetch(AUTH + '/video-link/' + encodeURIComponent(PL.slug), { headers: { Authorization: 'Bearer ' + S.token }, cache: 'no-store' });
