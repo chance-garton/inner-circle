@@ -459,7 +459,7 @@ emoji-picker{--background:var(--card);--border-color:rgba(233,238,246,0.12);--in
 .swrep{position:absolute;right:-46px;top:50%;width:34px;height:34px;border-radius:50%;background:rgba(216,170,60,0.18);color:var(--gold);display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(-50%) scale(.6);pointer-events:none}
 .heartpop{position:absolute;left:50%;top:50%;font-size:44px;line-height:1;transform:translate(-50%,-50%) scale(.2);opacity:0;animation:hpop .75s ease-out forwards;pointer-events:none;z-index:5}
 @keyframes hpop{30%{transform:translate(-50%,-50%) scale(1.15);opacity:1}100%{transform:translate(-50%,-70%) scale(1);opacity:0}}
-body.dropping::after{content:"Drop photos to add them";position:fixed;inset:12px;border:2px dashed var(--gold);border-radius:18px;background:rgba(10,15,28,0.8);display:flex;align-items:center;justify-content:center;color:var(--gold);font-weight:700;font-size:18px;z-index:90;pointer-events:none}
+body.dropping::after{content:"Drop photos or videos to add them";position:fixed;inset:12px;border:2px dashed var(--gold);border-radius:18px;background:rgba(10,15,28,0.8);display:flex;align-items:center;justify-content:center;color:var(--gold);font-weight:700;font-size:18px;z-index:90;pointer-events:none}
 /* photo albums (2026-11-14, Chance: several photos in one message, laid out compact like Telegram) */
 .attachbar.multi{flex-direction:column;align-items:stretch;gap:6px}
 .attrow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
@@ -488,6 +488,47 @@ body.dropping::after{content:"Drop photos to add them";position:fixed;inset:12px
 .lbx,.lbsave,.lbcount,.lbnav{transition:opacity .18s}
 .lightbox.lbhide .lbx,.lightbox.lbhide .lbsave,.lightbox.lbhide .lbcount,.lightbox.lbhide .lbnav{opacity:0;pointer-events:none}
 .lightbox.drag img{transition:none}
+/* members' video (2026-11-26) */
+.alb .vcell{position:absolute;overflow:hidden;border-radius:3px;cursor:pointer;background:#05080f}
+.alb .vcell img{position:absolute;inset:0;width:100%;height:100%;border-radius:0;cursor:pointer}
+.alb .vcell video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;background:transparent;opacity:0;transition:opacity .25s}
+.alb .vcell.playing video{opacity:1}
+.alb.vone{width:280px}
+@media (min-width:861px){.alb.vone{width:320px}}
+.vdur{position:absolute;left:6px;top:6px;padding:2px 8px;border-radius:999px;background:rgba(10,15,28,0.72);color:#fff;font-size:11.5px;font-weight:700;line-height:1.45;display:flex;align-items:center;gap:4px;pointer-events:none;font-variant-numeric:tabular-nums;z-index:1}
+.vdur b{font-weight:700}
+.vplay{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(10,15,28,0.62);color:#fff;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:opacity .2s;z-index:1}
+.vcell.playing .vplay{opacity:0}
+.alb:not(.one) .vplay{width:36px;height:36px;margin:-18px 0 0 -18px}
+.alb:not(.one) .vplay svg{width:18px;height:18px}
+.pcell .prog.big{width:46px;height:46px;margin:-23px 0 0 -23px}
+.pcell .prog.big::before{-webkit-mask:radial-gradient(circle,transparent 16px,#000 17px);mask:radial-gradient(circle,transparent 16px,#000 17px)}
+.pcell .pcx{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;z-index:2}
+.pcap{position:absolute;left:0;right:0;top:calc(50% + 28px);text-align:center;font-size:11.5px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.85);pointer-events:none}
+.attach.vid{cursor:pointer}
+.attach .vdur{left:3px;top:auto;bottom:3px;font-size:10.5px;padding:1px 6px}
+.attach .vwait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted)}
+.vedit{display:flex;flex-direction:column;gap:12px;padding:14px 16px 16px}
+.vedit .vhead{display:flex;align-items:center;gap:10px}
+.vedit .vstage{background:#000;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.vedit .vstage video{display:block;max-width:100%;max-height:min(46dvh,420px);cursor:pointer}
+.vtrim{position:relative;height:54px;border-radius:10px;overflow:hidden;background:#0b1220;touch-action:none;user-select:none;-webkit-user-select:none;cursor:ew-resize}
+.vtrim .vstrip{position:absolute;inset:0;display:flex}
+.vtrim .vstrip canvas{flex:1 1 0;min-width:0;width:0;height:100%;object-fit:cover}
+.vtrim .vshade{position:absolute;top:0;bottom:0;background:rgba(5,8,15,0.74)}
+.vtrim .vsel{position:absolute;top:0;bottom:0;box-sizing:border-box;border:3px solid var(--gold);border-left-width:13px;border-right-width:13px;border-radius:10px;min-width:26px}
+.vtrim .vnow{position:absolute;top:3px;bottom:3px;width:2px;margin-left:-1px;background:#fff;border-radius:2px;pointer-events:none}
+.vedit .vrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.vedit .btn1{min-height:40px;padding:0 22px;font-size:14px}
+.lightbox video.lbvid{display:none;max-width:min(1100px,100%);max-height:calc(100dvh - 150px);border-radius:12px;background:#000;transition:transform .2s ease;cursor:pointer}
+.lightbox.isvid video.lbvid{display:block}
+.lightbox.isvid img{display:none}
+.lightbox.drag video.lbvid{transition:none}
+.lbvc{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));width:min(640px,calc(100% - 24px));box-sizing:border-box;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(10,15,28,0.8);color:var(--ink);z-index:22;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;touch-action:auto}
+.lightbox.isvid .lbvc{display:flex}
+.lbvc button{width:36px;height:36px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;color:var(--ink)}
+.lbvc input[type=range]{flex:1;min-width:0;height:24px;accent-color:var(--gold);touch-action:none}
+.lbvc .lbvt{flex:none;white-space:nowrap}
 .joined{align-self:center;display:flex;align-items:center;gap:7px;margin:10px 0;padding:5px 14px 5px 6px;border-radius:999px;background:rgba(216,170,60,0.09);border:1px solid rgba(216,170,60,0.3);font-size:13.5px;color:var(--muted);flex-wrap:wrap;justify-content:center}
 .joined button{display:inline-flex;align-items:center;gap:7px;color:var(--gold)}
 .joined .time{margin-left:4px}
@@ -827,7 +868,7 @@ button.tchip{cursor:pointer;font:inherit;font-weight:700;font-size:12.5px;backgr
 </head>
 <body>
 <div id="app"></div>
-<input type="file" id="filepick" accept="image/png,image/jpeg,image/gif,image/webp" multiple class="sr" tabindex="-1" aria-hidden="true">
+<input type="file" id="filepick" accept="image/png,image/jpeg,image/gif,image/webp,video/*" multiple class="sr" tabindex="-1" aria-hidden="true">
 <script>
 (function(){
 'use strict';
@@ -1305,7 +1346,7 @@ window.ivcLatest = function () {
     let photo = '';
     if (a.startsWith('img:')) { const el = document.querySelector('img[data-media="' + CSS.escape(a.slice(4)) + '"][src]'); if (el && el.getAttribute('src')) photo = el.src; }
     const k = a.startsWith('sym:') ? a.slice(4) : '';
-    return { id: m.id, name: p.name || 'Member', text: (m.text || '').replace(/\s+/g, ' ').slice(0, 220) || (m.image ? 'Photo' : ''), created: m.created || '',
+    return { id: m.id, name: p.name || 'Member', text: (m.text || '').replace(/\s+/g, ' ').slice(0, 220) || mediaWord(m), created: m.created || '',
       photo, sym: k ? P(SYMS[k] || '', { s: 22, w: 1.9 }) : '', color: k ? (SYM_COLORS[k] || '#8FB5F0') : hashColor(m.uid), initial: ((p.name || '?').trim().charAt(0) || '?').toUpperCase() };
   } catch (e) { return null; }
 };
@@ -1402,6 +1443,7 @@ function openSettings() {
   const alertsOn = perm === 'granted' && load('ivc_alerts') !== 'off';
   const sound = load('ivc_sound') !== 'off';
   const hapt = load('ivc_haptics') !== 'off';
+  const vauto = load('ivc_autoplay') !== 'off';
   const host = S.me && S.me.role === 'host', mod = host || (S.me && S.me.role === 'mod');
   const sw = on => `<span class="sw${on ? ' on' : ''}" aria-hidden="true"><i></i></span>`;
   const alertSub = perm === 'unsupported' ? 'Not available in this browser. On iPhone, add InnerVerse to your Home Screen first.'
@@ -1417,6 +1459,7 @@ function openSettings() {
       <button class="setrow" id="sAlert" role="switch" aria-checked="${alertsOn}" ${perm === 'unsupported' || perm === 'denied' || lvl === 'none' ? 'disabled' : ''}>${P('<rect x="3" y="4" width="18" height="14" rx="3"/><path d="M8 21h8"/>',{s:20})}<span class="st"><b>Pop-ups</b><small>${alertSub}</small></span>${sw(alertsOn && lvl !== 'none')}</button>
       <button class="setrow" id="sSound" role="switch" aria-checked="${sound}">${I.note(20)}<span class="st"><b>Mention chime</b><small>A soft sound when you are mentioned</small></span>${sw(sound)}</button>
       <button class="setrow" id="sHapt" role="switch" aria-checked="${hapt}">${P('<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M3 9v6M21 9v6"/>',{s:20})}<span class="st"><b>Haptics</b><small>${IOS ? 'A light tick when you tap reactions and menu options' : 'A light buzz when you press, hold and slide'}</small></span>${sw(hapt)}</button>
+      <button class="setrow" id="sVid" role="switch" aria-checked="${vauto}">${I.play(20)}<span class="st"><b>Play videos on their own</b><small>Members' videos play silently as you scroll. Off, each waits for a tap.</small></span>${sw(vauto)}</button>
       ${mod ? `<button class="setrow" id="sRep">${I.shield(20)}<span class="st"><b>Reports</b><small>Messages members flagged</small></span>${S.reports ? `<span class="cnt">${S.reports}</span>` : ''}${I.chev(18)}</button>` : ''}
       ${host ? `<button class="setrow" id="sJoin" role="switch" aria-checked="${S.me.join_alerts !== false}">${I.user(20)}<span class="st"><b>New member alerts</b><small>Only you get these: a notification when someone joins the Inner Circle, whatever "Notify me about" says.</small></span>${sw(S.me.join_alerts !== false)}</button>` : ''}
       ${host ? `<button class="setrow" id="sLog">${I.history(20)}<span class="st"><b>Moderation history</b><small>Only you see this. Deletions, mutes, removals, roles and titles, each with undo.</small></span>${I.chev(18)}</button>` : ''}
@@ -1444,6 +1487,7 @@ function openSettings() {
     if (b.dataset.lvl !== 'none' && perm === 'default') Notification.requestPermission().then(() => openSettings()); else openSettings();
     S.unread = 0; renderMentionBadge();
   });
+  $('#sVid').onclick = () => { store('ivc_autoplay', vauto ? 'off' : null); pickPlaying(); openSettings(); };
   $('#sHapt').onclick = () => { store('ivc_haptics', hapt ? 'off' : null); if (IOS) syncHx(); if (!hapt) haptic(15); openSettings(); };
   if ($('#sRep')) $('#sRep').onclick = () => { closeOverlay(); sendWs({ t: 'reports' }); };
   if ($('#sLog')) $('#sLog').onclick = () => {
@@ -1669,6 +1713,7 @@ function hydrateMedia(root) {
     }
     p.then(u => { img.src = u; }).catch(() => { img.alt = 'Image unavailable'; });
   });
+  hydrateVideos();
 }
 
 // public episode data for link cards and favourites
@@ -2223,7 +2268,7 @@ function savePending() { const keep = S.pending.filter(p => !p.up); store('ivc_p
 function queueSend(o, up) {
   const cid = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   const p = { cid, uid: S.me && S.me.uid, o: Object.assign({ room: S.room || '' }, o, { t: 'send', cid }), at: Date.now(), tried: false };
-  if (up && up.length) { p.up = up; up.forEach(a => { a.pend = p; }); }
+  if (up && up.length) { p.up = up; up.forEach(a => { a.pend = p; if (a.video) startVideo(a); }); } // a video is prepared and uploaded from here
   S.pending.push(p); savePending(); renderPending(true);
   if (p.up) { pendUploadDone(p); return; } // goes as soon as every photo is up (at once if they already are)
   armFail(p); trySend(p);
@@ -2235,12 +2280,13 @@ function pendUploadDone(p, err) {
     p.up.forEach(a => { a.pend = null; });
     S.attach = (S.attach || []).concat(p.up).slice(0, ALBUM_MAX);
     const f = $('#field'); if (f && !f.value && p.o.text) { f.value = p.o.text; f.dispatchEvent(new Event('input')); }
-    renderAttach(); renderPending(false); toast((err && err.message) || 'A photo did not upload. Try again.'); return;
+    renderAttach(); renderPending(false); if (!err.quiet) toast((err && err.message) || 'A photo did not upload. Try again.'); return;
   }
-  if (!p.up.every(a => a.key && a.w)) return;
+  if (!p.up.every(a => a.key && a.w && (!a.video || a.vkey))) return;
   const ups = p.up; delete p.up;
-  p.local = ups.map(a => ({ u: a.local || a.url, w: a.w, h: a.h }));
-  p.o.image = ups[0].key; if (ups.length > 1) p.o.images = ups.map(a => ({ k: a.key, w: a.w || 1, h: a.h || 1 }));
+  p.local = ups.map(a => ({ u: a.local || a.url, w: a.w, h: a.h, v: a.video ? { d: a.outDur, q: a.mute } : null }));
+  const item = a => a.video ? { k: a.key, w: a.w || 1, h: a.h || 1, v: a.vkey, d: Math.round(a.outDur * 10) / 10, s: a.size, q: a.mute ? 1 : undefined } : { k: a.key, w: a.w || 1, h: a.h || 1 };
+  p.o.image = ups[0].key; if (ups.length > 1 || ups[0].video) p.o.images = ups.map(item);
   savePending(); renderPending(false); armFail(p); trySend(p);
 }
 function armFail(p) { clearTimeout(p.failT); p.failed = false; p.failT = setTimeout(() => { if (S.pending.includes(p)) { p.failed = true; renderPending(false); } }, 20000); }
@@ -2278,15 +2324,16 @@ function pendHtml() {
   return S.pending.filter(p => (p.o.room || '') === S.room).map(p => {
     const t = p.o.text || '';
     const pics = p.up ? p.up.map(a => ({ u: a.url, w: a.w || 1, h: a.h || 1, a })) : p.local || null;
-    const ph = pics ? pendPics(pics) : p.o.image ? `<div class="txt">\u{1F4F7} ${p.o.images ? p.o.images.length + ' photos' : 'Photo'}</div>` : '';
+    const ph = pics ? pendPics(pics) : p.o.image ? `<div class="txt">${hasVid(p.o) ? '\u{1F3A5}' : '\u{1F4F7}'} ${p.o.images && p.o.images.length > 1 ? p.o.images.length + (hasVid(p.o) ? ' photos and videos' : ' photos') : hasVid(p.o) ? 'Video' : 'Photo'}</div>` : '';
     return `<div class="row me first pend" data-cid="${esc(p.cid)}"><span class="gap"></span><div class="stack"><div class="bub${pics ? ' hasalb' : ''}">${ph}${t ? `<div class="txt">${esc(t)}</div>` : ''}${p.failed ? `<button class="pst fail" data-retry="${esc(p.cid)}">Not sent yet. Tap to try again</button>` : `<span class="pst">${CLOCK_ICON} Sending\u2026</span>`}</div></div></div>`;
   }).join('');
 }
 // a message on its way with photos shows the photos themselves, each with its upload ring (2026-11-15)
 function pendPics(pics) {
   const pc = v => (v * 100).toFixed(3) + '%';
-  const cell = (x, c, H) => `<div class="pcell" style="left:${pc(c.x)};top:${pc(c.y / H)};width:${pc(c.w)};height:${pc(c.h / H)}"><img src="${esc(x.u)}" alt="">${x.a ? progHtml(x.a) : ''}</div>`;
-  if (pics.length === 1) { const x = pics[0], H = Math.min(1.25, Math.max(0.45, x.h / x.w)); return `<div class="alb one" style="aspect-ratio:1 / ${H.toFixed(4)}">${cell(x, { x: 0, y: 0, w: 1, h: H }, H)}</div>`; }
+  const vd = x => { const a = x.a && x.a.video ? x.a : null, v = a ? { d: a.t1 - a.t0, q: a.mute } : x.v; return v ? `<span class="vdur">${v.q ? soundIcon(true, 13) : ''}<b>${clip(v.d)}</b></span>${a ? '' : `<span class="vplay">${VID_ICON}</span>`}` : ''; };
+  const cell = (x, c, H) => `<div class="pcell" style="left:${pc(c.x)};top:${pc(c.y / H)};width:${pc(c.w)};height:${pc(c.h / H)}"><img src="${esc(x.u)}" alt="">${vd(x)}${x.a ? (x.a.video ? vprogHtml(x.a) : progHtml(x.a)) : ''}</div>`;
+  if (pics.length === 1) { const x = pics[0], isV = !!(x.v || (x.a && x.a.video)), H = Math.min(1.25, Math.max(isV ? 0.5 : 0.45, x.h / x.w)); return `<div class="alb one${isV ? ' vone' : ''}" style="aspect-ratio:1 / ${H.toFixed(4)}">${cell(x, { x: 0, y: 0, w: 1, h: H }, H)}</div>`; }
   const L = albumLayout(pics);
   return `<div class="alb" style="aspect-ratio:1 / ${L.H.toFixed(4)}">${pics.map((x, i) => cell(x, L.cells[i], L.H)).join('')}</div>`;
 }
@@ -2527,13 +2574,13 @@ function roomIntro(empty) {
 }
 function lastLine(r) {
   if (r.saved && !r.last) return 'Notes to yourself and messages you save. Only you can see this.';
-  if (r.saved) return r.last.image && !r.last.text ? 'Photo' : esc(r.last.text);
+  if (r.saved) return r.last.image && !r.last.text ? (r.last.video ? 'Video' : 'Photo') : esc(r.last.text);
   if (liveSoon(r) && !r.last) return 'Goes live ' + esc(whenLabel(r.starts));
   if (!r.last) return r.key ? 'No messages yet. Start the conversation.' : '';
   if (r.last.kind === 'room') return 'New episode room';
   if (r.last.kind === 'live') return liveSoon(r) ? 'Goes live ' + esc(whenLabel(r.starts)) : 'Live room opened';
   if (r.last.kind === 'join') return `${esc(person(r.last.uid).name || 'A member')} joined the chat`;
-  return `${esc(person(r.last.uid).name || 'Member')}: ${r.last.image && !r.last.text ? 'Photo' : esc(r.last.text)}`;
+  return `${esc(person(r.last.uid).name || 'Member')}: ${r.last.image && !r.last.text ? (r.last.video ? 'Video' : 'Photo') : esc(r.last.text)}`;
 }
 function sideRooms() {
   const row = r => `<button class="roomrow${r.key === S.room ? ' on' : ''}" data-goroom="${esc(r.key)}"${r.key === S.room ? ' aria-current="page"' : ''} title="${esc(r.title)}">${r.saved ? savedIcon(40) : r.live ? `<span style="width:40px;display:flex;justify-content:center"><span class="livedot${liveSoon(r) ? ' soon' : ''}"></span></span>` : r.key ? (r.thumb ? `<img class="rth" src="${esc(thumbAt(r.thumb, 100))}" alt="">` : I.play()) : I.chat()}<span class="rn">${esc(r.key ? shortRoom(r.title) : 'Inner Circle Chat')}</span>${r.key !== S.room && r.opened && r.unread ? `<span class="rbadge">${r.unread > 99 ? '99+' : r.unread}</span>` : ''}</button>`;
@@ -2867,7 +2914,7 @@ function renderChat() {
       <div id="linkbar"></div>
       <div id="tsbar"></div>
       <div class="compose">
-        <button class="ibtn" id="imgBtn" aria-label="Add an image">${I.image(21)}</button>
+        <button class="ibtn" id="imgBtn" aria-label="Add a photo or video">${I.image(21)}</button>
         ${S.superOn && !isSaved(S.room) ? `<button class="ibtn supbtn" id="supBtn" aria-label="Super Chat" title="Super Chat">${COIN(22)}</button>` : ''}
         <label class="sr" for="field">${isSaved(S.room) ? 'Write a note to yourself' : S.roomInfo.live ? 'Message the live room' : S.room ? 'Talk about this episode' : 'Message the Inner Circle'}</label>
         <div class="fwrap"><textarea id="field" class="field" rows="1" maxlength="2000" placeholder="${isSaved(S.room) ? 'Note to self' : 'Message'}"></textarea>
@@ -3164,9 +3211,9 @@ function msgHtml(m, i, list) {
     if (m.reply && !m.reply.deleted) {
       const rp = person(m.reply.uid);
       const rk = m.reply.kind || ((findMsg(m.reply.id) || {}).kind);
-      body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b><span class="qt">${m.reply.deleted ? 'Message deleted' : rk === 'join' ? 'joined the chat' : esc((m.reply.text || (m.reply.image ? 'Photo' : '')).replace(/\s+/g, ' ').slice(0, 200))}</span></button>`;
+      body += `<button class="quote" data-goto="${m.reply.id}"><b>${esc(rp.name)}</b><span class="qt">${m.reply.deleted ? 'Message deleted' : rk === 'join' ? 'joined the chat' : esc((m.reply.text || (m.reply.video ? 'Video' : m.reply.image ? 'Photo' : '')).replace(/\s+/g, ' ').slice(0, 200))}</span></button>`;
     }
-    if (m.images && m.images.length > 1) body += albumHtml(m.images, p.name);
+    if (isAlbum(m)) body += albumHtml(m.images, p.name);
     else if (m.image) body += `<img class="mimg" data-media="${esc(m.image)}" data-zoom="1" alt="Image from ${esc(p.name)}">`;
     // a song link shows only its player: the link text and any link preview are left out (Chance, 2026-10-24: "it needs only do the player itself")
     const sid = m.text && !epFrom(m.text) ? songFrom(m.text) : '';
@@ -3193,7 +3240,7 @@ function msgHtml(m, i, list) {
     out += `<div class="row${mine ? ' me' : ''} first last" data-id="${m.id}">${visitor ? supAv(36) : `<button data-who="${esc(m.uid)}" aria-label="${esc(p.name)}'s profile">${avatar(m.uid, 36)}</button>`}<div class="stack"><div class="bub sup" data-press="${m.id}" style="--sc:${t[1]}">${band}${from}<div class="supbody">${body}</div>${thx}${rx}</div></div></div>`;
     return out;
   }
-  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}${last ? ' last' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub${mentionedMe(m) ? ' mentioned' : ''}${m.images && m.images.length > 1 ? ' hasalb' : ''}" data-press="${m.id}">${head}${body}${rx}</div></div></div>`;
+  out += `<div class="row${mine ? ' me' : ''}${first ? ' first' : ''}${last ? ' last' : ''}" data-id="${m.id}">${av}<div class="stack"><div class="bub${mentionedMe(m) ? ' mentioned' : ''}${isAlbum(m) ? ' hasalb' : ''}" data-press="${m.id}">${head}${body}${rx}</div></div></div>`;
   return out;
 }
 
@@ -3351,7 +3398,15 @@ document.addEventListener('click', e => {
     if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); }
     else sendWs({ t: 'thread', id: Number(t.dataset.goto) });
   }
-  else if (t.dataset.zoom && t.src) { const al = t.closest('.alb'); if (al) { const ims = [...al.querySelectorAll('img')]; openLightbox(ims.map(x => x.src || ''), ims.indexOf(t), ims.map(x => x.dataset.key || '')); } else openLightbox(t.src); }
+  else if (t.dataset.zoom && (t.src || t.dataset.vid)) {
+    const al = t.closest('.alb');
+    if (al) {
+      const ims = [...al.querySelectorAll('img[data-key]')];
+      // a clip that was playing silently in the chat carries on from the same moment, now with sound
+      const vids = ims.map(x => { if (!x.dataset.vid) return null; const pv = vidPool.get(x.dataset.vid); return { k: x.dataset.vid, d: Number(x.dataset.d) || 0, t: x === t && pv && pv.isConnected ? pv.currentTime : 0 }; });
+      openLightbox(ims.map(x => x.src || ''), ims.indexOf(t), ims.map(x => x.dataset.key || ''), vids.some(Boolean) ? vids : null);
+    } else openLightbox(t.src);
+  }
 });
 // right-click on a computer, press and hold on a phone: the message menu
 document.addEventListener('contextmenu', e => {
@@ -3505,8 +3560,8 @@ document.addEventListener('drop', e => {
   if (!dropOk()) return;
   e.preventDefault();
   if (S.editMsg) { toast('Finish editing first.'); return; }
-  const fs = [...e.dataTransfer.files].filter(f => /^image\//.test(f.type));
-  if (fs.length) attachImages(fs); else toast('Only photos can be dropped here.');
+  const fs = [...e.dataTransfer.files].filter(f => /^image\//.test(f.type) || isVideoFile(f));
+  if (fs.length) attachImages(fs); else toast('Only photos and videos can be dropped here.');
 });
 
 // press and hold (phone) or right-click (computer) on a reaction: who reacted, Telegram style. The
@@ -3621,7 +3676,7 @@ function wireComposer() {
     }, true);
   };
   $('#imgBtn').onclick = () => { if (S.editMsg) { toast('Finish editing first.'); return; } pickImage(); };
-  f.addEventListener('paste', e => { const its = [...((e.clipboardData && e.clipboardData.files) || [])].filter(x => /^image\//.test(x.type)); if (its.length && !S.editMsg) { e.preventDefault(); attachImages(its); } });
+  f.addEventListener('paste', e => { const its = [...((e.clipboardData && e.clipboardData.files) || [])].filter(x => /^image\//.test(x.type) || isVideoFile(x)); if (its.length && !S.editMsg) { e.preventDefault(); attachImages(its); } });
   renderAttach();
   function send() {
     const text = f.value.trim();
@@ -3634,6 +3689,7 @@ function wireComposer() {
     const ats = S.attach || [];
     const bad = ats.find(a => a.failed);
     if (bad) { toast(ats.length > 1 ? 'One image did not upload. Remove it or pick it again.' : 'That image did not upload. Remove it or pick it again.'); return; }
+    if (ats.some(a => a.video && !a.ready)) { toast('The video is still loading. One moment.'); return; }
     if (!text && !ats.length) return;
     const lk = clientLink(text);
     // photos go into the chat straight away with an upload ring on each, and the message posts once they are up (2026-11-15)
@@ -3728,12 +3784,13 @@ function attachImages(files) {
   S.attach = S.attach || [];
   let room = ALBUM_MAX - S.attach.length, skipped = 0;
   for (const file of files) {
-    if (!/^image\//.test(file.type)) { toast('Images only.'); continue; }
-    if (file.size > 60 * 1024 * 1024) { toast('An image over 60 MB was left out.'); continue; }
+    const vid = isVideoFile(file);
+    if (!vid && !/^image\//.test(file.type)) { toast('Photos and videos only.'); continue; }
+    if (!vid && file.size > 60 * 1024 * 1024) { toast('An image over 60 MB was left out.'); continue; }
     if (room <= 0) { skipped++; continue; }
-    room--; attachImage(file);
+    room--; if (vid) attachVideo(file); else attachImage(file);
   }
-  if (skipped) toast(`Up to ${ALBUM_MAX} images in one message.`);
+  if (skipped) toast(`Up to ${ALBUM_MAX} photos and videos in one message.`);
   const fld = $('#field'); fld && fld.focus();
 }
 // a photo is shrunk on the phone before it uploads (at most 2560px on its long side) and redrawn, which also
@@ -3785,32 +3842,40 @@ function attachImage(file) {
     attDone(at);
   }).catch(e => { at.failed = true; attDone(at, e); });
 }
-function attProg(at) { document.querySelectorAll(`[data-prog="${at.id}"]`).forEach(el => el.style.setProperty('--p', Math.round(at.prog * 100))); }
+function attProg(at) {
+  document.querySelectorAll(`[data-prog="${at.id}"]`).forEach(el => el.style.setProperty('--p', Math.round(at.prog * 100)));
+  if (at.video) document.querySelectorAll(`[data-cap="${at.id}"]`).forEach(el => { const w = at.stage === 'up' ? 'Sending' : 'Preparing'; if (el.textContent !== w) el.textContent = w; });
+}
 function attDone(at, err) {
   if (at.pend) { pendUploadDone(at.pend, err); return; }
   if (!(S.attach || []).includes(at)) return;
   if (err) { toast(err.message || 'Upload failed'); renderAttach(); return; }
   document.querySelectorAll(`[data-prog="${at.id}"]`).forEach(el => el.remove()); // in place, so a drag to reorder is never cut short
 }
-function removeAttach(at) { try { URL.revokeObjectURL(at.url); } catch (e) {} S.attach = (S.attach || []).filter(a => a !== at); if (!S.attach.length) S.attach = null; renderAttach(); }
-function clearAttach() { for (const a of S.attach || []) { try { URL.revokeObjectURL(a.url); } catch (e) {} } S.attach = null; renderAttach(); }
-const progHtml = a => a.key || a.failed ? '' : `<span class="prog" data-prog="${a.id}" style="--p:${Math.round((a.prog || 0) * 100)}"></span>`;
+function removeAttach(at) { if (at.video) dropVideo(at); try { URL.revokeObjectURL(at.url); } catch (e) {} S.attach = (S.attach || []).filter(a => a !== at); if (!S.attach.length) S.attach = null; renderAttach(); }
+function clearAttach() { for (const a of S.attach || []) { if (a.video) dropVideo(a); try { URL.revokeObjectURL(a.url); } catch (e) {} } S.attach = null; renderAttach(); }
+const progHtml = a => a.key || a.failed || a.video ? '' : `<span class="prog" data-prog="${a.id}" style="--p:${Math.round((a.prog || 0) * 100)}"></span>`;
+// a video on its way: a ring that fills as it is prepared and then sent, with an x in the middle to call it back
+const vprogHtml = a => a.vkey ? '' : `<span class="prog big" data-prog="${a.id}" style="--p:${Math.round((a.prog || 0) * 100)}"></span><button class="pcx" data-vcancel="${a.id}" aria-label="Stop sending this video">${I.close(18)}</button><span class="pcap" data-cap="${a.id}">${a.stage === 'up' ? 'Sending' : 'Preparing'}</span>`;
 function renderAttach() {
   const box = $('#attachbar'); if (!box) return;
   const l = S.attach || [];
   if (!l.length) { box.innerHTML = ''; box.className = ''; return; }
-  const one = a => `<div class="attach" data-aid="${a.id}"><img src="${esc(a.url)}" alt="Image to send" draggable="false">${a.failed ? '<span class="ast">Not uploaded</span>' : progHtml(a)}<button class="ax" aria-label="Remove the image">${I.close(14)}</button></div>`;
-  const failed = l.some(a => a.failed);
+  const one = a => a.video
+    ? `<div class="attach vid" data-aid="${a.id}" title="Trim, or send without sound">${a.url ? `<img src="${esc(a.url)}" alt="Video to send" draggable="false">` : ''}${a.ready ? `<span class="vdur">${a.mute ? soundIcon(true, 12) : ''}<b>${clip(a.t1 - a.t0)}</b></span>` : '<span class="vwait">Loading</span>'}<button class="ax" aria-label="Remove the video">${I.close(14)}</button></div>`
+    : `<div class="attach" data-aid="${a.id}"><img src="${esc(a.url)}" alt="Image to send" draggable="false">${a.failed ? '<span class="ast">Not uploaded</span>' : progHtml(a)}<button class="ax" aria-label="Remove the image">${I.close(14)}</button></div>`;
+  const failed = l.some(a => a.failed), vids = l.filter(a => a.video).length;
   if (l.length === 1) {
     box.className = 'attachbar';
-    box.innerHTML = `${one(l[0])}<span class="attachnote">${failed ? 'Upload failed. Remove it and try again.' : 'Add a message if you like, then send. Tap the image button to add more.'}</span>`;
+    box.innerHTML = `${one(l[0])}<span class="attachnote">${failed ? 'Upload failed. Remove it and try again.' : vids ? 'Tap the video to trim it or turn its sound off. Add a message if you like, then send.' : 'Add a message if you like, then send. Tap the image button to add more.'}</span>`;
   } else {
     box.className = 'attachbar multi';
-    box.innerHTML = `<div class="attrow">${l.map(one).join('')}${l.length < ALBUM_MAX ? '<button class="attadd" aria-label="Add more images">+</button>' : ''}</div><span class="attachnote">${failed ? 'One upload failed. Remove it and try again.' : `${l.length} photos, sent as one message. Hold and drag to reorder.`}</span>`;
+    box.innerHTML = `<div class="attrow">${l.map(one).join('')}${l.length < ALBUM_MAX ? '<button class="attadd" aria-label="Add more images">+</button>' : ''}</div><span class="attachnote">${failed ? 'One upload failed. Remove it and try again.' : vids ? `${l.length} ${vids === l.length ? 'videos' : 'photos and videos'}, sent as one message. Tap a video to trim it. Hold and drag to reorder.` : `${l.length} photos, sent as one message. Hold and drag to reorder.`}</span>`;
     const add = box.querySelector('.attadd'); if (add) add.onclick = () => pickImage();
     wireReorder(box.querySelector('.attrow'));
   }
   box.querySelectorAll('.ax').forEach((b, i) => { b.onclick = () => removeAttach(l[i]); });
+  box.querySelectorAll('.attach.vid').forEach(el => { el.addEventListener('click', e => { if (e.target.closest('.ax') || el.classList.contains('dragging')) return; const a = l.find(x => x.id === el.dataset.aid); if (a && a.ready) openVideoEdit(a); }); });
   stickDown();
 }
 // hold a thumbnail (or drag it with the mouse) to change the photos' order before sending (2026-11-15)
@@ -3850,6 +3915,383 @@ function wireReorder(row) {
     const mu = () => { removeEventListener('mousemove', mm); removeEventListener('mouseup', mu); finish(); };
     addEventListener('mousemove', mm); addEventListener('mouseup', mu);
   });
+}
+
+// ------------------------------------------------------------ members' video (2026-11-26, Chance)
+// A video rides in a message the way a photo does (alone, or in an album beside photos). On Send it is
+// shrunk on the member's own device to 720p (which also drops the location and camera details a phone
+// writes into a clip), uploaded in pieces so a dropped connection only costs the piece in flight, and
+// played back as a stream from a signed link. Before sending, a tap on its thumbnail opens the trim
+// and sound editor. Kept in step with the VIDEO_ numbers in worker.js.
+const VIDEO_MAX_S = 300, VIDEO_MAX_BYTES = 200 * 1024 * 1024, VIDEO_EDGE = 1280;
+const MB_URL = location.origin + '/vendor/mediabunny-1.66.5.min.js';
+const VID_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
+const PAUSE_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 5.5h3.4v13H7zM13.6 5.5H17v13h-3.4z" fill="currentColor"/></svg>';
+const soundIcon = (off, s) => P('<path d="M11 5 6 9H3v6h3l5 4z"/>' + (off ? '<path d="m16 9.5 5 5M21 9.5l-5 5"/>' : '<path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>'), { s: s || 18 });
+function isVideoFile(f) { return /^video\//.test(f.type || '') || /\.(mp4|m4v|mov|webm|mkv)$/i.test(f.name || ''); }
+function clip(s) { s = Math.max(0, Math.round(Number(s) || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function hasVid(m) { return !!(m && Array.isArray(m.images) && m.images.some(x => x && x.v)); }
+function mediaWord(m) { return m && m.image ? (hasVid(m) ? 'Video' : 'Photo') : ''; }
+function isAlbum(m) { return !!(m && m.images && (m.images.length > 1 || (m.images.length === 1 && m.images[0] && m.images[0].v))); }
+let mbP = null, mbTry = 0;
+// a browser remembers a script that failed to load, so a second try asks under a fresh address
+function loadMB() { return mbP || (mbP = import(MB_URL + (mbTry++ ? '?try=' + mbTry : '')).catch(e => { mbP = null; throw e; })); }
+const once = (el, ev, ms) => new Promise(r => { const f = () => { clearTimeout(t); el.removeEventListener(ev, f); r(true); }; const t = setTimeout(() => { el.removeEventListener(ev, f); r(false); }, ms); el.addEventListener(ev, f); });
+const waitOnline = ms => new Promise(r => {
+  if (navigator.onLine !== false) { setTimeout(r, ms); return; }
+  const f = () => { removeEventListener('online', f); clearTimeout(t); setTimeout(r, 600); };
+  const t = setTimeout(() => { removeEventListener('online', f); r(); }, 5 * 60 * 1000);
+  addEventListener('online', f);
+});
+
+// ---- picking: read the clip's length and shape, and take its cover picture
+function probeVideo(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), v = document.createElement('video');
+    let done = false;
+    const fail = () => { if (done) return; done = true; clearTimeout(t); try { v.removeAttribute('src'); v.load(); URL.revokeObjectURL(url); } catch (e) {} rej(new Error('That video could not be read on this device.')); };
+    const t = setTimeout(fail, 25000);
+    v.muted = true; v.defaultMuted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto';
+    v.onerror = fail;
+    v.onloadedmetadata = async () => {
+      try {
+        if (!isFinite(v.duration)) { const p = once(v, 'durationchange', 4000); v.currentTime = 1e7; await p; v.currentTime = 0; }
+        if (!isFinite(v.duration) || !(v.duration > 0) || !v.videoWidth || !v.videoHeight) return fail();
+        try { await v.play(); v.pause(); } catch (e) { /* a phone may not allow it; the frame grab below still tries */ }
+        if (done) return;
+        done = true; clearTimeout(t); v.onerror = null;
+        res({ url, el: v, dur: v.duration, w: v.videoWidth, h: v.videoHeight });
+      } catch (e) { fail(); }
+    };
+    v.src = url;
+  });
+}
+async function videoFrame(v, t, edge) {
+  t = Math.max(0, Math.min(t, Math.max(0, (v.duration || 0) - 0.05)));
+  if (v.readyState < 2 || Math.abs(v.currentTime - t) > 0.04) {
+    const p = once(v, 'seeked', 5000); v.currentTime = t; await p;
+    if (v.readyState < 2) await once(v, 'loadeddata', 2500);
+  }
+  const k = Math.min(1, edge / Math.max(v.videoWidth, v.videoHeight, 1));
+  const c = document.createElement('canvas'); c.width = Math.max(2, Math.round(v.videoWidth * k)); c.height = Math.max(2, Math.round(v.videoHeight * k));
+  c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+  return c;
+}
+async function videoPoster(at) {
+  at.stripTok = (at.stripTok || 0) + 1; // a film strip being drawn steps aside
+  let c = null;
+  try { if (at.el) c = await videoFrame(at.el, at.t0 + Math.min(0.1, (at.t1 - at.t0) / 2), VIDEO_EDGE); } catch (e) { c = null; }
+  if (!c) { const k = Math.min(1, 640 / Math.max(at.w, at.h, 1)); c = document.createElement('canvas'); c.width = Math.max(2, Math.round(at.w * k)); c.height = Math.max(2, Math.round(at.h * k)); const g = c.getContext('2d'); g.fillStyle = '#0b1220'; g.fillRect(0, 0, c.width, c.height); }
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+  if (!blob) throw new Error('That video could not be read on this device.');
+  if (at.url) { try { URL.revokeObjectURL(at.url); } catch (e) {} }
+  at.poster = blob; at.url = URL.createObjectURL(blob);
+}
+function attachVideo(file) {
+  const at = { id: 'a' + (++attSeq), url: '', video: true, file, key: '', vkey: '', failed: false, w: 0, h: 0, dur: 0, t0: 0, t1: 0, mute: false, prog: 0, pend: null, ready: false, started: false, stage: '' };
+  S.attach = S.attach || []; S.attach.push(at); renderAttach();
+  probeVideo(file).then(async info => {
+    at.src = info.url; at.el = info.el; at.w = info.w; at.h = info.h; at.dur = info.dur; at.t1 = Math.min(info.dur, VIDEO_MAX_S);
+    await videoPoster(at);
+    if (!(S.attach || []).includes(at)) { dropVideo(at); return; }
+    at.ready = true; renderAttach();
+    if (info.dur > VIDEO_MAX_S + 0.5) toast('Videos can be up to 5 minutes. The first 5 are picked. Tap the video to choose another part.');
+    loadMB().catch(() => {}); // the shrinking tools load while the member writes their words
+  }).catch(e => { toast((e && e.message) || 'That video could not be read on this device.'); if ((S.attach || []).includes(at)) removeAttach(at); });
+}
+function haltVideo(ctl) {
+  if (!ctl || ctl.off) return;
+  ctl.off = true;
+  try { ctl.conv && ctl.conv.cancel(); } catch (e) {}
+  ctl.xhrs.forEach(x => { try { x.abort(); } catch (e) {} });
+  if (ctl.up) fetch(`${API}/api/video/abort?${new URLSearchParams({ key: ctl.up.key, id: ctl.up.id })}`, { method: 'POST', headers: { Authorization: 'Bearer ' + S.token }, keepalive: true }).catch(() => {});
+  try { ctl.lock && ctl.lock.release(); } catch (e) {}
+}
+function stopVideoWork(at) { haltVideo(at.ctl); at.ctl = null; at.started = false; at.stage = ''; at.prog = 0; }
+function resetVideo(at) { stopVideoWork(at); at.vkey = ''; at.size = 0; }
+// the x on a video that is on its way: it comes back to the message box with its words
+function cancelVideo(at) { const p = at.pend; stopVideoWork(at); if (p) pendUploadDone(p, { quiet: true }); }
+function dropVideo(at) {
+  stopVideoWork(at);
+  try { if (at.src) URL.revokeObjectURL(at.src); } catch (e) {}
+  if (at.el) { try { at.el.removeAttribute('src'); at.el.load(); } catch (e) {} }
+  at.el = null; at.file = null; at.src = ''; at.strip = null;
+}
+
+// ---- sending: shrink, then upload in pieces
+// one clip is prepared at a time (a phone asked to shrink three at once struggles); their uploads may overlap
+let shrinkLine = Promise.resolve();
+function inLine(fn) { const p = shrinkLine.then(fn, fn); shrinkLine = p.catch(() => {}); return p; }
+function startVideo(at) {
+  if (at.started || at.vkey || !at.file) return;
+  at.started = true; at.failed = false; at.prog = 0; at.stage = 'prep';
+  const ctl = at.ctl = { off: false, conv: null, up: null, xhrs: new Set(), lock: null };
+  try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(l => { if (ctl.off) l.release(); else ctl.lock = l; }).catch(() => {}); } catch (e) {}
+  (async () => {
+    const out = await inLine(() => { if (ctl.off) throw new Error('canceled'); return shrinkVideo(at, ctl); });
+    if (ctl.off) return;
+    at.stage = 'up'; attProg(at);
+    const [pk, vk] = await Promise.all([
+      at.key ? at.key : uploadBlob(at.poster, 'image/jpeg', () => {}),
+      uploadVideo(out.blob, ctl, v => { at.prog = 0.4 + 0.6 * v; attProg(at); }),
+    ]);
+    if (ctl.off) return;
+    at.key = pk; at.vkey = vk; at.size = out.blob.size; at.outDur = out.dur; at.w = out.w || at.w; at.h = out.h || at.h; at.prog = 1; at.stage = ''; at.started = false; at.ctl = null;
+    try { ctl.lock && ctl.lock.release(); } catch (e) {}
+    at.local = at.url; mediaCache.set(pk, Promise.resolve(at.url)); // the sender sees it at once: no download of their own clip
+    keepLocalVideo(vk, out.blob);
+    const sent = !!at.pend;
+    attDone(at);
+    if (sent) { try { if (at.src) URL.revokeObjectURL(at.src); } catch (e) {} if (at.el) { try { at.el.removeAttribute('src'); at.el.load(); } catch (e) {} } at.el = null; at.file = null; at.src = ''; at.strip = null; }
+  })().catch(e => {
+    if (ctl.off) return; // cancelled or replaced: nothing to report
+    haltVideo(ctl); at.ctl = null; at.started = false; at.stage = ''; at.prog = 0;
+    attDone(at, e && e.message ? e : new Error('The video could not be sent. Try again.'));
+  });
+}
+async function shrinkVideo(at, ctl) {
+  let MB;
+  try { MB = await loadMB(); } catch (e) { throw new Error('The video tools did not load. Check your connection and try again.'); }
+  const input = new MB.Input({ source: new MB.BlobSource(at.file), formats: MB.ALL_FORMATS });
+  try {
+    const vt = await input.getPrimaryVideoTrack();
+    if (!vt) throw new Error('That file has no video in it.');
+    const at2 = await input.getPrimaryAudioTrack().catch(() => null);
+    const sw = (vt.getDisplayWidth ? await vt.getDisplayWidth() : vt.displayWidth) || at.w, sh = (vt.getDisplayHeight ? await vt.getDisplayHeight() : vt.displayHeight) || at.h;
+    const even = n => Math.max(2, Math.round(n / 2) * 2);
+    const k = Math.min(1, VIDEO_EDGE / Math.max(sw, sh)), ow = even(sw * k), oh = even(sh * k);
+    const target = Math.round(Math.max(500e3, 2.2e6 * Math.pow((ow * oh) / (1280 * 720), 0.75)));
+    let st = null; try { st = await vt.computePacketStats(150); } catch (e) { st = null; }
+    const fps = st && isFinite(st.averagePacketRate) && st.averagePacketRate > 0 ? st.averagePacketRate : 30;
+    const rate = st && isFinite(st.averageBitrate) && st.averageBitrate > 0 ? st.averageBitrate : Infinity;
+    const codec = vt.getCodec ? await vt.getCodec() : vt.codec;
+    const trimmed = at.t0 > 0.05 || at.t1 < at.dur - 0.05;
+    const light = k === 1 && codec === 'avc' && rate <= target * 1.4 && fps <= 31; // already small: its picture is copied as it is
+    const isType = (t, type) => (t.type === type) || (type === 'video' ? !!(t.isVideoTrack && t.isVideoTrack()) : !!(t.isAudioTrack && t.isAudioTrack()));
+    const run = async (video, copy) => {
+      const output = new MB.Output({ format: new MB.Mp4OutputFormat({ fastStart: 'in-memory' }), target: new MB.BufferTarget() });
+      const conv = await MB.Conversion.init({ input, output, tracks: 'primary', video, audio: at.mute ? { discard: true } : {}, trim: trimmed ? { start: at.t0, end: at.t1 } : undefined, copy, tags: {}, showWarnings: false });
+      if (!conv.isValid || !conv.utilizedTracks.some(t => isType(t, 'video'))) throw new Error('This device could not prepare that video.');
+      if (at2 && !at.mute && !conv.utilizedTracks.some(t => isType(t, 'audio'))) throw new Error('This device could not keep that video’s sound.');
+      if (ctl.off) throw new Error('canceled');
+      ctl.conv = conv;
+      conv.onProgress = p => { at.prog = 0.4 * Math.max(0, Math.min(1, p)); attProg(at); };
+      try { await conv.execute(); } finally { ctl.conv = null; }
+      return new Blob([output.target.buffer], { type: 'video/mp4' });
+    };
+    let blob = null, w = ow, h = oh;
+    const enc = { width: ow, height: oh, fit: 'fill', codec: 'avc', bitrate: target, keyFrameInterval: 2 };
+    if (fps > 31) enc.frameRate = 30;
+    let canEnc = false; try { canEnc = !!(await MB.canEncodeVideo('avc', { width: ow, height: oh, bitrate: target })); } catch (e) { canEnc = false; }
+    const attempt = async (video, copy) => { try { return await run(video, copy); } catch (e) { if (ctl.off) throw e; at.prog = 0; attProg(at); return null; } };
+    if (!light && canEnc) blob = await attempt(enc, undefined);
+    // nothing to shrink, or this device cannot re-encode: the picture is repacked as it is (still trimmed, still stripped of its details)
+    if (!blob) { w = even(sw); h = even(sh); blob = await attempt({}, undefined); }
+    if (!blob) blob = await run({}, { mode: 'forced', shiftTolerance: Infinity });
+    if (blob.size > VIDEO_MAX_BYTES) throw new Error('That video is too large to send from this device. Trim it shorter and try again.');
+    let dur = at.t1 - at.t0;
+    try { const chk = new MB.Input({ source: new MB.BlobSource(blob), formats: MB.ALL_FORMATS }); const d = await chk.computeDuration(); chk.dispose && chk.dispose(); if (d > 0) dur = d; } catch (e) { /* keep the trimmed length */ }
+    return { blob, w, h, dur: Math.min(dur, VIDEO_MAX_S + 2) };
+  } finally { try { input.dispose && input.dispose(); } catch (e) {} }
+}
+function sendPiece(st, n, piece, ctl, onBytes) {
+  return new Promise((res, rej) => {
+    const x = new XMLHttpRequest(); ctl.xhrs.add(x);
+    x.open('POST', `${API}/api/video/part?${new URLSearchParams({ key: st.key, id: st.id, n: String(n) })}`);
+    x.setRequestHeader('Authorization', 'Bearer ' + S.token); x.setRequestHeader('Content-Type', 'application/octet-stream');
+    x.timeout = 180000;
+    x.upload.onprogress = e => { if (e.lengthComputable) onBytes(e.loaded); };
+    const end = () => ctl.xhrs.delete(x);
+    x.onload = () => { end(); let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} if (x.status >= 200 && x.status < 300 && j.etag) res({ n: j.n, etag: j.etag }); else { const e = new Error(j.error || 'The video did not upload.'); e.status = x.status; rej(e); } };
+    x.onerror = x.ontimeout = () => { end(); rej(new Error('The video did not upload. Check your connection and try again.')); };
+    x.onabort = () => { end(); rej(new Error('canceled')); };
+    x.send(piece);
+  });
+}
+async function uploadVideo(blob, ctl, onProg) {
+  const call = async (op, q, body) => {
+    const r = await fetch(`${API}/api/video/${op}?${new URLSearchParams(q)}`, { method: 'POST', headers: Object.assign({ Authorization: 'Bearer ' + S.token }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(j.error || 'The video did not upload.'); e.status = r.status; throw e; }
+    return j;
+  };
+  // a piece that fails goes again on its own (waiting for the connection when the phone is offline); a plain "no" from the server does not
+  const retry = async fn => {
+    for (let n = 0; ; n++) {
+      if (ctl.off) throw new Error('canceled');
+      try { return await fn(); } catch (e) {
+        if (ctl.off || (e.status && e.status < 500 && e.status !== 408 && e.status !== 409)) throw e;
+        if (n >= 6) throw new Error('The video did not upload. Check your connection and try again.');
+        await waitOnline(Math.min(20000, 700 * 2 ** n));
+      }
+    }
+  };
+  const st = await retry(() => call('start', { type: 'video/mp4', size: String(blob.size) }));
+  ctl.up = { key: st.key, id: st.id };
+  const size = st.part, n = Math.ceil(blob.size / size), sent = new Array(n).fill(0), parts = new Array(n);
+  let next = 0;
+  const tell = () => onProg(Math.min(1, sent.reduce((a, b) => a + b, 0) / blob.size));
+  const lane = async () => {
+    for (;;) {
+      const i = next++; if (i >= n) return;
+      const piece = blob.slice(i * size, (i + 1) * size);
+      parts[i] = await retry(() => { sent[i] = 0; return sendPiece(st, i + 1, piece, ctl, b => { sent[i] = Math.min(b, piece.size); tell(); }); });
+      sent[i] = piece.size; tell();
+    }
+  };
+  await Promise.all([lane(), lane(), lane()]);
+  const done = await retry(() => call('done', { key: st.key, id: st.id }, { parts }));
+  ctl.up = null;
+  return done.key;
+}
+
+// ---- playing: a signed link per clip, asked for once and kept until it nears its end
+const videoLinks = new Map(); // clip key -> { url, exp } or the request for one
+const localVids = [];
+function keepLocalVideo(key, blob) { // the sender's last two clips play from the phone itself
+  localVids.push(key); videoLinks.set(key, { url: URL.createObjectURL(blob), exp: Infinity, local: true });
+  while (localVids.length > 2) { const k = localVids.shift(), l = videoLinks.get(k); if (l && l.local && !vidPool.has(k)) { try { URL.revokeObjectURL(l.url); } catch (e) {} videoLinks.delete(k); } }
+}
+function videoLink(key) {
+  const hit = videoLinks.get(key);
+  if (hit && (typeof hit.then === 'function' || hit.exp - Date.now() > 20 * 60 * 1000)) return Promise.resolve(hit);
+  const p = fetch(`${API}/api/video/link?${new URLSearchParams({ key })}`, { method: 'POST', headers: { Authorization: 'Bearer ' + S.token } })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('link')))
+    .then(j => { const l = { url: j.url, exp: j.exp }; videoLinks.set(key, l); return l; })
+    .catch(e => { if (videoLinks.get(key) === p) videoLinks.delete(key); throw e; });
+  videoLinks.set(key, p);
+  return p;
+}
+// Clips play silently on their own while they are on screen (two at most, the ones nearest the middle),
+// Telegram style; a tap opens the viewer with sound. Off with the Settings switch, on a data-saver
+// phone, or when the phone asks for less motion.
+const vidPool = new Map(); // clip key -> its <video>, kept across redraws of the list so a new message does not restart it
+let vidIO = null, pickRaf = 0;
+function autoplayOn() { return load('ivc_autoplay') !== 'off' && !(navigator.connection && navigator.connection.saveData) && !matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function hydrateVideos() {
+  const cells = [...document.querySelectorAll('.vcell[data-vid]')];
+  const live = new Set(cells.map(c => c.dataset.vid));
+  for (const [k, v] of vidPool) if (!live.has(k)) freeVideo(k, v);
+  if (!vidIO && 'IntersectionObserver' in window) vidIO = new IntersectionObserver(es => {
+    for (const e of es) { e.target._vis = e.isIntersecting ? e.intersectionRatio : 0; if (e.target._vis >= 0.35 && e.target.dataset.vid) videoLink(e.target.dataset.vid).catch(() => {}); } // the link is ready before a tap, so the tap itself can start the sound
+    pickPlaying();
+  }, { threshold: [0, 0.35, 0.7, 1] });
+  for (const c of cells) {
+    if (!c._obs) { c._obs = true; if (vidIO) vidIO.observe(c); }
+    const v = vidPool.get(c.dataset.vid);
+    if (v && !v.isConnected) { c.appendChild(v); if (v.readyState >= 2) c.classList.add('playing'); }
+  }
+  if (cells.length || vidPool.size) pickPlaying();
+}
+function freeVideo(k, v) { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} v.remove(); vidPool.delete(k); }
+function pickPlaying() {
+  cancelAnimationFrame(pickRaf);
+  pickRaf = requestAnimationFrame(() => {
+    const on = autoplayOn() && !document.hidden && !document.querySelector('#ovl.lightbox');
+    const mid = innerHeight / 2, centre = c => { const r = c.getBoundingClientRect(); return Math.abs(r.top + r.height / 2 - mid); };
+    const seen = [...document.querySelectorAll('.vcell[data-vid]')].filter(c => (c._vis || 0) >= 0.7).sort((a, b) => centre(a) - centre(b));
+    const want = new Map();
+    if (on) for (const c of seen) { if (want.size >= 2) break; if (!want.has(c.dataset.vid)) want.set(c.dataset.vid, c); }
+    for (const [k, v] of vidPool) { if (!want.has(k)) { if (!v.paused) v.pause(); if (vidPool.size > 3) freeVideo(k, v); } }
+    for (const [k, c] of want) playCell(k, c);
+  });
+}
+function playCell(key, c) {
+  let v = vidPool.get(key);
+  if (!v) {
+    v = document.createElement('video');
+    v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true; v.preload = 'metadata'; v.tabIndex = -1;
+    v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('disablepictureinpicture', ''); v.setAttribute('aria-hidden', 'true');
+    vidPool.set(key, v);
+    v.addEventListener('playing', () => { const cell = v.parentNode; if (cell && cell.classList) cell.classList.add('playing'); });
+    v.addEventListener('timeupdate', () => { const cell = v.parentNode, b = cell && cell.querySelector && cell.querySelector('.vdur b'); if (b && isFinite(v.duration)) b.textContent = clip(Math.max(0, v.duration - v.currentTime)); });
+    v.addEventListener('error', () => { if (vidPool.get(key) === v && v.src) { const l = videoLinks.get(key); if (l && !l.local) videoLinks.delete(key); freeVideo(key, v); } });
+    videoLink(key).then(l => { if (vidPool.get(key) !== v) return; v.src = l.url; v.play().catch(() => {}); }).catch(() => { if (vidPool.get(key) === v) freeVideo(key, v); });
+  }
+  if (v.parentNode !== c) c.appendChild(v);
+  if (v.src && v.paused) v.play().catch(() => {});
+}
+document.addEventListener('visibilitychange', () => pickPlaying());
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-vcancel]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  for (const p of S.pending) { const a = (p.up || []).find(x => x.id === b.dataset.vcancel); if (a) { cancelVideo(a); return; } }
+});
+
+// ---- before sending: trim the clip and choose whether it carries its sound
+async function filmStrip(at, box) {
+  if (at.strip) { at.strip.forEach(c => box.appendChild(c)); return; }
+  const el = at.el; if (!el) return;
+  const tok = at.stripTok = (at.stripTok || 0) + 1, n = 8, made = [];
+  for (let i = 0; i < n; i++) {
+    if (at.stripTok !== tok || !box.isConnected) return;
+    try { const c = await videoFrame(el, ((i + 0.5) / n) * at.dur, 160); if (at.stripTok !== tok || !box.isConnected) return; made.push(c); box.appendChild(c); } catch (e) { return; }
+  }
+  at.strip = made;
+}
+function openVideoEdit(at) {
+  if (!at.ready || !at.src) return;
+  let t0 = at.t0, t1 = at.t1, mute = at.mute;
+  const D = at.dur, MIN = Math.min(1, D), long = D > VIDEO_MAX_S + 0.5;
+  const o = overlay(`<div class="vedit">
+    <div class="vhead"><h2 class="h1" style="font-size:21px;flex:1">Trim video</h2><button class="ibtn" id="veX" aria-label="Close">${I.close()}</button></div>
+    <div class="vstage"><video playsinline preload="auto"></video></div>
+    <div class="vtrim" id="veTrim" role="group" aria-label="Drag the ends to choose the part to send"><div class="vstrip"></div><div class="vshade" id="veL"></div><div class="vshade" id="veR"></div><div class="vsel" id="veSel"></div><div class="vnow" id="veNow"></div></div>
+    <div class="vrow"><span id="veLen"></span><button class="btn2 sm" id="veMute"></button></div>
+    <div class="vrow"><button class="btn2 sm" id="veAll">${long ? 'First 5 minutes' : 'Whole video'}</button><button class="btn1" id="veDone">Done</button></div>
+  </div>`, false, 'Trim video');
+  const q = sel => o.querySelector(sel), v = q('video'), bar = q('#veTrim');
+  const pct = t => ((t / D) * 100).toFixed(3) + '%';
+  const draw = () => {
+    q('#veL').style.cssText = `left:0;width:${pct(t0)}`;
+    q('#veR').style.cssText = `left:${pct(t1)};right:0`;
+    const sel = q('#veSel'); sel.style.left = pct(t0); sel.style.width = pct(t1 - t0);
+    q('#veLen').textContent = `${clip(t1 - t0)} of ${clip(D)}${long ? ' (5 minutes at most)' : ''}`;
+    const mb = q('#veMute'); mb.innerHTML = soundIcon(mute, 16) + (mute ? 'Sound off' : 'Sound on'); mb.setAttribute('aria-pressed', String(mute));
+  };
+  const seek = t => { try { v.currentTime = t; } catch (e) {} q('#veNow').style.left = pct(t); };
+  v.muted = mute; v.src = at.src;
+  v.addEventListener('loadedmetadata', () => { seek(t0); v.play().catch(() => {}); }, { once: true });
+  v.addEventListener('timeupdate', () => { if (drag) return; if (v.currentTime >= t1 - 0.03 || v.currentTime < t0 - 0.4) v.currentTime = t0; q('#veNow').style.left = pct(v.currentTime); });
+  v.onclick = () => { if (v.paused) v.play().catch(() => {}); else v.pause(); };
+  let drag = '';
+  const tAt = x => { const r = bar.getBoundingClientRect(); return Math.max(0, Math.min(D, ((x - r.left) / r.width) * D)); };
+  const move = e => {
+    if (!drag) return;
+    const t = tAt(e.clientX);
+    if (drag === 's') { t0 = Math.min(t, D - MIN); if (t1 - t0 < MIN) t1 = Math.min(D, t0 + MIN); if (t1 - t0 > VIDEO_MAX_S) t1 = t0 + VIDEO_MAX_S; seek(t0); }
+    else if (drag === 'e') { t1 = Math.max(t, MIN); if (t1 - t0 < MIN) t0 = Math.max(0, t1 - MIN); if (t1 - t0 > VIDEO_MAX_S) t0 = t1 - VIDEO_MAX_S; seek(Math.max(t0, t1 - 0.05)); }
+    else seek(Math.max(t0, Math.min(t1 - 0.05, t)));
+    draw();
+  };
+  bar.addEventListener('pointerdown', e => {
+    const r = bar.getBoundingClientRect(), t = tAt(e.clientX), px = s => Math.abs((s / D) * r.width);
+    const dS = px(t - t0), dE = px(t - t1);
+    drag = dS <= 24 && dS <= dE ? 's' : dE <= 24 ? 'e' : t < t0 ? 's' : t > t1 ? 'e' : 'p';
+    try { bar.setPointerCapture(e.pointerId); } catch (err) {}
+    v.pause(); e.preventDefault(); move(e);
+  });
+  bar.addEventListener('pointermove', move);
+  bar.addEventListener('touchstart', e => e.preventDefault(), { passive: false }); // keeps the browser from reading the drag as a flick, which swallows the next tap
+  const up = () => { if (!drag) return; const was = drag; drag = ''; if (was !== 'p') seek(t0); v.play().catch(() => {}); };
+  bar.addEventListener('pointerup', up); bar.addEventListener('pointercancel', up);
+  q('#veMute').onclick = () => { mute = !mute; v.muted = mute; draw(); };
+  q('#veAll').onclick = () => { t0 = 0; t1 = Math.min(D, VIDEO_MAX_S); draw(); seek(0); v.play().catch(() => {}); };
+  q('#veX').onclick = () => closeOverlay();
+  q('#veDone').onclick = async () => {
+    const moved = Math.abs(t0 - at.t0) > 0.01, changed = moved || Math.abs(t1 - at.t1) > 0.01 || mute !== at.mute;
+    closeOverlay();
+    if (!changed || !(S.attach || []).includes(at)) return;
+    resetVideo(at); // anything prepared with the old choices is set aside
+    at.t0 = t0; at.t1 = t1; at.mute = mute;
+    if (moved) { // a new start means a new cover picture; Send waits the moment that takes
+      at.ready = false; at.key = ''; renderAttach();
+      try { await videoPoster(at); } catch (e) { /* keeps its old cover */ }
+      at.ready = true;
+    }
+    if ((S.attach || []).includes(at)) renderAttach();
+  };
+  draw(); filmStrip(at, q('.vstrip'));
 }
 
 // ------------------------------------------------------------ overlays
@@ -3942,7 +4384,7 @@ function placePhoneMenu(s) {
 }
 function closeOverlay(keepDown, swap) {
   const o = $('#ovl'); const back = o && o._refocus && !keepDown;
-  if (o) o.remove(); stopAnims();
+  if (o) { o.querySelectorAll('video').forEach(v => { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} }); o.remove(); pickPlaying(); } stopAnims();
   if (o && ovlHist && !inPop && !swap) { ovlHist = false; skipPops++; try { history.back(); } catch (e) { skipPops--; } }
   if (back) { const f = $('#field'); if (f) { f.focus(); f.selectionStart = f.selectionEnd = f.value.length; } } // back to the message they were typing
 }
@@ -4160,35 +4602,95 @@ function showReports(m) {
 }
 
 // one image, or an album to page through: arrows on a computer, a sideways swipe on a phone
-function openLightbox(src, at, keys) {
+function openLightbox(src, at, keys, vids) {
   const list = Array.isArray(src) ? src : [src];
   let i = Math.max(0, at || 0);
   const s = document.createElement('div'); s.className = 'scrim lightbox'; s.id = 'ovl';
   const many = list.length > 1;
-  s.innerHTML = `<img alt=""><button class="lbx" aria-label="Close">${I.close(18)}</button><button class="lbsave" aria-label="Save or share this photo">${P('<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 19h14"/>',{s:16})}Save</button>${many ? '<span class="lbcount"></span><button class="lbnav prev" aria-label="Previous photo">‹</button><button class="lbnav next" aria-label="Next photo">›</button>' : ''}`;
+  s.innerHTML = `<img alt=""><video class="lbvid" playsinline></video><div class="lbvc"><button class="lbvp" aria-label="Play or pause"></button><span class="lbvt">0:00 / 0:00</span><input type="range" min="0" max="0" step="0.05" value="0" aria-label="Place in the video"><button class="lbvm" aria-label="Sound on or off"></button></div><button class="lbx" aria-label="Close">${I.close(18)}</button><button class="lbsave" aria-label="Save or share">${P('<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 19h14"/>',{s:16})}Save</button>${many ? '<span class="lbcount"></span><button class="lbnav prev" aria-label="Previous photo">‹</button><button class="lbnav next" aria-label="Next photo">›</button>' : ''}`;
   const img = s.querySelector('img');
+  // a video in the viewer: tap it to play or pause, drag the bar to move through it; swipes work as they do on a photo
+  const vid = s.querySelector('.lbvid'), vc = s.querySelector('.lbvc'), rng = vc.querySelector('input');
+  const vOf = () => (vids && vids[i]) || null;
+  let vtok = 0;
+  const vstop = () => { vtok++; try { vid.pause(); vid.removeAttribute('src'); vid.removeAttribute('poster'); vid.load(); } catch (e) {} };
+  const vtoggle = () => { if (!vOf()) return; if (vid.paused) vid.play().catch(() => {}); else vid.pause(); };
+  const vui = () => {
+    const d = vid.duration && isFinite(vid.duration) ? vid.duration : ((vOf() || {}).d || 0);
+    vc.querySelector('.lbvt').textContent = `${clip(vid.currentTime || 0)} / ${clip(d)}`;
+    if (!rng._drag) { rng.max = String(d || 0); rng.value = String(vid.currentTime || 0); }
+    const pb = vc.querySelector('.lbvp'), want = vid.paused ? 'play' : 'pause'; if (pb.dataset.s !== want) { pb.dataset.s = want; pb.innerHTML = vid.paused ? VID_ICON : PAUSE_ICON; }
+    const mb = vc.querySelector('.lbvm'), mw = vid.muted ? 'off' : 'on'; if (mb.dataset.s !== mw) { mb.dataset.s = mw; mb.innerHTML = soundIcon(vid.muted, 19); }
+  };
+  ['timeupdate', 'durationchange', 'loadedmetadata', 'play', 'pause', 'volumechange'].forEach(ev => vid.addEventListener(ev, vui));
+  // a clip playing with sound quiets the episode playing behind it (here, and in the app)
+  const vsound = () => { if (vid.paused || vid.muted) return; tellApp({ videoPlaying: true }); try { if (PL.playing) plToggle(); } catch (e) {} };
+  vid.addEventListener('play', vsound); vid.addEventListener('volumechange', vsound);
+  vc.querySelector('.lbvp').onclick = () => vtoggle();
+  vc.querySelector('.lbvm').onclick = () => { vid.muted = !vid.muted; };
+  rng.addEventListener('input', () => { rng._drag = true; try { vid.currentTime = Number(rng.value); } catch (e) {} });
+  rng.addEventListener('change', () => { rng._drag = false; });
   const show = () => {
-    const u = list[i];
-    if (u) img.src = u;
+    const u = list[i], v = vOf();
+    vstop(); s.classList.toggle('isvid', !!v);
+    if (v) {
+      const tok = vtok, from = v.t || 0; v.t = 0;
+      if (u) vid.poster = u; else if (keys && keys[i]) { const p = mediaCache.get(keys[i]); if (p) p.then(x => { if (tok === vtok && !vid.poster) vid.poster = x; }); }
+      vid.muted = false; vui();
+      const begin = l => {
+        if (tok !== vtok) return;
+        if (from > 0.3) vid.addEventListener('loadedmetadata', () => { try { if (tok === vtok && from < vid.duration - 0.3) vid.currentTime = from; } catch (e) {} }, { once: true });
+        vid.src = l.url; vid.play().catch(() => vui()); // if the phone will not start sound by itself, it waits, paused, for a tap
+      };
+      const have = videoLinks.get(v.k);
+      if (have && !have.then && have.exp - Date.now() > 20 * 60 * 1000) begin(have); // inside the tap itself, which is what lets a phone play sound
+      else videoLink(v.k).then(begin).catch(() => { if (tok === vtok) toast('That video could not be loaded. Try again in a moment.'); });
+    }
+    else if (u) img.src = u;
     else if (keys && keys[i]) { const p = mediaCache.get(keys[i]); if (p) p.then(x => { img.src = x; }); }
     if (many) s.querySelector('.lbcount').textContent = `${i + 1} of ${list.length}`;
   };
   // zoom: pinch, double tap or double-click; drag to look around while zoomed (2026-11-14, Chance)
   let sc = 1, tx = 0, ty = 0;
-  const apply = (extra) => { img.style.transform = extra || (sc === 1 && !tx && !ty ? '' : `translate(${tx}px,${ty}px) scale(${sc})`); s.classList.toggle('zoomed', sc > 1); };
+  const apply = (extra) => { const tf = extra || (sc === 1 && !tx && !ty ? '' : `translate(${tx}px,${ty}px) scale(${sc})`); img.style.transform = tf; vid.style.transform = tf; s.classList.toggle('zoomed', sc > 1); };
   const clampPan = () => { const mx = Math.max(0, (img.offsetWidth * sc - innerWidth) / 2 + 20), my = Math.max(0, (img.offsetHeight * sc - innerHeight) / 2 + 20); tx = Math.max(-mx, Math.min(mx, tx)); ty = Math.max(-my, Math.min(my, ty)); };
   const resetZoom = () => { sc = 1; tx = ty = 0; apply(); };
   const zoomAt = (cx, cy, to) => { const r = img.getBoundingClientRect(), ox = cx - (r.left + r.width / 2), oy = cy - (r.top + r.height / 2), k = to / sc; tx = tx * k - ox * (k - 1); ty = ty * k - oy * (k - 1); sc = to; if (sc <= 1) { sc = 1; tx = ty = 0; } clampPan(); apply(); };
   img.addEventListener('dblclick', e => { e.stopPropagation(); zoomAt(e.clientX, e.clientY, sc > 1 ? 1 : 2.5); });
-  s.addEventListener('wheel', e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); s.classList.add('drag'); zoomAt(e.clientX, e.clientY, Math.min(5, Math.max(1, sc * (e.deltaY < 0 ? 1.12 : 0.89)))); clearTimeout(s._wt); s._wt = setTimeout(() => s.classList.remove('drag'), 150); }, { passive: false });
+  s.addEventListener('wheel', e => { if ((!e.ctrlKey && !e.metaKey) || vOf()) return; e.preventDefault(); s.classList.add('drag'); zoomAt(e.clientX, e.clientY, Math.min(5, Math.max(1, sc * (e.deltaY < 0 ? 1.12 : 0.89)))); clearTimeout(s._wt); s._wt = setTimeout(() => s.classList.remove('drag'), 150); }, { passive: false });
   let mdrag = null;
   img.addEventListener('mousedown', e => { if (sc <= 1) return; e.preventDefault(); mdrag = { x: e.clientX - tx, y: e.clientY - ty }; s.classList.add('drag'); });
   s.addEventListener('mousemove', e => { if (!mdrag) return; tx = e.clientX - mdrag.x; ty = e.clientY - mdrag.y; clampPan(); apply(); });
   s.addEventListener('mouseup', () => { mdrag = null; s.classList.remove('drag'); });
   const go = d => { i = (i + d + list.length) % list.length; resetZoom(); show(); };
-  const key = e => { if (!document.body.contains(s)) { document.removeEventListener('keydown', key); return; } if (e.key === 'ArrowRight') go(1); else if (e.key === 'ArrowLeft') go(-1); };
+  const key = e => { if (!document.body.contains(s)) { document.removeEventListener('keydown', key); return; } if (many && e.key === 'ArrowRight') go(1); else if (many && e.key === 'ArrowLeft') go(-1); else if (e.key === ' ' && vOf() && e.target !== rng) { e.preventDefault(); vtoggle(); } };
   // Save: the phone's share sheet (Save Image on iPhone), or a download on a computer (2026-11-14)
+  // a video is fetched first (the button counts it in), then handed to the phone's share sheet (Save Video on
+  // iPhone) on a second tap, since a phone only opens that sheet straight after a tap; a computer just downloads it
+  const saveVideo = async v => {
+    const btn = s.querySelector('.lbsave');
+    try {
+      const probe = new File([''], 'inner-circle-video.mp4', { type: 'video/mp4' });
+      const sheet = !!(navigator.canShare && navigator.canShare({ files: [probe] })) && matchMedia('(hover: none)').matches;
+      const l = await videoLink(v.k);
+      if (!sheet) { const a = document.createElement('a'); a.href = l.local ? l.url : l.url + '&dl=1'; a.download = 'inner-circle-video.mp4'; document.body.appendChild(a); a.click(); a.remove(); return; }
+      if (!v.file) {
+        if (v.busy) return; v.busy = true;
+        const lab = btn.lastChild; lab.textContent = 'Getting it';
+        try {
+          const r = await fetch(l.url); if (!r.ok) throw new Error('fetch');
+          const total = Number(r.headers.get('Content-Length')) || v.s || 0, rd = r.body && r.body.getReader ? r.body.getReader() : null;
+          let blob;
+          if (rd) { const chunks = []; let got = 0; for (;;) { const { done, value } = await rd.read(); if (done) break; chunks.push(value); got += value.length; if (total) lab.textContent = Math.min(99, Math.round((got / total) * 100)) + '%'; } blob = new Blob(chunks, { type: 'video/mp4' }); }
+          else blob = await r.blob();
+          v.file = new File([blob], 'inner-circle-video.mp4', { type: 'video/mp4' });
+        } finally { v.busy = false; lab.textContent = v.file ? 'Save video' : 'Save'; }
+      }
+      try { await navigator.share({ files: [v.file] }); } catch (e) { if (e && e.name === 'NotAllowedError') toast('Ready. Tap Save video once more.'); else if (e && e.name !== 'AbortError') throw e; }
+    } catch (e) { toast('Could not save that video.'); }
+  };
   const save = async () => {
+    const sv = vOf(); if (sv) return saveVideo(sv);
     try {
       const blob = await (await fetch(img.src)).blob();
       const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
@@ -4201,10 +4703,12 @@ function openLightbox(src, at, keys) {
     if (e.target.closest('.lbx')) { e.stopPropagation(); closeOverlay(); return; }
     if (e.target.closest('.lbsave')) { e.stopPropagation(); save(); return; }
     if (e.target === img) return;
+    if (e.target === vid) { vtoggle(); return; }
+    if (e.target.closest('.lbvc')) return;
     const n = e.target.closest('.lbnav'); if (n) { e.stopPropagation(); go(n.classList.contains('next') ? 1 : -1); return; }
     closeOverlay();
   };
-  if (many) document.addEventListener('keydown', key);
+  if (many || vids) document.addEventListener('keydown', key);
   const onResize = () => { if (!document.body.contains(s)) { removeEventListener('resize', onResize); return; } resetZoom(); };
   addEventListener('resize', onResize);
   // touch (2026-11-14, Chance): sideways swipe follows the finger to the next photo, swipe up or down (or a flick)
@@ -4214,15 +4718,16 @@ function openLightbox(src, at, keys) {
   const mid = t => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
   const slideTo = d => { // the photo leaves with the swipe and the next one comes in from the other side
     sliding = true; s.classList.remove('drag');
-    img.style.transition = 'transform .18s ease-out'; img.style.transform = `translateX(${-d * innerWidth}px)`;
+    const st = (k, v) => { img.style[k] = v; vid.style[k] = v; };
+    st('transition', 'transform .18s ease-out'); st('transform', `translateX(${-d * innerWidth}px)`);
     setTimeout(() => {
-      img.style.transition = 'none'; go(d); img.style.transform = `translateX(${d * innerWidth}px)`;
-      requestAnimationFrame(() => requestAnimationFrame(() => { img.style.transition = 'transform .2s ease-out'; img.style.transform = ''; setTimeout(() => { img.style.transition = ''; sliding = false; }, 220); }));
+      st('transition', 'none'); go(d); st('transform', `translateX(${d * innerWidth}px)`);
+      requestAnimationFrame(() => requestAnimationFrame(() => { st('transition', 'transform .2s ease-out'); st('transform', ''); setTimeout(() => { st('transition', ''); sliding = false; }, 220); }));
     }, 180);
   };
   s.addEventListener('touchstart', e => {
-    if (sliding || e.target.closest('.lbx,.lbnav,.lbsave')) { x0 = null; return; }
-    if (e.touches.length === 2) { x0 = null; clearTimeout(tapT); mode = 'pinch'; s.classList.add('drag'); pinch = { d: dist(e.touches), sc, tx, ty, m: mid(e.touches) }; return; }
+    if (sliding || e.target.closest('.lbx,.lbnav,.lbsave,.lbvc')) { x0 = null; return; }
+    if (e.touches.length === 2 && !vOf()) { x0 = null; clearTimeout(tapT); mode = 'pinch'; s.classList.add('drag'); pinch = { d: dist(e.touches), sc, tx, ty, m: mid(e.touches) }; return; }
     if (e.touches.length !== 1) return;
     x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); mode = sc > 1 ? 'pan' : ''; pan0 = { tx, ty };
   }, { passive: true });
@@ -4259,11 +4764,12 @@ function openLightbox(src, at, keys) {
     if (moved) return;
     // a tap: two quick taps zoom in (on that spot) or back to fit; one tap shows or hides the buttons
     e.preventDefault();
+    if (vOf()) { vtoggle(); return; } // a tap on a video plays or pauses it
     const t = Date.now();
     if (t - lastTap < 300) { clearTimeout(tapT); lastTap = 0; if (sc > 1) resetZoom(); else zoomAt(ct.clientX, ct.clientY, 2.5); return; }
     lastTap = t; clearTimeout(tapT); tapT = setTimeout(() => s.classList.toggle('lbhide'), 300);
   });
-  closeOverlay(); document.body.appendChild(s); ovlHistory(); show(); // the phone's back gesture closes it
+  closeOverlay(); document.body.appendChild(s); ovlHistory(); show(); pickPlaying(); // the phone's back gesture closes it
 }
 
 // the album mosaic: rows fitted to the photos' shapes, a tall first photo beside two when there are three
@@ -4298,8 +4804,15 @@ function albumLayout(items) {
   return { H: y - G, cells };
 }
 function albumHtml(items, who) {
-  const L = albumLayout(items), pc = v => (v * 100).toFixed(3) + '%';
-  return `<div class="alb" style="aspect-ratio:1 / ${L.H.toFixed(4)}">${items.map((x, i) => { const c = L.cells[i]; return `<img data-media="${esc(x.k)}" data-key="${esc(x.k)}" data-zoom="1" alt="Photo ${i + 1} of ${items.length} from ${esc(who)}" style="left:${pc(c.x)};top:${pc(c.y / L.H)};width:${pc(c.w)};height:${pc(c.h / L.H)}">`; }).join('')}</div>`;
+  const one = items.length === 1, pc = v => (v * 100).toFixed(3) + '%';
+  // a video on its own keeps its shape, within reason (a tall phone clip is cropped in the chat and whole in the viewer)
+  const H1 = one ? Math.min(1.25, Math.max(0.5, (items[0].h || 1) / (items[0].w || 1))) : 0;
+  const L = one ? { H: H1, cells: [{ x: 0, y: 0, w: 1, h: H1 }] } : albumLayout(items);
+  return `<div class="alb${one ? ' one vone' : ''}" style="aspect-ratio:1 / ${L.H.toFixed(4)}">${items.map((x, i) => {
+    const c = L.cells[i], pos = `left:${pc(c.x)};top:${pc(c.y / L.H)};width:${pc(c.w)};height:${pc(c.h / L.H)}`;
+    if (x.v) return `<div class="vcell" data-vid="${esc(x.v)}" style="${pos}"><img data-media="${esc(x.k)}" data-key="${esc(x.k)}" data-zoom="1" data-vid="${esc(x.v)}" data-d="${Number(x.d) || 0}" alt="Video${one ? '' : ` ${i + 1} of ${items.length}`} from ${esc(who)}"><span class="vdur">${x.q ? soundIcon(true, 13) : ''}<b>${clip(x.d)}</b></span><span class="vplay">${VID_ICON}</span></div>`;
+    return `<img data-media="${esc(x.k)}" data-key="${esc(x.k)}" data-zoom="1" alt="Photo ${i + 1} of ${items.length} from ${esc(who)}" style="${pos}">`;
+  }).join('')}</div>`;
 }
 
 // every icon button shows its name on hover

@@ -708,7 +708,7 @@ html.member [data-song].on .spp{box-shadow:0 0 0 4px rgba(216,170,60,0.3)}
 <script>
 (function(){
 'use strict';
-const VERSION = '2026-11-25b';
+const VERSION = '2026-11-26a';
 const AUTH = 'https://innerverse-plus.chance-5da.workers.dev';
 const CIRCLE_API = 'https://innerverse-circle.chance-5da.workers.dev';
 const DATA = 'https://raw.githubusercontent.com/chance-garton/innerverse-data/main/';
@@ -1838,7 +1838,7 @@ function msgRow(m, terms) {
   const when = (m.fwd && m.fwd.created) || m.created;
   return `<a class="librow msgrow" href="#/chat?room=saved">
     <div class="msgfrom">${I.chat(14)}<span><b>${esc(m._from)}</b>${where}</span><span class="msgdate">${esc(fmtDate(localDay(when)))}</span></div>
-    ${shown ? `<div class="msgtext">${terms.length ? noteHtml(shown, terms).replace(/<button[^>]*class="ts"[^>]*>.*?<\/button>/g, x => x.replace(/<[^>]+>/g, '')) : esc(shown)}</div>` : ''}${m.image ? `<div class="msgphoto">Photo</div>` : ''}</a>`;
+    ${shown ? `<div class="msgtext">${terms.length ? noteHtml(shown, terms).replace(/<button[^>]*class="ts"[^>]*>.*?<\/button>/g, x => x.replace(/<[^>]+>/g, '')) : esc(shown)}</div>` : ''}${m.image ? `<div class="msgphoto">${(m.images || []).some(x => x && x.v) ? 'Video' : 'Photo'}</div>` : ''}</a>`;
 }
 function libRows() {
   const all = savedList();

@@ -9,6 +9,15 @@ import APP_HTML from './app.html';
 const INITIATOR_CUTOFF = Date.UTC(2027, 0, 1); // joined before 1 Jan 2027
 const MAX_TEXT = 2000;
 const MAX_IMAGE = 8 * 1024 * 1024;
+// Members' video (2026-11-26): a clip is shrunk on the member's device, then uploaded in pieces straight into
+// the same private storage as the photos (a piece that fails goes again on its own), and played from a
+// signed link that lasts half a day. Kept in step with the VIDEO_ numbers in app.html.
+const MAX_VIDEO = 200 * 1024 * 1024; // a stored clip (a shrunk five minutes is under 100 MB; the rest is room for a clip a device could not shrink)
+const VIDEO_PART = 5 * 1024 * 1024; // the size of each uploaded piece (the storage's minimum for all but the last)
+const VIDEO_MAX_SECONDS = 300;
+const VIDEO_LINK_MS = 12 * 3600 * 1000;
+const VIDEO_KEY = /^circle\/[0-9a-f-]{36}\.(mp4|mov|webm)$/;
+const VIDEO_TYPES = { 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm' };
 const PAGE = 50;
 const LOOKING_MS = 65 * 1000; // a screen silent this long is not looking, so its member gets the push
 // Episode rooms (2026-10-10): every episode can have a room, keyed by its free slug ('ep:<slug>'; '' is
@@ -153,6 +162,47 @@ async function stripeSigOk(raw, header, secret) {
   const mac = await hmac256(utf8(secret), utf8(t + '.' + raw));
   const hex = [...mac].map(b => b.toString(16).padStart(2, '0')).join('');
   return sigs.includes(hex);
+}
+
+// ---------------------------------------------------------------- members' video
+
+// The key that signs video links lives in the room (like the push keys), so there is no secret to set.
+let videoKeyBytes = null;
+async function videoSig(env, key, exp) {
+  if (!videoKeyBytes) {
+    const room = env.ROOM.get(env.ROOM.idFromName('lounge'));
+    const j = await (await room.fetch(new Request('https://room/media-key'))).json();
+    videoKeyBytes = ub64(j.key);
+  }
+  return b64u(await hmac256(videoKeyBytes, utf8(key + '\n' + exp)));
+}
+const videoSizes = new Map(); // key -> bytes (a stored clip never changes)
+async function videoSize(env, key) {
+  if (videoSizes.has(key)) return videoSizes.get(key);
+  const h = await env.MEDIA.head(key);
+  if (!h) return -1;
+  if (videoSizes.size > 2000) videoSizes.clear();
+  videoSizes.set(key, h.size);
+  return h.size;
+}
+// "bytes=a-b", "bytes=a-" or "bytes=-n" against a file of `size` bytes: the piece to send, null for none asked, 'bad' for one that cannot be met
+function byteRange(h, size) {
+  const m = /^bytes=(\d*)-(\d*)$/.exec(String(h || '').trim());
+  if (!m || (!m[1] && !m[2])) return null;
+  let start, end;
+  if (!m[1]) { const n = Number(m[2]); if (!n) return 'bad'; start = Math.max(0, size - n); end = size - 1; }
+  else { start = Number(m[1]); end = m[2] ? Math.min(Number(m[2]), size - 1) : size - 1; }
+  if (start >= size || start > end) return 'bad';
+  return { offset: start, length: end - start + 1 };
+}
+const videoStarts = new Map(); // uid -> times of their recent uploads
+function videoLimited(uid) {
+  const now = Date.now();
+  const list = (videoStarts.get(uid) || []).filter(t => now - t < 10 * 60 * 1000);
+  if (list.length >= 12) { videoStarts.set(uid, list); return true; }
+  list.push(now); videoStarts.set(uid, list);
+  if (videoStarts.size > 5000) videoStarts.clear();
+  return false;
 }
 
 // ---------------------------------------------------------------- worker
@@ -310,6 +360,80 @@ async function route(req, env, url, path, okOrigin) {
       return json({ key });
     }
 
+    // ---- members' video: upload in pieces, then a signed link to play it
+    if (path.startsWith('/api/video/') && req.method === 'POST') {
+      if (!okOrigin) return json({ error: 'origin not allowed' }, 403);
+      const who = await verify(bearer(req), env);
+      if (!who || !who.entitled) return json({ error: 'not a member' }, 401);
+      const op = path.slice('/api/video/'.length), q = url.searchParams;
+      if (op === 'start') {
+        const type = String(q.get('type') || ''), size = Number(q.get('size') || 0), ext = VIDEO_TYPES[type];
+        if (!ext) return json({ error: 'That kind of video cannot be posted here.' }, 415);
+        if (!(size > 0) || size > MAX_VIDEO) return json({ error: 'That video is too large to post.' }, 413);
+        if (videoLimited(who.uid)) return json({ error: 'Easy there. A few minutes between that many videos, please.' }, 429);
+        const key = 'circle/' + crypto.randomUUID() + '.' + ext;
+        const up = await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: ext === 'webm' ? 'video/webm' : 'video/mp4' }, customMetadata: { uid: who.uid } });
+        return json({ key, id: up.uploadId, part: VIDEO_PART });
+      }
+      const key = String(q.get('key') || '');
+      if (!VIDEO_KEY.test(key)) return json({ error: 'bad video' }, 400);
+      if (op === 'link') {
+        const exp = Date.now() + VIDEO_LINK_MS;
+        return json({ url: url.origin + '/v/' + key + '?e=' + exp + '&s=' + (await videoSig(env, key, exp)), exp });
+      }
+      const id = String(q.get('id') || '');
+      if (!id || id.length > 1024) return json({ error: 'bad upload' }, 400);
+      const up = env.MEDIA.resumeMultipartUpload(key, id);
+      if (op === 'part') {
+        const n = Number(q.get('n'));
+        if (!Number.isInteger(n) || n < 1 || n > Math.ceil(MAX_VIDEO / VIDEO_PART)) return json({ error: 'bad piece' }, 400);
+        // the piece is passed straight through to storage as it arrives (never held whole in the Worker), so its size must be declared
+        const len = Number(req.headers.get('Content-Length') || 0);
+        if (!(len > 0) || !req.body) return json({ error: 'empty piece' }, 400);
+        if (len > VIDEO_PART) return json({ error: 'piece too large' }, 413);
+        try { const p = await up.uploadPart(n, req.body); return json({ n: p.partNumber, etag: p.etag }); }
+        catch (e) { return json({ error: 'That piece did not save.' }, 409); }
+      }
+      if (op === 'done') {
+        let body = {}; try { body = await req.json(); } catch (e) { /* empty */ }
+        const parts = (Array.isArray(body.parts) ? body.parts : []).slice(0, Math.ceil(MAX_VIDEO / VIDEO_PART))
+          .map(p => ({ partNumber: Number(p && p.n), etag: String((p && p.etag) || '') })).filter(p => Number.isInteger(p.partNumber) && p.partNumber > 0 && p.etag)
+          .sort((a, b) => a.partNumber - b.partNumber);
+        if (!parts.length) return json({ error: 'bad upload' }, 400);
+        try {
+          const obj = await up.complete(parts);
+          if (obj.size > MAX_VIDEO) { await env.MEDIA.delete(key); return json({ error: 'That video is too large to post.' }, 413); }
+          return json({ key, size: obj.size });
+        } catch (e) {
+          // it may have finished a moment ago and only the answer was lost on the way back
+          const h = await env.MEDIA.head(key).catch(() => null);
+          if (h && h.size <= MAX_VIDEO) return json({ key, size: h.size });
+          return json({ error: 'The upload could not be finished.' }, 409);
+        }
+      }
+      if (op === 'abort') { try { await up.abort(); } catch (e) { /* already gone */ } return json({ ok: true }); }
+      return json({ error: 'not found' }, 404);
+    }
+
+    // a clip plays from its signed link; the player asks for it in pieces (so it starts at once and can skip around)
+    if (path.startsWith('/v/') && (req.method === 'GET' || req.method === 'HEAD')) {
+      let key = ''; try { key = decodeURIComponent(path.slice(3)); } catch (e) { /* bad address */ }
+      const exp = Number(url.searchParams.get('e') || 0), sig = url.searchParams.get('s') || '';
+      if (!VIDEO_KEY.test(key) || !(exp > Date.now()) || exp > Date.now() + VIDEO_LINK_MS + 60000 || !sig || sig !== (await videoSig(env, key, exp))) return new Response('Members only', { status: 401 });
+      const size = await videoSize(env, key);
+      if (size < 0) return new Response('Not found', { status: 404 });
+      const head = { 'Content-Type': key.endsWith('.webm') ? 'video/webm' : 'video/mp4', 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, max-age=43200', 'X-Content-Type-Options': 'nosniff' };
+      if (url.searchParams.get('dl')) head['Content-Disposition'] = 'attachment; filename="inner-circle-video.' + key.split('.').pop() + '"';
+      const range = byteRange(req.headers.get('Range'), size);
+      if (range === 'bad') return new Response(null, { status: 416, headers: Object.assign(head, { 'Content-Range': 'bytes */' + size }) });
+      if (range) Object.assign(head, { 'Content-Range': `bytes ${range.offset}-${range.offset + range.length - 1}/${size}`, 'Content-Length': String(range.length) });
+      else head['Content-Length'] = String(size);
+      if (req.method === 'HEAD') return new Response(null, { status: range ? 206 : 200, headers: head });
+      const obj = await env.MEDIA.get(key, range ? { range } : undefined);
+      if (!obj) return new Response('Not found', { status: 404 });
+      return new Response(obj.body, { status: range ? 206 : 200, headers: head });
+    }
+
     if (path.startsWith('/media/') && req.method === 'GET') {
       const who = await verify(bearer(req), env);
       if (!who || !who.entitled) return new Response('Members only', { status: 401 });
@@ -460,7 +584,7 @@ export class Room {
         // Telegram style: the room as the title, "Name: message" as the text (the phone trims it to fit)
         const name = author.name || 'A member';
         const text = (m.text || '').replace(/\s+/g, ' ').trim();
-        const body = m.kind === 'join' ? `${name} joined the chat` : m.sup ? `${name} sent a ${money(m.sup.a)} Super Chat${text ? ': ' + text : ''}`.slice(0, 600) : `${name}: ${m.image ? '\u{1F4F7} ' + (m.images && m.images.length > 1 ? m.images.length + ' photos' : 'Photo') + (text ? ' ' : '') : ''}${text}`.slice(0, 600);
+        const body = m.kind === 'join' ? `${name} joined the chat` : m.sup ? `${name} sent a ${money(m.sup.a)} Super Chat${text ? ': ' + text : ''}`.slice(0, 600) : `${name}: ${m.image ? mediaWords(m) + (text ? ' ' : '') : ''}${text}`.slice(0, 600);
         const img = typeof author.avatar === 'string' && author.avatar.startsWith('img:') ? author.avatar.slice(4) : '';
         let title = m.kind === 'join' ? 'New member' : roomTitle, text2 = m.kind === 'join' ? `${name} just joined the Inner Circle` : body, url = roomUrl, av = img;
         if (m.kind === 'room') { const ri = this.roomInfo(m.text, await this.eps()); title = 'Inner Circle'; text2 = `New episode room: ${trimTo(ri.title, 140)}`; url = '/app/#/chat?room=' + encodeURIComponent(m.text); av = ''; }
@@ -594,7 +718,7 @@ export class Room {
       return { ...this.roomInfo(key, x), opened: !!s, engaged: !!(s && s.engaged),
         unread: s ? this.one("SELECT COUNT(*) AS n FROM messages WHERE room = ? AND deleted = 0 AND id > ? AND uid != ? AND COALESCE(kind, '') != 'join'", key, s.last_read, uid).n : 0,
         total: this.roomTotal(key),
-        last: last ? { id: last.id, uid: last.uid, text: (last.text || '').replace(/\s+/g, ' ').slice(0, 140), image: !!last.image, kind: last.kind || '', created: last.created } : null };
+        last: last ? { id: last.id, uid: last.uid, text: (last.text || '').replace(/\s+/g, ' ').slice(0, 140), image: !!last.image, video: hasVideo(last.images), kind: last.kind || '', created: last.created } : null };
     };
     const mine = [...st.values()].filter(r => r.engaged && r.room && !isPrivate(r.room) && !newest.includes(r.room)).map(r => one(r.room))
       .sort((a, b) => ((b.last && b.last.id) || 0) - ((a.last && a.last.id) || 0));
@@ -738,6 +862,11 @@ export class Room {
   async fetch(req) {
     const path = new URL(req.url).pathname;
     if (path === '/push-key') return json({ key: (await this.vapid()).pub });
+    if (path === '/media-key') { // the key that signs video links, made once and kept here (only the Worker itself can ask)
+      let row = this.one("SELECT v FROM meta WHERE k = 'media_key'");
+      if (!row) { this.sql.exec("INSERT OR IGNORE INTO meta (k, v) VALUES ('media_key', ?)", b64u(crypto.getRandomValues(new Uint8Array(32)))); row = this.one("SELECT v FROM meta WHERE k = 'media_key'"); }
+      return json({ key: row.v });
+    }
     if (path === '/handoff-put' || path === '/handoff-get') {
       const { h, token } = await req.json(); const now = Date.now();
       this.sql.exec('DELETE FROM handoff WHERE created < ?', now - 15 * 60 * 1000);
@@ -867,7 +996,7 @@ export class Room {
     }
     for (let i = 0; i < parentIds.length; i += 80) {
       const c = parentIds.slice(i, i + 80);
-      for (const p of this.all(`SELECT id, uid, text, image, deleted, kind FROM messages WHERE id IN (${inList(c.length)})`, ...c)) ctx.parents.set(p.id, p);
+      for (const p of this.all(`SELECT id, uid, text, image, images, deleted, kind FROM messages WHERE id IN (${inList(c.length)})`, ...c)) ctx.parents.set(p.id, p);
     }
     return rows.map(r => this.shape(r, ctx));
   }
@@ -881,8 +1010,8 @@ export class Room {
     }
     let reply = null;
     if (row.reply_to) {
-      const p = ctx ? ctx.parents.get(row.reply_to) : this.one('SELECT id, uid, text, image, deleted, kind FROM messages WHERE id = ?', row.reply_to);
-      if (p) reply = { id: p.id, uid: p.uid, text: p.deleted ? '' : (p.text || '').slice(0, 200), image: !p.deleted && !!p.image, deleted: !!p.deleted, kind: p.kind || '' };
+      const p = ctx ? ctx.parents.get(row.reply_to) : this.one('SELECT id, uid, text, image, images, deleted, kind FROM messages WHERE id = ?', row.reply_to);
+      if (p) reply = { id: p.id, uid: p.uid, text: p.deleted ? '' : (p.text || '').slice(0, 200), image: !p.deleted && !!p.image, video: !p.deleted && hasVideo(p.images), deleted: !!p.deleted, kind: p.kind || '' };
     }
     return {
       id: row.id, uid: row.uid, text: row.deleted ? '' : row.text, image: row.deleted ? '' : row.image,
@@ -1816,8 +1945,25 @@ function albumFrom(v) {
   for (const x of v.slice(0, 10)) {
     if (!x || typeof x.k !== 'string' || !MEDIA_KEY.test(x.k)) continue;
     const w = Math.round(Number(x.w)), h = Math.round(Number(x.h));
-    out.push({ k: x.k, w: w > 0 && w < 40000 ? w : 1, h: h > 0 && h < 40000 ? h : 1 });
+    const it = { k: x.k, w: w > 0 && w < 40000 ? w : 1, h: h > 0 && h < 40000 ? h : 1 };
+    // a video (2026-11-26): `k` is its cover picture, `v` the clip, `d` its length in seconds, `s` its size, `q` 1 when sent without sound
+    if (typeof x.v === 'string' && VIDEO_KEY.test(x.v)) {
+      const d = Math.round(Number(x.d) * 10) / 10, s = Math.round(Number(x.s));
+      if (!(d > 0) || d > VIDEO_MAX_SECONDS + 2) continue;
+      it.v = x.v; it.d = d;
+      if (s > 0 && s <= MAX_VIDEO) it.s = s;
+      if (x.q) it.q = 1;
+    }
+    out.push(it);
   }
-  return out.length > 1 ? out : [];
+  return out.length > 1 || (out.length && out[0].v) ? out : []; // one photo alone travels in `image`; one video keeps its details here
 }
+// "Photo", "3 photos", "Video", "2 videos" or "4 photos and videos" for a message's pictures (push text)
+function mediaWords(m) {
+  const list = Array.isArray(m.images) ? m.images : [], n = Math.max(1, list.length), vids = list.filter(x => x && x.v).length;
+  if (!vids) return '\u{1F4F7} ' + (n > 1 ? n + ' photos' : 'Photo');
+  if (vids === n) return '\u{1F3A5} ' + (n > 1 ? n + ' videos' : 'Video');
+  return '\u{1F4F7} ' + n + ' photos and videos';
+}
+const hasVideo = images => typeof images === 'string' && images.includes('"v":"circle/');
 function safeArr(s) { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
